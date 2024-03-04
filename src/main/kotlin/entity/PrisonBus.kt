@@ -2,6 +2,15 @@ package entity
 
 import entity.tileTypes.Tile
 
+/**
+ * Data class to represent a prisoner bus
+ *
+ * This would be a truck in the game Aquaretto
+ *
+ * @property tiles a list of [Tile] in the prison bus
+ * @property blockedSlots a list of [Boolean], defines if a slot in a prison bus is blocked
+ * if this list does not contain a value, no slot is blocked
+ */
 class PrisonBus {
 
     val tiles: MutableList<Tile> = mutableListOf()

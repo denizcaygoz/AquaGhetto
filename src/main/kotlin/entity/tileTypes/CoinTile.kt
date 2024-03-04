@@ -1,4 +1,7 @@
 package entity.tileTypes
 
-class CoinTile(): Tile() {
-}
+/**
+ * Data class to represent a coin tile
+ * @see [Tile]
+ */
+class CoinTile: Tile()
