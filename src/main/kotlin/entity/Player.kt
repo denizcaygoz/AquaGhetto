@@ -1,6 +1,5 @@
 package entity
 
-import entity.tileTypes.GuardTile
 import entity.tileTypes.PrisonerTile
 import tools.aqua.bgw.util.Stack
 
