@@ -1,5 +1,7 @@
 package entity.tileTypes
 
+import java.io.Serializable
+
 /**
  * Data class to represent a guard tile
  *
@@ -7,4 +9,4 @@ package entity.tileTypes
  *
  * @see [Tile]
  */
-class GuardTile : Tile()
+class GuardTile : Tile(), Serializable

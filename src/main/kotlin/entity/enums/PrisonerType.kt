@@ -1,5 +1,7 @@
 package entity.enums
 
+import java.io.Serializable
+
 /**
  * Enum to distinguish between the eight possible prisoner types
  * red, blue, green, yellow, orange, purple, brown, cyan
@@ -9,7 +11,7 @@ package entity.enums
  * dolphins, orcas, sea lions, hippopotamus, sea turtle, penguin, polar bear, crocodile
  * (dolphins, orcas, and sea lions cards are not allowed to be removed)
  */
-enum class PrisonerType {
+enum class PrisonerType: Serializable {
     RED,
     BLUE,
     GREEN,

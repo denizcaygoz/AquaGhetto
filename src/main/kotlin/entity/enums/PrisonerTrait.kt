@@ -1,5 +1,7 @@
 package entity.enums
 
+import java.io.Serializable
+
 
 /**
  * Enum to distinguish between the six possible traits a prisoner can have
@@ -8,7 +10,7 @@ package entity.enums
  * The corresponding traits/symbols from the game Aquaretto would be
  * none, male, female, flash, fish, offspring
  */
-enum class PrisonerTrait {
+enum class PrisonerTrait: Serializable {
     NONE,
     MALE,
     FEMALE,

@@ -1,6 +1,7 @@
 package entity
 
 import entity.tileTypes.Tile
+import java.io.Serializable
 
 /**
  * A data class to represent a player's personal game board
@@ -18,7 +19,7 @@ import entity.tileTypes.Tile
  *
  * @property guardPosition a list of [Pair] containing the locations of the guards placed on the yard.
  */
-class Board {
+class Board: Serializable {
 
     private val prisonYard: MutableMap<Int, MutableMap<Int, Tile>> = mutableMapOf()
     private val prisonGrid: MutableMap<Int, MutableMap<Int, Boolean>> = mutableMapOf()

@@ -1,7 +1,10 @@
 package entity
 
 import entity.tileTypes.PrisonerTile
-import tools.aqua.bgw.util.Stack
+import java.io.ObjectInputStream
+import java.io.ObjectOutputStream
+import java.io.Serializable
+import java.util.Stack
 
 /**
  * Data class to represent a player in the game Aquaghetto.
@@ -28,7 +31,7 @@ import tools.aqua.bgw.util.Stack
  * @property maxPrisonerTypes the maximum amount of prisoners with different types
  */
 
-class Player(val name: String) {
+class Player(val name: String): Serializable {
 
     val board: Board = Board()
     val isolation: Stack<PrisonerTile> = Stack()

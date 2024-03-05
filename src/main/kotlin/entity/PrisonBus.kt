@@ -1,6 +1,7 @@
 package entity
 
 import entity.tileTypes.Tile
+import java.io.Serializable
 
 /**
  * Data class to represent a prisoner bus
@@ -11,7 +12,7 @@ import entity.tileTypes.Tile
  * @property blockedSlots a list of [Boolean], defines if a slot in a prison bus is blocked
  * if this list does not contain a value, no slot is blocked
  */
-class PrisonBus {
+class PrisonBus: Serializable {
 
     val tiles: MutableList<Tile> = mutableListOf()
     val blockedSlots: MutableList<Boolean> = mutableListOf()
