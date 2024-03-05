@@ -1,7 +1,6 @@
 package entity
 
 import entity.tileTypes.Tile
-import java.io.Serial
 import java.util.Stack
 import java.io.Serializable
 
@@ -25,7 +24,6 @@ import java.io.Serializable
  */
 class AquaGhetto: Serializable {
     companion object {
-        @Serial
         private const val serialVersionUID: Long = -6431955668823631957L
     }
 

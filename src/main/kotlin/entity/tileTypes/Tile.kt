@@ -1,6 +1,5 @@
 package entity.tileTypes
 
-import java.io.Serial
 import java.io.Serializable
 
 /**
@@ -9,7 +8,6 @@ import java.io.Serializable
  */
 abstract class Tile: Serializable {
     companion object {
-        @Serial
         private const val serialVersionUID: Long = -1344851655740130092L
     }
 
