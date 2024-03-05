@@ -1,6 +1,7 @@
 package entity
 
 import entity.tileTypes.PrisonerTile
+import java.io.Serial
 import java.io.Serializable
 import java.util.Stack
 
@@ -30,6 +31,10 @@ import java.util.Stack
  */
 
 class Player(val name: String): Serializable {
+    companion object {
+        @Serial
+        private const val serialVersionUID: Long = 2382752881182402781L
+    }
 
     val board: Board = Board()
     val isolation: Stack<PrisonerTile> = Stack()

@@ -1,5 +1,6 @@
 package entity.tileTypes
 
+import java.io.Serial
 import java.io.Serializable
 
 /**
@@ -9,4 +10,11 @@ import java.io.Serializable
  *
  * @see [Tile]
  */
-class GuardTile : Tile(), Serializable
+class GuardTile : Tile(), Serializable {
+    companion object {
+        @Serial
+        private const val serialVersionUID: Long = -8828161763151770395L
+    }
+
+
+}

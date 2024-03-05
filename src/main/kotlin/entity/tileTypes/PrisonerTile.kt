@@ -2,6 +2,7 @@ package entity.tileTypes
 
 import entity.enums.PrisonerTrait
 import entity.enums.PrisonerType
+import java.io.Serial
 import java.io.Serializable
 
 /**
@@ -14,6 +15,10 @@ import java.io.Serializable
  * trait male or female and has not yet been paired.
  */
 class PrisonerTile(val prisonerTrait: PrisonerTrait , val prisonerType: PrisonerType): Tile(), Serializable {
+    companion object {
+        @Serial
+        private const val serialVersionUID: Long = -8184519218972531765L
+    }
 
     var breedable: Boolean = (prisonerTrait == PrisonerTrait.MALE) || (prisonerTrait == PrisonerTrait.FEMALE)
 

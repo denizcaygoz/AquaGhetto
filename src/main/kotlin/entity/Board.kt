@@ -1,6 +1,7 @@
 package entity
 
 import entity.tileTypes.Tile
+import java.io.Serial
 import java.io.Serializable
 
 /**
@@ -20,6 +21,10 @@ import java.io.Serializable
  * @property guardPosition a list of [Pair] containing the locations of the guards placed on the yard.
  */
 class Board: Serializable {
+    companion object {
+        @Serial
+        private const val serialVersionUID: Long = -5505146300869386926L
+    }
 
     private val prisonYard: MutableMap<Int, MutableMap<Int, Tile>> = mutableMapOf()
     private val prisonGrid: MutableMap<Int, MutableMap<Int, Boolean>> = mutableMapOf()
