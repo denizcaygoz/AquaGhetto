@@ -19,7 +19,7 @@ import java.util.Stack
  * @property takenBus the [PrisonBus] a player is currently holding, can be null if the player does not own a bus
  * if the player owns a bus this indicates that has finished his actions for this round
  * @property money the amount of money the player owns
- * @property hasJanitor if the player owns a janitor, this would be the trainer in Aquaretto
+ * @property hasJanitor if the player owns a janitor, this would be the manager in Aquaretto
  * @property secretaryCount the amount of secretaries the players owns, a value between 0 and 2 (included), this
  * would be the cashier in Aquaretto
  * @property lawyerCount the amount of layers the player owns, a value between 0 and 2 (included), this
