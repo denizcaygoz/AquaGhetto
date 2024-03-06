@@ -22,7 +22,7 @@ import java.util.Stack
  * @property hasJanitor if the player owns a janitor, this would be the trainer in Aquaretto
  * @property secretaryCount the amount of secretaries the players owns, a value between 0 and 2 (included), this
  * would be the cashier in Aquaretto
- * @property layerCount the amount of layers the player owns, a value between 0 and 2 (included), this
+ * @property lawyerCount the amount of layers the player owns, a value between 0 and 2 (included), this
  * would be the keeper in Aquaretto
  * @property remainingBigExtensions the amount of big extensions the player could place
  * @property remainingSmallExtensions the amount of small extensions the player could place
@@ -40,7 +40,7 @@ class Player(val name: String): Serializable {
     var money: Int = 0
     var hasJanitor = false
     var secretaryCount = 0
-    var layerCount = 0
+    var lawyerCount = 0
     var remainingBigExtensions: Int = 2
     var remainingSmallExtensions: Int = 2
     var maxPrisonerTypes = 3
