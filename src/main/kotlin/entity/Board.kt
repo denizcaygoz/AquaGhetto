@@ -1,5 +1,7 @@
 package entity
 
+import entity.tileTypes.GuardTile
+import entity.tileTypes.PrisonerTile
 import entity.tileTypes.Tile
 import java.io.Serializable
 
@@ -11,6 +13,7 @@ import java.io.Serializable
  *
  * @property prisonYard a two-dimensional map containing the tiles placed by the player. The first key is
  * the x-coordinate of the grid (horizontal), the second key is the y-coordinate of the grid (vertical).
+ * This map will only hold [PrisonerTile] and [GuardTile]. This is ensured by the [setPrisonYard] function.
  *
  * @property prisonGrid a two-dimensional map containing boolean values. The first key is
  * the x-coordinate of the grid (horizontal), the second key is the y-coordinate of the grid (vertical).
@@ -47,8 +50,10 @@ class Board: Serializable {
      * @param x the x-coordinate of the grid
      * @param y the y-coordinate of the grid
      * @param tile the to set at the specified location, can be null to remove the tile at the specified location
+     * @throws IllegalArgumentException if the tile is not a [PrisonerTile] or a [GuardTile] or null
      */
     fun setPrisonYard(x: Int, y: Int , tile: Tile?) {
+        require(tile == null || tile is PrisonerTile || tile is GuardTile)
         var yMap = prisonYard[x]
         if (yMap == null) {
             yMap = mutableMapOf()
