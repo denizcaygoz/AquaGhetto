@@ -8,16 +8,15 @@ import java.io.Serializable
  *
  * This would be a truck in the game Aquaretto
  *
- * @property tiles a list of [Tile] in the prison bus
- * @property blockedSlots a list of [Boolean], defines if a slot in a prison bus is blocked
- * if this list does not contain a value, no slot is blocked
+ * @property tiles an array with 3 positions of [Tile] in the prison bus, elements can be null if there is no card
+ * @property blockedSlots an BooleanArray with 3 positions, defines if a slot in a prison bus is blocked
  */
 class PrisonBus: Serializable {
     companion object {
         private const val serialVersionUID: Long = -3274357975281180850L
     }
 
-    val tiles: MutableList<Tile> = mutableListOf()
-    val blockedSlots: MutableList<Boolean> = mutableListOf()
+    val tiles: Array<Tile?> = Array(3) {null}
+    val blockedSlots: BooleanArray = BooleanArray(3) {false}
 
 }
