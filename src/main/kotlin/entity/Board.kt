@@ -67,6 +67,15 @@ class Board: Serializable {
     }
 
     /**
+     * Function to get an iterator of the prison yard map
+     *
+     * @return a [MutableIterator] over the prison yard map
+     */
+    fun getPrisonYardIterator(): MutableIterator<MutableMap.MutableEntry<Int, MutableMap<Int, Tile>>> {
+        return prisonYard.iterator()
+    }
+
+    /**
      * A function to check if there is a prison area at the specified location
      *
      * @param x the x-coordinate of the grid
@@ -92,6 +101,15 @@ class Board: Serializable {
             prisonGrid[x] = yMap
         }
         yMap[y] = floor
+    }
+
+    /**
+     * Function to get an iterator of the prison grid map
+     *
+     * @return a [MutableIterator] over the prison grid map
+     */
+    fun getPrisonGridIterator(): MutableIterator<MutableMap.MutableEntry<Int, MutableMap<Int, Boolean>>> {
+        return prisonGrid.iterator()
     }
 
 }
