@@ -1,6 +1,7 @@
-import view.SopraApplication
+import entity.AquaGhetto
+import view.AquaGhettoApplication
 
 fun main() {
-    SopraApplication().show()
+    AquaGhettoApplication().show()
     println("Application ended. Goodbye")
 }
