@@ -6,6 +6,7 @@ import entity.Player
 import entity.PrisonBus
 import entity.enums.PrisonerTrait
 import entity.enums.PrisonerType
+import entity.tileTypes.GuardTile
 import entity.tileTypes.PrisonerTile
 import entity.tileTypes.Tile
 import view.Refreshable
@@ -28,10 +29,60 @@ class PlayerActionService(private val rootService: RootService): AbstractRefresh
 
     }
 
-    /*new prisoner -> sourceX = sourceY = -101*/
+    /* new employee -> sourceX = sourceY = -101 */
     /*isolation prisoner -> sourceX = sourceY = -102*/
+    /* secretary -> sourceX = sourceY = -103 */
+    /* janitor -> sourceX = sourceY = -104 */
+    /* lawyer -> sourceX = sourceY = -105 */
     fun moveEmployee(sourceX: Int, sourceY: Int , destinationX: Int, destinationY: Int) {
+        checkNotNull(rootService.currentGame) { "No game is running right now."}
+        val game = rootService.currentGame
+        val currentPlayer = game.players[game.currentPlayer]
 
+        var employeeToMove: Tile? = null
+        if (sourceX == sourceY && sourceX < -100) {
+            when (sourceX) {
+                -103 -> {
+                    check(currentPlayer.secretaryCount > 0) { "Current player doesn't have any secretarys to move."}
+                    currentPlayer.secretaryCount--
+                }
+                -104 -> {
+                    check(currentPlayer.hasJanitor) { "Current player doesn't have a janitor to move."}
+                    currentPlayer.hasJanitor = false
+                }
+                -105 -> {
+                    check(currentPlayer.lawyerCount > 0) { "Current player doesn't have a lawyer to move."}
+                    currentPlayer.lawyerCount--
+                }
+            }
+        } else {
+            employeeToMove = GuardTile()
+            currentPlayer.board.guardPosition.remove(Pair(sourceX, sourceY))
+        }
+
+        if (destinationX == destinationY && destinationX < -100) {
+            when (destinationX) {
+                -103 -> {
+                    currentPlayer.secretaryCount++
+                }
+                -104 -> {
+                    currentPlayer.hasJanitor = true
+                }
+                -105 -> {
+                    currentPlayer.lawyerCount++
+                }
+            }
+        } else {
+            val isOccupied = currentPlayer.board.getPrisonGrid(destinationX, destinationY)
+            check(isOccupied)
+            currentPlayer.board.setPrisonYard(destinationX, destinationY, employeeToMove)
+            currentPlayer.board.guardPosition.add(Pair(destinationX, destinationY))
+        }
+
+        onAllRefreshables {
+            refreshEmployee(currentPlayer)
+            refreshScoreStats()
+        }
     }
 
     fun buyPrisonerFromOtherIsolation(player: Player, x: Int, y: Int) {
