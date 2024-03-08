@@ -7,7 +7,7 @@ import entity.tileTypes.PrisonerTile
 import entity.tileTypes.Tile
 import view.Refreshable
 
-class PlayerActionService(private val rootService: RootService): Refreshable {
+class PlayerActionService(private val rootService: RootService): AbstractRefreshingService() {
 
     fun addTileToPrisonBus(tile: Tile, prisonBus: PrisonBus) {
 
