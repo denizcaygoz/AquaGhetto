@@ -27,6 +27,7 @@ import java.util.Stack
  * @property remainingBigExtensions the amount of big extensions the player could place
  * @property remainingSmallExtensions the amount of small extensions the player could place
  * @property maxPrisonerTypes the maximum amount of prisoners with different types
+ * @property currentScore the current score of a player
  */
 
 class Player(val name: String): Serializable {
@@ -44,5 +45,6 @@ class Player(val name: String): Serializable {
     var remainingBigExtensions: Int = 2
     var remainingSmallExtensions: Int = 2
     var maxPrisonerTypes = 3
+    var currentScore = 0
 
 }
