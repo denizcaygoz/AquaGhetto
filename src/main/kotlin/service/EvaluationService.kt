@@ -4,7 +4,7 @@ import entity.Player
 import entity.enums.PrisonerType
 import view.Refreshable
 
-class EvaluationService(private val rootService: RootService): Refreshable {
+class EvaluationService(private val rootService: RootService): AbstractRefreshingService() {
 
     fun evaluatePlayer(player: Player): Int {
         return 0

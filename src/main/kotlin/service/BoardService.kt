@@ -5,13 +5,13 @@ import entity.tileTypes.Tile
 import view.Refreshable
 import java.util.Stack
 
-class BoardService(private val rootService: RootService): Refreshable {
+class BoardService(private val rootService: RootService): AbstractRefreshingService() {
 
     fun createStacks(playerCount: Int): Pair<Stack<Tile>,Stack<Tile>> {
         return Pair(Stack(),Stack())
     }
 
-    fun createPrisonBusses(playerCount: Int): List<PrisonBus> {
+    fun createPrisonBusses(playerCount: Int): MutableList<PrisonBus> {
         return mutableListOf()
     }
 

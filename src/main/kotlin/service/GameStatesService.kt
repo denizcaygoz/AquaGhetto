@@ -2,7 +2,7 @@ package service
 
 import view.Refreshable
 
-class GameStatesService(private val rootService: RootService): Refreshable {
+class GameStatesService(private val rootService: RootService): AbstractRefreshingService() {
 
     fun saveGame() {
 

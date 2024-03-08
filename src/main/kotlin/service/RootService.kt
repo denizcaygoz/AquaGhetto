@@ -9,10 +9,10 @@ class RootService: Refreshable {
     val evaluationService = EvaluationService(this)
     val gameService = GameService(this)
     val gameStatesService = GameStatesService(this)
-    val kIService = AIService(this)
+    val aiService = AIService(this)
     val playerActionService = PlayerActionService(this)
     val validationService = ValidationService(this)
 
-    val currentGame: AquaGhetto? = null
+    var currentGame: AquaGhetto? = null
 
 }

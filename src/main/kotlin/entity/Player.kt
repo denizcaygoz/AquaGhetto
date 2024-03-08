@@ -1,5 +1,6 @@
 package entity
 
+import entity.enums.PlayerType
 import entity.tileTypes.PrisonerTile
 import java.io.Serializable
 import java.util.Stack
@@ -14,11 +15,12 @@ import java.util.Stack
  * small extension the player can use, an [Int] storing the amount of different prisonerTypes a player can have
  *
  * @param name a string to store the name of the player
+ * @param type the type of this player
  * @property board the player's own [board].
  * @property isolation a [Stack] containing [PrisonerTile], this would be the depot in Aquaretto
  * @property takenBus the [PrisonBus] a player is currently holding, can be null if the player does not own a bus
  * if the player owns a bus this indicates that has finished his actions for this round
- * @property money the amount of money the player owns
+ * @property coins the amount of coins the player owns
  * @property hasJanitor if the player owns a janitor, this would be the manager in Aquaretto
  * @property secretaryCount the amount of secretaries the players owns, a value between 0 and 2 (included), this
  * would be the cashier in Aquaretto
@@ -30,15 +32,15 @@ import java.util.Stack
  * @property currentScore the current score of a player
  */
 
-class Player(val name: String): Serializable {
+class Player(val name: String, val type: PlayerType): Serializable {
     companion object {
         private const val serialVersionUID: Long = 2382752881182402781L
     }
 
-    val board: Board = Board()
-    val isolation: Stack<PrisonerTile> = Stack()
+    var board: Board = Board()
+    var isolation: Stack<PrisonerTile> = Stack()
     var takenBus: PrisonBus? = null
-    var money: Int = 0
+    var coins: Int = 0
     var hasJanitor = false
     var secretaryCount = 0
     var lawyerCount = 0
