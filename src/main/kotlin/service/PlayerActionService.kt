@@ -1,5 +1,6 @@
 package service
 
+import entity.AquaGhetto
 import entity.Player
 import entity.PrisonBus
 import entity.enums.PrisonerType
@@ -35,8 +36,33 @@ class PlayerActionService(private val rootService: RootService): Refreshable {
 
     }
 
+    /**
+     * [freePrisoner] discards the tile on top of the isolation stack.
+     *
+     * @throws IllegalStateException when there is no game running
+     * @throws IllegalArgumentException when the player has not enough money
+     * @throws IllegalArgumentException when there is no prisoner on his isolation stack
+     *
+     **/
     fun freePrisoner() {
+        val game: AquaGhetto? = rootService.currentGame
 
+        checkNotNull(game) { "There is no game running" }
+
+        val currentPlayer: Player = game.players[game.currentPlayer]
+        require(currentPlayer.money >= 2) { "The current player has not enough money" }
+        require(!currentPlayer.isolation.empty()) { "There is not prisoner to be freed" }
+
+        currentPlayer.isolation.pop()
+        currentPlayer.money -= 2
+
+        rootService.evaluationService.evaluatePlayer(currentPlayer)
+
+        //rootService.gameService.determineNextPlayer()
+
+        /**
+         * onAllRefreshables { refreshIsolation() }
+         * */
     }
 
     fun expandPrisonGrid(isBigExtension: Boolean, x: Int, y: Int , rotation: Int) {
