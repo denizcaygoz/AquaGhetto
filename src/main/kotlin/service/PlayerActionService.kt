@@ -35,11 +35,13 @@ class PlayerActionService(private val rootService: RootService): AbstractRefresh
     /* janitor -> sourceX = sourceY = -104 */
     /* lawyer -> sourceX = sourceY = -105 */
     fun moveEmployee(sourceX: Int, sourceY: Int , destinationX: Int, destinationY: Int) {
-        checkNotNull(rootService.currentGame) { "No game is running right now."}
         val game = rootService.currentGame
-        val currentPlayer = game.players[game.currentPlayer]
 
+        checkNotNull(game) { "No game is running right now."}
+
+        val currentPlayer = game.players[game.currentPlayer]
         var employeeToMove: Tile? = null
+
         if (sourceX == sourceY && sourceX < -100) {
             when (sourceX) {
                 -103 -> {
@@ -86,17 +88,19 @@ class PlayerActionService(private val rootService: RootService): AbstractRefresh
     }
 
     fun buyPrisonerFromOtherIsolation(player: Player, x: Int, y: Int): Tile? {
-        checkNotNull(rootService.currentGame) { "No game is currently running."}
         val game = rootService.currentGame
+
+        checkNotNull(game) { "No game is currently running."}
+
         val currentPlayer = game.players[game.currentPlayer]
 
-        check(currentPlayer.money >= 2) { "Insufficient player funds."}
+        check(currentPlayer.coins >= 2) { "Insufficient player funds."}
         check(player.isolation.isNotEmpty()) { "Player has no Prisoner in their isolation." }
         check(player != currentPlayer) { "Player can't buy from their own isolation."}
 
         // Transferring money
-        player.money++
-        currentPlayer.money -= 2
+        player.coins++
+        currentPlayer.coins -= 2
 
         // Fetching the Prisoner from the selected player
         val prisonerFromSelectedPlayersIsolation = player.isolation.pop()
@@ -124,11 +128,11 @@ class PlayerActionService(private val rootService: RootService): AbstractRefresh
         checkNotNull(game) { "There is no game running" }
 
         val currentPlayer: Player = game.players[game.currentPlayer]
-        require(currentPlayer.money >= 2) { "The current player has not enough money" }
+        require(currentPlayer.coins >= 2) { "The current player has not enough money" }
         require(!currentPlayer.isolation.empty()) { "There is not prisoner to be freed" }
 
         currentPlayer.isolation.pop()
-        currentPlayer.money -= 2
+        currentPlayer.coins -= 2
 
         rootService.evaluationService.evaluatePlayer(currentPlayer)
 
@@ -156,7 +160,7 @@ class PlayerActionService(private val rootService: RootService): AbstractRefresh
         val neededMoney: Int = if(isBigExtension) 2 else 1
         val board: Board = currentPlayer.board
 
-        require(currentPlayer.money >= neededMoney) { "The current player has not enough money" }
+        require(currentPlayer.coins >= neededMoney) { "The current player has not enough money" }
         require(board.getPrisonGrid(x,y)) { "The expansion can not be placed at this (x,y)" }
 
         val placementCoordinates: MutableList<Pair<Int, Int>> = mutableListOf()
@@ -199,7 +203,7 @@ class PlayerActionService(private val rootService: RootService): AbstractRefresh
             board.setPrisonGrid(coordinates.first, coordinates.second, true)
         }
 
-        currentPlayer.money -= neededMoney
+        currentPlayer.coins -= neededMoney
         if (isBigExtension) {
             currentPlayer.remainingBigExtensions -= 1
             currentPlayer.maxPrisonerTypes += 1
