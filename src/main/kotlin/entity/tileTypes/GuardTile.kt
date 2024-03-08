@@ -9,7 +9,7 @@ import java.io.Serializable
  *
  * @see [Tile]
  */
-class GuardTile : Tile(), Serializable {
+class GuardTile : Tile(-1), Serializable {
     companion object {
         private const val serialVersionUID: Long = -8828161763151770395L
     }

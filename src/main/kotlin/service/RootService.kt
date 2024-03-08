@@ -8,7 +8,7 @@ class RootService {
     val evaluationService = EvaluationService(this)
     val gameService = GameService(this)
     val gameStatesService = GameStatesService(this)
-    val kIService = KIService(this)
+    val kIService = AIService(this)
     val playerActionService = PlayerActionService(this)
     val validationService = ValidationService(this)
 

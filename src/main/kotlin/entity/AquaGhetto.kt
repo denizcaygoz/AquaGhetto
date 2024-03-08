@@ -21,6 +21,7 @@ import java.io.Serializable
  * As soon as a player takes a prison bus, it is removed from the list
  * @property previousState saves the previous state of the game, is null if there is no previous state
  * @property nextState saves the next state of the game, is null if there is no previous state
+ * @property allTiles a list containing all free tiles in the game
  */
 class AquaGhetto: Serializable {
     companion object {
@@ -34,5 +35,6 @@ class AquaGhetto: Serializable {
     val prisonBusses: MutableList<PrisonBus> = mutableListOf()
     var previousState: AquaGhetto? = null
     var nextState: AquaGhetto? = null
+    var allTiles: MutableList<Tile> = mutableListOf()
 
 }

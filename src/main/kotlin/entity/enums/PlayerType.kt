@@ -8,8 +8,8 @@ package entity.enums
  * ONLINE: a "normal" Player input is expected from the Network
  */
 enum class PlayerType {
-    KI,
-    RANDOM,
+    AI,
+    RANDOM_AI,
     PLAYER,
-    ONLINE,
+    NETWORK,
 }

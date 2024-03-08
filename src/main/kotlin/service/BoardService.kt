@@ -14,4 +14,8 @@ class BoardService(private val rootService: RootService) {
         return mutableListOf()
     }
 
+    fun createAllTiles() {
+
+    }
+
 }
