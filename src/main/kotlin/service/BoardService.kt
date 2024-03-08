@@ -2,9 +2,10 @@ package service
 
 import entity.PrisonBus
 import entity.tileTypes.Tile
+import view.Refreshable
 import java.util.Stack
 
-class BoardService(private val rootService: RootService) {
+class BoardService(private val rootService: RootService): Refreshable {
 
     fun createStacks(playerCount: Int): Pair<Stack<Tile>,Stack<Tile>> {
         return Pair(Stack(),Stack())

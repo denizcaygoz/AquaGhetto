@@ -1,8 +1,9 @@
 package service
 
 import entity.tileTypes.PrisonerTile
+import view.Refreshable
 
-class ValidationService(private val rootService: RootService) {
+class ValidationService(private val rootService: RootService): Refreshable {
 
     fun validateTilePlacement(tile: PrisonerTile, x: Int, y: Int): Boolean {
         return false

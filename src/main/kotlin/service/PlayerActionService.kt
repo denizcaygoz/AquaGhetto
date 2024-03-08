@@ -5,8 +5,9 @@ import entity.PrisonBus
 import entity.enums.PrisonerType
 import entity.tileTypes.PrisonerTile
 import entity.tileTypes.Tile
+import view.Refreshable
 
-class PlayerActionService(private val rootService: RootService) {
+class PlayerActionService(private val rootService: RootService): Refreshable {
 
     fun addTileToPrisonBus(tile: Tile, prisonBus: PrisonBus) {
 
