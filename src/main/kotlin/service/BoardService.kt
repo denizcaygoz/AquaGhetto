@@ -11,7 +11,7 @@ class BoardService(private val rootService: RootService): Refreshable {
         return Pair(Stack(),Stack())
     }
 
-    fun createPrisonBusses(playerCount: Int): List<PrisonBus> {
+    fun createPrisonBusses(playerCount: Int): MutableList<PrisonBus> {
         return mutableListOf()
     }
 

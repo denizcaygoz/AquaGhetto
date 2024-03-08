@@ -28,11 +28,11 @@ class AquaGhetto: Serializable {
         private const val serialVersionUID: Long = -6431955668823631957L
     }
 
-    val drawStack: Stack<Tile> = Stack()
-    val finalStack: Stack<Tile> = Stack()
-    val players: MutableList<Player> = mutableListOf()
+    var drawStack: Stack<Tile> = Stack()
+    var finalStack: Stack<Tile> = Stack()
+    var players: MutableList<Player> = mutableListOf()
     var currentPlayer: Int = 0
-    val prisonBusses: MutableList<PrisonBus> = mutableListOf()
+    var prisonBusses: MutableList<PrisonBus> = mutableListOf()
     var previousState: AquaGhetto? = null
     var nextState: AquaGhetto? = null
     var allTiles: MutableList<Tile> = mutableListOf()
