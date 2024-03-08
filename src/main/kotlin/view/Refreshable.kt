@@ -17,28 +17,26 @@ import entity.tileTypes.PrisonerTile
  */
 interface Refreshable {
 
-    fun refreshAfterStartGame() {
+    fun refreshAfterStartGame() {}
 
-    }
+    fun refreshAfterNextTurn(player: Player) {}
 
-    fun refreshAfterNextTurn(player: Player)
+    fun refreshAfterEndGame() {}
 
-    fun refreshAfterEndGame()
+    fun refreshPrisonBus(prisonBus: PrisonBus) {}
 
-    fun refreshPrisonBus(prisonBus: PrisonBus)
+    fun refreshTileStack(finalStack: Boolean) {}
 
-    fun refreshTileStack(finalStack: Boolean)
+    fun refreshScoreStats() {}
 
-    fun refreshScoreStats()
+    fun refreshPrison(tile: PrisonerTile, x: Int, y: Int) {}
 
-    fun refreshPrison(tile: PrisonerTile, x: Int, y: Int)
+    fun refreshAfterSelectGameMode(multiplayer: Boolean) {}
 
-    fun refreshAfterSelectGameMode(multiplayer: Boolean)
+    fun refreshAfterPause() {}
 
-    fun refreshAfterPause()
+    fun refreshIsolation(player: Player) {}
 
-    fun refreshIsolation(player: Player)
-
-    fun refreshEmployee(player: Player)
+    fun refreshEmployee(player: Player) {}
 
 }
