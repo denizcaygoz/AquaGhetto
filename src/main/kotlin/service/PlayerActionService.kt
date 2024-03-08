@@ -102,9 +102,12 @@ class PlayerActionService(private val rootService: RootService): Refreshable {
         }
 
         currentPlayer.money -= neededMoney
-        currentPlayer.remainingBigExtensions -= if (isBigExtension) 1 else 0
-        currentPlayer.remainingSmallExtensions -= if (!isBigExtension) 1 else 0
-        currentPlayer.maxPrisonerTypes += if (isBigExtension) 1 else 0
+        if (isBigExtension) {
+            currentPlayer.remainingBigExtensions -= 1
+            currentPlayer.maxPrisonerTypes += 1
+        } else {
+            currentPlayer.remainingSmallExtensions -= 1
+        }
 
         //rootService.gameService.determineNextPlayer()
 
