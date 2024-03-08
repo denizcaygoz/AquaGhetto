@@ -85,8 +85,29 @@ class PlayerActionService(private val rootService: RootService): AbstractRefresh
         }
     }
 
-    fun buyPrisonerFromOtherIsolation(player: Player, x: Int, y: Int) {
+    fun buyPrisonerFromOtherIsolation(player: Player, x: Int, y: Int): Tile? {
+        checkNotNull(rootService.currentGame) { "No game is currently running."}
+        val game = rootService.currentGame
+        val currentPlayer = game.players[game.currentPlayer]
 
+        check(currentPlayer.money >= 2) { "Insufficient player funds."}
+        check(player.isolation.isNotEmpty()) { "Player has no Prisoner in their isolation." }
+        check(player != currentPlayer) { "Player can't buy from their own isolation."}
+
+        // Transferring money
+        player.money++
+        currentPlayer.money -= 2
+
+        // Fetching the Prisoner from the selected player
+        val prisonerFromSelectedPlayersIsolation = player.isolation.pop()
+        val bonusTile = placePrisoner(prisonerFromSelectedPlayersIsolation, x, y)
+
+        onAllRefreshables {
+            refreshScoreStats()
+            refreshPrison(prisonerFromSelectedPlayersIsolation, x, y)
+        }
+
+        return bonusTile
     }
 
     fun freePrisoner() {
