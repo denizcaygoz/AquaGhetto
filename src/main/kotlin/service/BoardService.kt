@@ -47,14 +47,16 @@ class BoardService(private val rootService: RootService): AbstractRefreshingServ
             }
         }
 
+        val toRemove = mutableListOf<Tile>()
         for (tile in game.allTiles) {
             if ((tile is PrisonerTile && tile.prisonerTrait == PrisonerTrait.BABY) ||
                 (tile is PrisonerTile && typesNotAdd.contains(tile.prisonerType))) {
                     continue
                 }
             tilesInGame.add(tile)
-            game.allTiles.remove(tile)
+            toRemove.remove(tile)
         }
+        game.allTiles.removeAll(toRemove)
 
         tilesInGame.shuffle()
 
@@ -145,6 +147,31 @@ class BoardService(private val rootService: RootService): AbstractRefreshingServ
         }
 
         game.allTiles = allTiles
+    }
+
+    /**
+     * Function to get a baby tile of the specified type
+     *
+     * @param prisonerType the type of the prisoner to get a baby from
+     * @return the prison tile
+     * @throws IllegalStateException if no baby card is still available
+     * @throws IllegalStateException if there is no running game
+     */
+    fun getBabyTile(prisonerType: PrisonerType): PrisonerTile {
+        val game = rootService.currentGame
+        checkNotNull(game) { "No running game." }
+
+        var tileFound: PrisonerTile? = null
+        for (tile in game.allTiles) {
+            if (tile is PrisonerTile && tile.prisonerTrait == PrisonerTrait.BABY && tile.prisonerType == prisonerType) {
+                tileFound = tile
+                break
+            }
+        }
+
+        checkNotNull(tileFound) {"Found no baby card"}
+        game.allTiles.remove(tileFound)
+        return tileFound
     }
 
 }
