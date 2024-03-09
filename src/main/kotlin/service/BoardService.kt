@@ -11,12 +11,84 @@ import java.util.Stack
 
 class BoardService(private val rootService: RootService): AbstractRefreshingService() {
 
+    /**
+     * Creates two stacks of cards the first is the normal draw stack and the second one
+     * is the final stack. Depending on the amount of players the normal stack contains different
+     * amount of cards.
+     * 5 -> all 8 types
+     * 4 -> 7 types
+     * 3 -> 6 types
+     * 2 -> 5 types
+     *
+     * @param playerCount the amount of players in the game
+     * @return a Pair of the normal draw stack and the final stack
+     * @throws IllegalStateException if there is no running game
+     */
     fun createStacks(playerCount: Int): Pair<Stack<Tile>,Stack<Tile>> {
-        return Pair(Stack(),Stack())
+        val game = rootService.currentGame
+        checkNotNull(game) { "No running game." }
+
+        val tilesInGame = mutableListOf<Tile>()
+
+        val typesNotAdd = mutableListOf<PrisonerType>()
+
+        when (playerCount) {
+            2 -> {
+                typesNotAdd.add(PrisonerType.CYAN)
+            }
+            3 -> {
+                typesNotAdd.add(PrisonerType.CYAN)
+                typesNotAdd.add(PrisonerType.BROWN)
+            }
+            4 -> {
+                typesNotAdd.add(PrisonerType.CYAN)
+                typesNotAdd.add(PrisonerType.BROWN)
+                typesNotAdd.add(PrisonerType.PURPLE)
+            }
+        }
+
+        for (tile in game.allTiles) {
+            if ((tile is PrisonerTile && tile.prisonerTrait == PrisonerTrait.BABY) ||
+                (tile is PrisonerTile && typesNotAdd.contains(tile.prisonerType))) {
+                    continue
+                }
+            tilesInGame.add(tile)
+            game.allTiles.remove(tile)
+        }
+
+        tilesInGame.shuffle()
+
+        val normalStack = Stack<Tile>()
+        normalStack.addAll(tilesInGame.subList(0 , 15))
+
+        val finalStack = Stack<Tile>()
+        finalStack.addAll(tilesInGame.subList(15 , tilesInGame.size))
+
+        return Pair(normalStack, finalStack)
     }
 
-    fun createPrisonBusses(playerCount: Int): MutableList<PrisonBus> {
-        return mutableListOf()
+    /**
+     * Creates a list of prisonBuses depending on the amount of players
+     * 5, 4 or 3 players -> same amount of buses no slots blocked
+     * 2 -> 3 buses, one slot blocked, two slots blocked, no slot blocked
+     *
+     * @param playerCount the amount of players in the game
+     * @return a list of prisonBuses depending on the amount of players
+     */
+    fun createPrisonBuses(playerCount: Int): MutableList<PrisonBus> {
+        val buses = mutableListOf<PrisonBus>()
+
+        if (playerCount >= 3) {
+            for (i in 0 until playerCount) {
+                buses.add(PrisonBus())
+            }
+        } else {
+            buses.add(PrisonBus())
+            buses.add(PrisonBus().apply { blockedSlots[0] = true })
+            buses.add(PrisonBus().apply { blockedSlots[0] = true; blockedSlots[1] = true})
+        }
+
+        return buses
     }
 
     /**
