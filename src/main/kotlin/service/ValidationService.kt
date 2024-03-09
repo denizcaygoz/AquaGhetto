@@ -1,7 +1,6 @@
 package service
 
 import entity.tileTypes.PrisonerTile
-import view.Refreshable
 
 class ValidationService(private val rootService: RootService): AbstractRefreshingService() {
 

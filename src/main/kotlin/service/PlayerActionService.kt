@@ -9,7 +9,6 @@ import entity.enums.PrisonerType
 import entity.tileTypes.GuardTile
 import entity.tileTypes.PrisonerTile
 import entity.tileTypes.Tile
-import view.Refreshable
 
 class PlayerActionService(private val rootService: RootService): AbstractRefreshingService() {
 

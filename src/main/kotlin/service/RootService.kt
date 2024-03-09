@@ -1,9 +1,8 @@
 package service
 
 import entity.AquaGhetto
-import view.Refreshable
 
-class RootService: Refreshable {
+class RootService {
 
     val boardService = BoardService(this)
     val evaluationService = EvaluationService(this)
