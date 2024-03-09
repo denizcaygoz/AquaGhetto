@@ -26,8 +26,17 @@ class PlayerActionService(private val rootService: RootService): AbstractRefresh
     }
 
     fun movePrisonerToPrisonYard(x: Int, y: Int) {
+        val game = rootService.currentGame
+        checkNotNull(game) { "No game started yet." }
+        val player = game.players[game.currentPlayer]
+        check(player.coins >= 1) { "Bring more money and come back!"}
+        check(player.isolation.isNotEmpty()) { "Empty Isolation." }
+        val tile = player.isolation.pop()
+        placePrisoner(tile, x, y)
+        onAllRefreshables { refreshIsolation(player)}
 
     }
+
 
     /* new employee -> sourceX = sourceY = -101 */
     /*isolation prisoner -> sourceX = sourceY = -102*/
