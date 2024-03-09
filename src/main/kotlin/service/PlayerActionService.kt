@@ -33,6 +33,7 @@ class PlayerActionService(private val rootService: RootService): AbstractRefresh
         check(player.isolation.isNotEmpty()) { "Empty Isolation." }
         val tile = player.isolation.pop()
         placePrisoner(tile, x, y)
+        player.coins--
         onAllRefreshables { refreshIsolation(player)}
 
     }
