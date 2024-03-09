@@ -3,7 +3,6 @@ package service
 import entity.AquaGhetto
 import entity.Player
 import entity.enums.PlayerType
-import view.Refreshable
 
 class GameService(private val rootService: RootService): AbstractRefreshingService() {
 
