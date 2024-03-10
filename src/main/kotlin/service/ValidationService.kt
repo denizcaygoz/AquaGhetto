@@ -1,6 +1,8 @@
 package service
 
 import entity.Board
+import entity.Player
+import entity.enums.PrisonerType
 import entity.tileTypes.PrisonerTile
 
 /**
@@ -51,16 +53,37 @@ class ValidationService(private val rootService: RootService): AbstractRefreshin
         if (amount != null && amount > 0 && !surroundingSameType) return false
 
         /*Check if player has not reached the maximum amount of prisoner types*/
-        var amountTypes = 0
-        for (prisonerIterator in prisonerTypeCount) {
-            if (prisonerIterator.value > 0) amountTypes++
-        }
-        if (amountTypes >= player.maxPrisonerTypes) {
-            return false
-        }
+        if (!checkTypeAmount(player, prisonerTypeCount, tile.prisonerType)) return false
 
         /*requirements for placing a card are fulfilled*/
         return true
+    }
+
+    /**
+     * Function to check if a player does not exceed the maximum amount of
+     * different prisoner types he can own
+     *
+     * @param player the player to check
+     * @param prisonerType a map containing the prisonerTypes as the key and the amount of prisoners a players
+     * owns as the value
+     * @param prisonerType the type a player wants to place
+     * @return true if a player does not exceed the maximum amount of prisoner types
+     */
+    private fun checkTypeAmount(player: Player, prisonerTypeCount: MutableMap<PrisonerType, Int>,
+                                prisonerType: PrisonerType): Boolean {
+        var amount = 0
+
+        /*counts the amount of different types a player owns*/
+        for (prisonerIterator in prisonerTypeCount) {
+            if (prisonerIterator.value > 0) amount++
+        }
+
+        /*if the player does not own a prisoner of the type, he increases his type count by one*/
+        if (prisonerTypeCount[prisonerType] == 0) {
+            amount++
+        }
+
+        return amount <= player.maxPrisonerTypes
     }
 
     /**
