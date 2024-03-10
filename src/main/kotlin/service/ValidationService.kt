@@ -50,6 +50,15 @@ class ValidationService(private val rootService: RootService): AbstractRefreshin
         val amount = prisonerTypeCount[tile.prisonerType]
         if (amount != null && amount > 0 && !surroundingSameType) return false
 
+        /*Check if player has not reached the maximum amount of prisoner types*/
+        var amountTypes = 0
+        for (prisonerIterator in prisonerTypeCount) {
+            if (prisonerIterator.value > 0) amountTypes++
+        }
+        if (amountTypes >= player.maxPrisonerTypes) {
+            return false
+        }
+
         /*requirements for placing a card are fulfilled*/
         return true
     }
