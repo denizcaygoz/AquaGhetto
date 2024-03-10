@@ -19,7 +19,8 @@ class AIService(private val rootService: RootService): AbstractRefreshingService
      * PLAYER, NETWORK -> throws exception
      *
      * @param player the player in whose name the action is performed
-     * @param delay the delay after the action
+     * @param delay the total delay of this action, if the computing of the turn already takes longer than delay
+     * there is no additional delay. Delay is measured in milliseconds
      * @throws IllegalArgumentException if the provides player is not an AI or a RandomAI
      */
     fun makeTurn(player: Player, delay: Int) {
