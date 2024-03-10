@@ -1,7 +1,6 @@
 package service
 
 import entity.Board
-import entity.tileTypes.CoinTile
 import entity.tileTypes.PrisonerTile
 
 /**
