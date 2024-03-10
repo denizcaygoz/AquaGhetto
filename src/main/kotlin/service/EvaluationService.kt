@@ -77,9 +77,9 @@ class EvaluationService(private val rootService: RootService): AbstractRefreshin
      */
     private fun getExtraPointsForGuard(x: Int, y: Int, board: Board): Int {
         var extraPoints = 0
-        for (x in -1..1) {
-            for (y in -1..1) {
-                val tile = board.getPrisonYard(x , y)
+        for (xIterator in -1..1) {
+            for (yIterator in -1..1) {
+                val tile = board.getPrisonYard(x + xIterator, y + yIterator)
                 if (tile !is PrisonerTile || tile.prisonerTrait == PrisonerTrait.OLD) continue
                 val type = tile.prisonerType
                 if (type == PrisonerType.RED || type == PrisonerType.GREEN || type == PrisonerType.BLUE) {

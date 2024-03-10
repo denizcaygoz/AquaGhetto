@@ -17,7 +17,7 @@ import java.io.Serializable
  * @property players a list of players participating in this game
  * The order of the players in the list is the order in which the players perform actions
  * @property currentPlayer the player whose turn it is
- * @property prisonBusses a list of [PrisonBus] which are located in the middle of the playing field
+ * @property prisonBuses a list of [PrisonBus] which are located in the middle of the playing field
  * As soon as a player takes a prison bus, it is removed from the list
  * @property previousState saves the previous state of the game, is null if there is no previous state
  * @property nextState saves the next state of the game, is null if there is no previous state
@@ -32,7 +32,7 @@ class AquaGhetto: Serializable {
     var finalStack: Stack<Tile> = Stack()
     var players: MutableList<Player> = mutableListOf()
     var currentPlayer: Int = 0
-    var prisonBusses: MutableList<PrisonBus> = mutableListOf()
+    var prisonBuses: MutableList<PrisonBus> = mutableListOf()
     var previousState: AquaGhetto? = null
     var nextState: AquaGhetto? = null
     var allTiles: MutableList<Tile> = mutableListOf()

@@ -29,12 +29,12 @@ class PlayerActionService(private val rootService: RootService): AbstractRefresh
         return null
     }
 
-    fun movePrisonerToPrisonYard(x: Int, y: Int) {
-
+    fun movePrisonerToPrisonYard(x: Int, y: Int): Tile? {
+        return null
     }
 
     /* new employee -> sourceX = sourceY = -101 */
-    /*isolation prisoner -> sourceX = sourceY = -102*/
+    /*isolation prisoner -> sourceX = sourceY = -102    <- isolation is janitor*/
     /* secretary -> sourceX = sourceY = -103 */
     /* janitor -> sourceX = sourceY = -104 */
     /* lawyer -> sourceX = sourceY = -105 */

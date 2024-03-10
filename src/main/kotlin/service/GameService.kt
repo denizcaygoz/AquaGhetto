@@ -57,7 +57,7 @@ class GameService(private val rootService: RootService): AbstractRefreshingServi
         game.finalStack = bothStacks.second
 
         /*Create prisonBusses*/
-        game.prisonBusses = rootService.boardService.createPrisonBuses(playerList.size)
+        game.prisonBuses = rootService.boardService.createPrisonBuses(playerList.size)
 
         /*Set current game to newly created game*/
         rootService.currentGame = game
@@ -124,7 +124,7 @@ class GameService(private val rootService: RootService): AbstractRefreshingServi
         for (player in game.players) {
             val bus = player.takenBus
             checkNotNull(bus) {"Not all players have taken a bus"}
-            game.prisonBusses.add(bus)
+            game.prisonBuses.add(bus)
             onAllRefreshables {
                 refreshPrisonBus(bus)
             }
