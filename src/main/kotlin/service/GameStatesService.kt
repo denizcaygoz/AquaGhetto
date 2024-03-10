@@ -9,6 +9,11 @@ import java.io.ObjectOutputStream
 import java.util.zip.GZIPInputStream
 import java.util.zip.GZIPOutputStream
 
+/**
+ * Service layer class that provides basic functions to save and load the game, undo and redo game actions
+ *
+ * @param rootService instance of the [RootService] for access to other services
+ */
 class GameStatesService(private val rootService: RootService): AbstractRefreshingService() {
 
     /**

@@ -3,6 +3,11 @@ package service
 import entity.AquaGhetto
 import view.Refreshable
 
+/**
+ * Main class of the service layer for the AquaGhetto game. Provides access
+ * to all other service classes and holds the [currentGame] state for these
+ * services to access.
+ */
 class RootService {
 
     val boardService = BoardService(this)

@@ -6,7 +6,12 @@ import entity.enums.PrisonerTrait
 import entity.enums.PrisonerType
 import entity.tileTypes.PrisonerTile
 
-
+/**
+ * Service layer class that provides basic functions to evaluate game actions, like evaluating the game, getting
+ * the amount of points a player has, getting a map containing the amount of different prisoners a player own
+ *
+ * @param rootService instance of the [RootService] for access to other services
+ */
 class EvaluationService(private val rootService: RootService): AbstractRefreshingService() {
 
     /**

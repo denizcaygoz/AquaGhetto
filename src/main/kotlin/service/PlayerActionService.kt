@@ -10,6 +10,11 @@ import entity.tileTypes.GuardTile
 import entity.tileTypes.PrisonerTile
 import entity.tileTypes.Tile
 
+/**
+ * Service layer class that provides basic functions for the actions a player can take
+ *
+ * @param rootService instance of the [RootService] for access to other services
+ */
 class PlayerActionService(private val rootService: RootService): AbstractRefreshingService() {
 
     fun addTileToPrisonBus(tile: Tile, prisonBus: PrisonBus) {

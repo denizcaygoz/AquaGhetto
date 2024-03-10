@@ -8,11 +8,20 @@ import entity.tileTypes.PrisonerTile
 import entity.tileTypes.Tile
 import java.util.Stack
 
+/**
+ * Service layer class that provides basic functions related to some board elements, like creating
+ * new draw and final stacks from the cards in Aquaghetto, creating prison buses, creating all tiles, checking
+ * if for a new baby
+ *
+ * @param rootService instance of the [RootService] for access to other services
+ */
 class BoardService(private val rootService: RootService): AbstractRefreshingService() {
 
     /**
      * Creates two stacks of cards the first is the normal draw stack and the second one
      * is the final stack. Depending on the amount of players the normal stack contains different
+     * This function takes these cards from the List allTiles in Aquaghetto, if there are nor
+     * cards in this list, an exception is thrown
      * amount of cards.
      * 5 -> all 8 types
      * 4 -> 7 types
@@ -22,10 +31,13 @@ class BoardService(private val rootService: RootService): AbstractRefreshingServ
      * @param playerCount the amount of players in the game
      * @return a Pair of the normal draw stack and the final stack
      * @throws IllegalStateException if there is no running game
+     * @throws IllegalStateException if not all cards are on the list allCards
      */
     fun createStacks(playerCount: Int): Pair<Stack<Tile>,Stack<Tile>> {
         val game = rootService.currentGame
         checkNotNull(game) { "No running game." }
+
+        require(game.allTiles.size == 114) {"Not all cards are on the allTiles stack. Call createAllTiles first."}
 
         val tilesInGame = mutableListOf<Tile>()
 

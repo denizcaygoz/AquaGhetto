@@ -5,7 +5,8 @@ import entity.Player
 import entity.enums.PlayerType
 
 /**
- * Service layer class that provides the logic for basic game functions
+ * Service layer class that provides the logic for basic game functions, like creating a new game or
+ * determine the next player
  *
  * @param rootService instance of the [RootService] for access to other services
  */
