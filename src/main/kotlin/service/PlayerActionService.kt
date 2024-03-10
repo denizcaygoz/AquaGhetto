@@ -25,18 +25,44 @@ class PlayerActionService(private val rootService: RootService): AbstractRefresh
         return null
     }
 
+    /**
+     * Moves a prisoner from the player's isolation area to the game board's prison yard.
+     * Requires a payment of one coin from the player.
+     *
+     * @param x The x-coordinate on the game board to place the prisoner.
+     * @param y The y-coordinate on the game board to place the prisoner.
+     *
+     * @throws IllegalStateException if the game has not been started yet.
+     * @throws IllegalArgumentException if the player does not have enough coins, or if the player's isolation area is empty.
+     */
     fun movePrisonerToPrisonYard(x: Int, y: Int) {
         val game = rootService.currentGame
         checkNotNull(game) { "No game started yet." }
-        val player = game.players[game.currentPlayer]
-        check(player.coins >= 1) { "Bring more money and come back!"}
-        check(player.isolation.isNotEmpty()) { "Empty Isolation." }
-        val tile = player.isolation.pop()
-        placePrisoner(tile, x, y)
-        player.coins--
-        onAllRefreshables { refreshIsolation(player)}
 
+        val player = game.players[game.currentPlayer]
+
+        // Ensure the player has enough coins for the move
+        check(player.coins >= 1) { "Bring more money and come back!" }
+
+        // Ensure the player's isolation area is not empty
+        check(player.isolation.isNotEmpty()) { "Empty Isolation." }
+
+        // Pop a prisoner tile from the player's isolation area
+        val tile = player.isolation.pop()
+
+        // Place the prisoner on the game board's prison yard
+        placePrisoner(tile, x, y)
+
+        // Deduct one coin from the player
+        player.coins--
+
+        // Refresh isolation area and prison layout for all observers
+        onAllRefreshables {
+            refreshIsolation(player)
+            refreshPrison(tile, x, y)
+        }
     }
+
 
 
     /* new employee -> sourceX = sourceY = -101 */
