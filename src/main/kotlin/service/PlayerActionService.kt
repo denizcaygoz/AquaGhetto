@@ -9,7 +9,6 @@ import entity.enums.PrisonerType
 import entity.tileTypes.GuardTile
 import entity.tileTypes.PrisonerTile
 import entity.tileTypes.Tile
-import view.Refreshable
 
 class PlayerActionService(private val rootService: RootService): AbstractRefreshingService() {
 
@@ -41,6 +40,7 @@ class PlayerActionService(private val rootService: RootService): AbstractRefresh
 
         val currentPlayer = game.players[game.currentPlayer]
         var employeeToMove: Tile? = null
+        var hasSetJanitorHere = false
 
         if (sourceX == sourceY && sourceX < -100) {
             when (sourceX) {
@@ -58,31 +58,43 @@ class PlayerActionService(private val rootService: RootService): AbstractRefresh
                 }
             }
         } else {
+            val isOccupied = currentPlayer.board.getPrisonGrid(destinationX, destinationY)
+            check(isOccupied) { "There is no tile at that position."}
             employeeToMove = GuardTile()
+            currentPlayer.board.setPrisonYard(destinationX, destinationY, null)
+            currentPlayer.board.setPrisonGrid(destinationX, destinationY, false)
             currentPlayer.board.guardPosition.remove(Pair(sourceX, sourceY))
         }
 
         if (destinationX == destinationY && destinationX < -100) {
             when (destinationX) {
                 -103 -> {
+                    check(currentPlayer.secretaryCount < 2) { "Current player has the maximum amount of secretaries."}
                     currentPlayer.secretaryCount++
                 }
                 -104 -> {
+                    check(!currentPlayer.hasJanitor) { "Current player already has a Janitor."}
                     currentPlayer.hasJanitor = true
+                    hasSetJanitorHere = true
                 }
                 -105 -> {
+                    check(currentPlayer.secretaryCount < 2) { "Current player has the maximum amount of lawyers."}
                     currentPlayer.lawyerCount++
                 }
             }
         } else {
             val isOccupied = currentPlayer.board.getPrisonGrid(destinationX, destinationY)
-            check(isOccupied)
+            check(!isOccupied) { "Another Tile already occupies this position."}
             currentPlayer.board.setPrisonYard(destinationX, destinationY, employeeToMove)
+            currentPlayer.board.setPrisonGrid(destinationX, destinationY, true)
             currentPlayer.board.guardPosition.add(Pair(destinationX, destinationY))
         }
 
         onAllRefreshables {
-            refreshEmployee(currentPlayer)
+            refreshEmployee(currentPlayer) // aktualisiert refreshEmployee auch die GuardTiles?
+            if (hasSetJanitorHere) {
+                refreshIsolation(currentPlayer)
+            }
             refreshScoreStats()
         }
     }
@@ -108,6 +120,7 @@ class PlayerActionService(private val rootService: RootService): AbstractRefresh
 
         onAllRefreshables {
             refreshScoreStats()
+            refreshIsolation(player)
             refreshPrison(prisonerFromSelectedPlayersIsolation, x, y)
         }
 
