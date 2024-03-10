@@ -3,7 +3,9 @@ package service
 import entity.AquaGhetto
 import java.io.File
 import java.io.FileInputStream
+import java.io.FileNotFoundException
 import java.io.FileOutputStream
+import java.io.IOException
 import java.io.ObjectInputStream
 import java.io.ObjectOutputStream
 import java.util.zip.GZIPInputStream
@@ -81,18 +83,16 @@ class GameStatesService(private val rootService: RootService): AbstractRefreshin
      * Saves an instance of AquaGhetto to the file "saveFile"
      *
      * @param aquaGhetto the instance to save
-     * @throws IllegalStateException if there was an error while saving the game
+     * @throws IOException see [FileOutputStream], [GZIPOutputStream], [ObjectOutputStream]
+     * @throws SecurityException see [FileOutputStream], [ObjectOutputStream]
+     * @throws NullPointerException see [ObjectOutputStream], [File]
      */
     private fun saveAquaGhetto(aquaGhetto: AquaGhetto) {
         val saveLocation = File("saveFile")
-        try {
-            val fileOut = FileOutputStream(saveLocation)
-            val gzipOut = GZIPOutputStream(fileOut)
-            val objOut = ObjectOutputStream(gzipOut)
-            objOut.writeObject(aquaGhetto)
-        } catch (e: Exception) {
-            throw IllegalStateException("There was an error while saving the game ($e)")
-        }
+        val fileOut = FileOutputStream(saveLocation)
+        val gzipOut = GZIPOutputStream(fileOut)
+        val objOut = ObjectOutputStream(gzipOut)
+        objOut.writeObject(aquaGhetto)
     }
 
     /**
@@ -101,21 +101,20 @@ class GameStatesService(private val rootService: RootService): AbstractRefreshin
      * set the current game to the loaded one and does not call a refresh.
      *
      * @return an instance of AquaGhetto saved in the file "saveFile"
-     * @throws IllegalStateException if there was an error while loading the game
+     * @param aquaGhetto the instance to save
+     * @throws IOException see [FileInputStream], [GZIPInputStream], [ObjectInputStream]
+     * @throws SecurityException see [FileInputStream], [ObjectInputStream]
+     * @throws NullPointerException see [ObjectInputStream], [File]
      */
     private fun loadAquaGhetto(): AquaGhetto {
         val saveLocation = File("saveFile")
         check(saveLocation.exists()) {"There is no game to load"}
-        try {
-            val fileIn = FileInputStream(saveLocation)
-            val gzipIn = GZIPInputStream(fileIn)
-            val objIn = ObjectInputStream(gzipIn)
-            val obj = objIn.readObject()
-            check(obj is AquaGhetto) {"Loaded object was not an instance of AquaGhetto"}
-            return obj
-        } catch (e: Exception) {
-            throw IllegalStateException("There was an error while loading the game ($e)")
-        }
+        val fileIn = FileInputStream(saveLocation)
+        val gzipIn = GZIPInputStream(fileIn)
+        val objIn = ObjectInputStream(gzipIn)
+        val obj = objIn.readObject()
+        check(obj is AquaGhetto) {"Loaded object was not an instance of AquaGhetto"}
+        return obj
     }
 
 }

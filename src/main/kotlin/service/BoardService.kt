@@ -60,10 +60,10 @@ class BoardService(private val rootService: RootService): AbstractRefreshingServ
 
         val toRemove = mutableListOf<Tile>()
         for (tile in game.allTiles) {
-            if ((tile is PrisonerTile && tile.prisonerTrait == PrisonerTrait.BABY) ||
-                (tile is PrisonerTile && typesNotAdd.contains(tile.prisonerType))) {
+            if (tile is PrisonerTile
+                        && (tile.prisonerTrait == PrisonerTrait.BABY || typesNotAdd.contains(tile.prisonerType))) {
                     continue
-                }
+            }
             tilesInGame.add(tile)
             toRemove.remove(tile)
         }
