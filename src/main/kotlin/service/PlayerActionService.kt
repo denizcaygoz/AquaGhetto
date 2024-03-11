@@ -25,8 +25,8 @@ class PlayerActionService(private val rootService: RootService): AbstractRefresh
 
     }
 
-    fun placePrisoner(tile: PrisonerTile, x: Int, y: Int): Tile? {
-        return null
+    fun placePrisoner(tile: PrisonerTile, x: Int, y: Int): Pair<Boolean,PrisonerTile?> {
+        return Pair(false, null)
     }
 
     /**
@@ -39,7 +39,7 @@ class PlayerActionService(private val rootService: RootService): AbstractRefresh
      * @throws IllegalStateException if the game has not been started yet.
      * @throws IllegalArgumentException if the player does not have enough coins, or if the player's isolation area is empty.
      */
-    fun movePrisonerToPrisonYard(x: Int, y: Int) {
+    fun movePrisonerToPrisonYard(x: Int, y: Int): Pair<Boolean,PrisonerTile?> {
         val game = rootService.currentGame
         checkNotNull(game) { "No game started yet." }
 
@@ -55,7 +55,7 @@ class PlayerActionService(private val rootService: RootService): AbstractRefresh
         val tile = player.isolation.pop()
 
         // Place the prisoner on the game board's prison yard
-        placePrisoner(tile, x, y)
+        val bonus = placePrisoner(tile, x, y)
 
         // Deduct one coin from the player
         player.coins--
@@ -65,6 +65,8 @@ class PlayerActionService(private val rootService: RootService): AbstractRefresh
             refreshIsolation(player)
             refreshPrison(tile, x, y)
         }
+
+        return bonus
     }
 
 
@@ -140,7 +142,7 @@ class PlayerActionService(private val rootService: RootService): AbstractRefresh
         }
     }
 
-    fun buyPrisonerFromOtherIsolation(player: Player, x: Int, y: Int): Tile? {
+    fun buyPrisonerFromOtherIsolation(player: Player, x: Int, y: Int): Pair<Boolean,PrisonerTile?> {
         val game = rootService.currentGame
 
         checkNotNull(game) { "No game is currently running."}

@@ -23,9 +23,13 @@ class RandomAIActionService(private val rootService: RootService, private val ra
         val tileToPlace = player.isolation.peek()
         val validLocations = randomAIService.randomAICheckValidService.validPlaces(tileToPlace, player).toList()
         val location = validLocations[ran.nextInt(validLocations.size)]
-        var bonus = rootService.playerActionService.movePrisonerToPrisonYard(location.first , location.second)
-        while (bonus != null) {
-            bonus = this.placeTile(bonus , player)
+        val bonus = rootService.playerActionService.movePrisonerToPrisonYard(location.first , location.second)
+        if (bonus.first) {
+            placeTile(GuardTile() , player)
+        }
+        val bonusTile = bonus.second
+        if (bonusTile != null) {
+            this.placeTile(bonusTile , player)
         }
     }
 
@@ -95,11 +99,15 @@ class RandomAIActionService(private val rootService: RootService, private val ra
         val validLocations = randomAIService.randomAICheckValidService.validPlaces(cardToBuy, player).toList()
         val location = validLocations[ran.nextInt(validLocations.size)]
 
-        var bonus =
+        val bonus =
             rootService.playerActionService.buyPrisonerFromOtherIsolation(playerToBuy, location.first, location.second)
 
-        while (bonus != null) {
-            bonus = this.placeTile(bonus , player)
+        if (bonus.first) {
+            placeTile(GuardTile() , player)
+        }
+        val bonusTile = bonus.second
+        if (bonusTile != null) {
+            this.placeTile(bonusTile , player)
         }
     }
 
@@ -115,14 +123,12 @@ class RandomAIActionService(private val rootService: RootService, private val ra
         val busToTake = canTakeBuses[ran.nextInt(canTakeBuses.size)]
         rootService.playerActionService.takePrisonBus(busToTake)
         for (tileToTake in busToTake.tiles) {
-            var bonus = tileToTake
-            while (bonus != null) {
-                bonus = this.placeTile(bonus , player)
-            }
+            if (tileToTake == null) continue
+            this.placeTile(tileToTake, player)
         }
     }
 
-    private fun placeTile(tile: Tile, player: Player): Tile? {
+    private fun placeTile(tile: Tile, player: Player) {
         when (tile) {
             is GuardTile -> {
                 /*creates a list of booleans where an employee can be placed*/
@@ -154,7 +160,6 @@ class RandomAIActionService(private val rootService: RootService, private val ra
                 }
                 rootService.playerActionService.moveEmployee(-101, -101,
                     locationToPlace.first, locationToPlace.second)
-                return null
             }
             is PrisonerTile -> {
                 val validLocations = randomAIService.randomAICheckValidService.validPlaces(tile, player).toList()
@@ -164,10 +169,14 @@ class RandomAIActionService(private val rootService: RootService, private val ra
                 } else {
                      validLocations[ran.nextInt(validLocations.size)]
                 }
-                return rootService.playerActionService.placePrisoner(tile, location.first, location.second)
-            }
-            else -> {
-                return null
+                val bonus = rootService.playerActionService.placePrisoner(tile, location.first, location.second)
+                if (bonus.first) {
+                    placeTile(GuardTile() , player)
+                }
+                val bonusTile = bonus.second
+                if (bonusTile != null) {
+                    this.placeTile(bonusTile , player)
+                }
             }
         }
 
