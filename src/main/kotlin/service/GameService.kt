@@ -1,6 +1,7 @@
 package service
 
 import entity.AquaGhetto
+import entity.Board
 import entity.Player
 import entity.enums.PlayerType
 
@@ -45,6 +46,7 @@ class GameService(private val rootService: RootService): AbstractRefreshingServi
         for (p in players) {
             val player = Player(p.first, p.second)
             playerList.add(player)
+            initializeBoard(player.board)
         }
         game.players = playerList
 
@@ -148,6 +150,23 @@ class GameService(private val rootService: RootService): AbstractRefreshingServi
         if (player.type == PlayerType.AI || player.type == PlayerType.RANDOM_AI) {
             rootService.aiService.makeTurn(player , delay)
         }
+    }
+
+    /*
+     * Initializes the board by adding the "default" 19 spaces
+     * @param board the board to initialize
+     */
+    private fun initializeBoard(board: Board) {
+        for (x in 1..4) {
+            for (y in 1..4) {
+                if (x == 4 && y == 4) continue
+                board.setPrisonGrid(x, y, true)
+            }
+        }
+        board.setPrisonGrid(0, 2, true)
+        board.setPrisonGrid(0, 3, true)
+        board.setPrisonGrid(2, 0, true)
+        board.setPrisonGrid(3, 0, true)
     }
 
 }

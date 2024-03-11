@@ -29,9 +29,45 @@ class PlayerActionService(private val rootService: RootService): AbstractRefresh
         return null
     }
 
-    fun movePrisonerToPrisonYard(x: Int, y: Int): Tile? {
-        return null
+    /**
+     * Moves a prisoner from the player's isolation area to the game board's prison yard.
+     * Requires a payment of one coin from the player.
+     *
+     * @param x The x-coordinate on the game board to place the prisoner.
+     * @param y The y-coordinate on the game board to place the prisoner.
+     *
+     * @throws IllegalStateException if the game has not been started yet.
+     * @throws IllegalArgumentException if the player does not have enough coins, or if the player's isolation area is empty.
+     */
+    fun movePrisonerToPrisonYard(x: Int, y: Int) {
+        val game = rootService.currentGame
+        checkNotNull(game) { "No game started yet." }
+
+        val player = game.players[game.currentPlayer]
+
+        // Ensure the player has enough coins for the move
+        check(player.coins >= 1) { "Bring more money and come back!" }
+
+        // Ensure the player's isolation area is not empty
+        check(player.isolation.isNotEmpty()) { "Empty Isolation." }
+
+        // Pop a prisoner tile from the player's isolation area
+        val tile = player.isolation.pop()
+
+        // Place the prisoner on the game board's prison yard
+        placePrisoner(tile, x, y)
+
+        // Deduct one coin from the player
+        player.coins--
+
+        // Refresh isolation area and prison layout for all observers
+        onAllRefreshables {
+            refreshIsolation(player)
+            refreshPrison(tile, x, y)
+        }
     }
+
+
 
     /* new employee -> sourceX = sourceY = -101 */
     /*isolation prisoner -> sourceX = sourceY = -102    <- isolation is janitor*/
@@ -45,6 +81,7 @@ class PlayerActionService(private val rootService: RootService): AbstractRefresh
 
         val currentPlayer = game.players[game.currentPlayer]
         var employeeToMove: Tile? = null
+        var hasSetJanitorHere = false
 
         if (sourceX == sourceY && sourceX < -100) {
             when (sourceX) {
@@ -62,31 +99,43 @@ class PlayerActionService(private val rootService: RootService): AbstractRefresh
                 }
             }
         } else {
+            val isOccupied = currentPlayer.board.getPrisonGrid(destinationX, destinationY)
+            check(isOccupied) { "There is no tile at that position."}
             employeeToMove = GuardTile()
+            currentPlayer.board.setPrisonYard(destinationX, destinationY, null)
+            currentPlayer.board.setPrisonGrid(destinationX, destinationY, false)
             currentPlayer.board.guardPosition.remove(Pair(sourceX, sourceY))
         }
 
         if (destinationX == destinationY && destinationX < -100) {
             when (destinationX) {
                 -103 -> {
+                    check(currentPlayer.secretaryCount < 2) { "Current player has the maximum amount of secretaries."}
                     currentPlayer.secretaryCount++
                 }
                 -104 -> {
+                    check(!currentPlayer.hasJanitor) { "Current player already has a Janitor."}
                     currentPlayer.hasJanitor = true
+                    hasSetJanitorHere = true
                 }
                 -105 -> {
+                    check(currentPlayer.secretaryCount < 2) { "Current player has the maximum amount of lawyers."}
                     currentPlayer.lawyerCount++
                 }
             }
         } else {
             val isOccupied = currentPlayer.board.getPrisonGrid(destinationX, destinationY)
-            check(isOccupied)
+            check(!isOccupied) { "Another Tile already occupies this position."}
             currentPlayer.board.setPrisonYard(destinationX, destinationY, employeeToMove)
+            currentPlayer.board.setPrisonGrid(destinationX, destinationY, true)
             currentPlayer.board.guardPosition.add(Pair(destinationX, destinationY))
         }
 
         onAllRefreshables {
-            refreshEmployee(currentPlayer)
+            refreshEmployee(currentPlayer) // aktualisiert refreshEmployee auch die GuardTiles?
+            if (hasSetJanitorHere) {
+                refreshIsolation(currentPlayer)
+            }
             refreshScoreStats()
         }
     }
@@ -112,6 +161,7 @@ class PlayerActionService(private val rootService: RootService): AbstractRefresh
 
         onAllRefreshables {
             refreshScoreStats()
+            refreshIsolation(player)
             refreshPrison(prisonerFromSelectedPlayersIsolation, x, y)
         }
 
