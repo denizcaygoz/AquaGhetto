@@ -101,11 +101,10 @@ class PlayerActionService(private val rootService: RootService): AbstractRefresh
                 }
             }
         } else {
-            val isOccupied = currentPlayer.board.getPrisonGrid(destinationX, destinationY)
-            check(isOccupied) { "There is no tile at that position."}
+            val sourceTile = currentPlayer.board.getPrisonYard(sourceX, sourceY)
+            checkNotNull(sourceTile) { "There is no tile at that position."}
             employeeToMove = GuardTile()
-            currentPlayer.board.setPrisonYard(destinationX, destinationY, null)
-            currentPlayer.board.setPrisonGrid(destinationX, destinationY, false)
+            currentPlayer.board.setPrisonYard(sourceX, sourceY, null)
             currentPlayer.board.guardPosition.remove(Pair(sourceX, sourceY))
         }
 
@@ -126,10 +125,9 @@ class PlayerActionService(private val rootService: RootService): AbstractRefresh
                 }
             }
         } else {
-            val isOccupied = currentPlayer.board.getPrisonGrid(destinationX, destinationY)
-            check(!isOccupied) { "Another Tile already occupies this position."}
+            val destinationTile = currentPlayer.board.getPrisonYard(destinationX, destinationY)
+            check(destinationTile == null) { "Another tile already occupies this position."}
             currentPlayer.board.setPrisonYard(destinationX, destinationY, employeeToMove)
-            currentPlayer.board.setPrisonGrid(destinationX, destinationY, true)
             currentPlayer.board.guardPosition.add(Pair(destinationX, destinationY))
         }
 
