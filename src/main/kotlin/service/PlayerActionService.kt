@@ -284,6 +284,13 @@ class PlayerActionService(private val rootService: RootService): AbstractRefresh
          **/
     }
 
+    /**
+     * Checks whether a player should receive a baby prisoner as a reward,
+     * and what type of prisoner this prisoner is. Also sets breedable to false.
+     * If the player does not receive a bonus, the return value is null
+     *
+     * @return the type of the baby or null
+     */
     fun checkBabyPrisoner(): PrisonerType? {
         val game = rootService.currentGame
         checkNotNull(game) { "No game started yet." }

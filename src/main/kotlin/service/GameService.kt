@@ -152,7 +152,7 @@ class GameService(private val rootService: RootService): AbstractRefreshingServi
         }
     }
 
-    /*
+    /**
      * Initializes the board by adding the "default" 19 spaces
      * @param board the board to initialize
      */
