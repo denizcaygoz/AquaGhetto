@@ -72,61 +72,65 @@ class PlayerActionService(private val rootService: RootService): AbstractRefresh
 
 
     /* new employee -> sourceX = sourceY = -101 */
-    /*isolation prisoner -> sourceX = sourceY = -102    <- isolation is janitor*/
+    /* janitor -> sourceX = sourceY = -102 */
     /* secretary -> sourceX = sourceY = -103 */
-    /* janitor -> sourceX = sourceY = -104 */
-    /* lawyer -> sourceX = sourceY = -105 */
+    /* lawyer -> sourceX = sourceY = -104 */
     fun moveEmployee(sourceX: Int, sourceY: Int , destinationX: Int, destinationY: Int) {
         val game = rootService.currentGame
 
         checkNotNull(game) { "No game is running right now."}
 
         val currentPlayer = game.players[game.currentPlayer]
-        var employeeToMove: Tile? = null
+        val employeeToMove: Tile = GuardTile()
         var hasSetJanitorHere = false
 
         if (sourceX == sourceY && sourceX < -100) {
             when (sourceX) {
+                -102 -> {
+                    check(currentPlayer.hasJanitor) { "Current player doesn't have a janitor to move."}
+                    currentPlayer.hasJanitor = false
+                    currentPlayer.coins--
+                }
                 -103 -> {
                     check(currentPlayer.secretaryCount > 0) { "Current player doesn't have any secretarys to move."}
                     currentPlayer.secretaryCount--
+                    currentPlayer.coins--
                 }
                 -104 -> {
-                    check(currentPlayer.hasJanitor) { "Current player doesn't have a janitor to move."}
-                    currentPlayer.hasJanitor = false
-                }
-                -105 -> {
                     check(currentPlayer.lawyerCount > 0) { "Current player doesn't have a lawyer to move."}
                     currentPlayer.lawyerCount--
+                    currentPlayer.coins--
                 }
             }
         } else {
             val sourceTile = currentPlayer.board.getPrisonYard(sourceX, sourceY)
             checkNotNull(sourceTile) { "There is no tile at that position."}
-            employeeToMove = GuardTile()
             currentPlayer.board.setPrisonYard(sourceX, sourceY, null)
             currentPlayer.board.guardPosition.remove(Pair(sourceX, sourceY))
+            currentPlayer.coins--
         }
 
         if (destinationX == destinationY && destinationX < -100) {
             when (destinationX) {
+                -102 -> {
+                    check(!currentPlayer.hasJanitor) { "Current player already has a Janitor."}
+                    currentPlayer.hasJanitor = true
+                    hasSetJanitorHere = true
+                }
                 -103 -> {
                     check(currentPlayer.secretaryCount < 2) { "Current player has the maximum amount of secretaries."}
                     currentPlayer.secretaryCount++
                 }
                 -104 -> {
-                    check(!currentPlayer.hasJanitor) { "Current player already has a Janitor."}
-                    currentPlayer.hasJanitor = true
-                    hasSetJanitorHere = true
-                }
-                -105 -> {
                     check(currentPlayer.secretaryCount < 2) { "Current player has the maximum amount of lawyers."}
                     currentPlayer.lawyerCount++
                 }
             }
         } else {
             val destinationTile = currentPlayer.board.getPrisonYard(destinationX, destinationY)
+            val isGrid = currentPlayer.board.getPrisonGrid(destinationX, destinationY)
             check(destinationTile == null) { "Another tile already occupies this position."}
+            check(isGrid) { "There is no prison tile to place the guard on."}
             currentPlayer.board.setPrisonYard(destinationX, destinationY, employeeToMove)
             currentPlayer.board.guardPosition.add(Pair(destinationX, destinationY))
         }
@@ -140,6 +144,14 @@ class PlayerActionService(private val rootService: RootService): AbstractRefresh
         }
     }
 
+    /**
+     * Buys a prisoner from another players isolation, if the player has sufficient funds.
+     *
+     * @throws IllegalStateException No game is currently live.
+     * @throws IllegalStateException The current player has less than two coins.
+     * @throws IllegalStateException The selected player has no prisoner in their isolation.
+     * @throws IllegalStateException The selected player is the same as the current player.
+     */
     fun buyPrisonerFromOtherIsolation(player: Player, x: Int, y: Int): Pair<Boolean,PrisonerTile?> {
         val game = rootService.currentGame
 
