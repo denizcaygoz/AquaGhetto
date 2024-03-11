@@ -35,4 +35,10 @@ class RootService {
         validationService.addRefreshable(newRefreshable)
     }
 
+    /**
+    * This function calls addRefreshables with any number of Refreshable objects as parameters.
+    */
+    fun addRefreshables(vararg newRefreshables: Refreshable) {
+        newRefreshables.forEach { addRefreshable(it) }
+    }
 }
