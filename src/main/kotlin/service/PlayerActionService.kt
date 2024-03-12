@@ -413,8 +413,8 @@ class PlayerActionService(private val rootService: RootService): AbstractRefresh
                 if (tile !is PrisonerTile) continue
                 val trait = tile.prisonerTrait
                 val type = tile.prisonerType
-                if (trait == PrisonerTrait.MALE || tile.breedable) foundBreedableMale[type] = tile
-                if (trait == PrisonerTrait.FEMALE || tile.breedable) foundBreedableFemale[type] = tile
+                if (trait == PrisonerTrait.MALE && tile.breedable) foundBreedableMale[type] = tile
+                if (trait == PrisonerTrait.FEMALE && tile.breedable) foundBreedableFemale[type] = tile
             }
         }
 
