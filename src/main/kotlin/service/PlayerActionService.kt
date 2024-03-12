@@ -10,6 +10,7 @@ import entity.tileTypes.CoinTile
 import entity.tileTypes.GuardTile
 import entity.tileTypes.PrisonerTile
 import entity.tileTypes.Tile
+import java.util.*
 
 /**
  * Service layer class that provides basic functions for the actions a player can take
@@ -432,4 +433,14 @@ class PlayerActionService(private val rootService: RootService): AbstractRefresh
         return null
     }
 
+    /**
+     * Draws a card from the given Stack.
+     *
+     * @param stack The tile stack to draw from
+     * @throws IllegalArgumentException The given stack is empty.
+     */
+    fun drawCard(stack: Stack<Tile>): Tile {
+        require(stack.isNotEmpty()) { "Can't draw from an empty stack" }
+        return stack.pop()
+    }
 }
