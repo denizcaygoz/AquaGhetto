@@ -86,7 +86,8 @@ class ValidationService(private val rootService: RootService): AbstractRefreshin
     }
 
     /**
-     * Validates if an extension is allowed to be placed at a specific location
+     * Validates if an extension is allowed to be placed at a specific location, for the
+     * board of the current player
      *
      * @param x the x-coordinate to place the extension onto
      * @param y the y-coordinate to place the extension onto
@@ -129,6 +130,20 @@ class ValidationService(private val rootService: RootService): AbstractRefreshin
                 }
             }
         }
+
+        /*
+         * player is not allowed to place extension on (0,0) (1,0) (0,1)
+         */
+        for(location in placementCoordinates) {
+            val xT = location.first
+            val yT = location.second
+            if ((xT == 0 && yT == 0) ||
+                (xT == 1 && yT == 0) ||
+                (xT == 0 && yT == 1)) {
+                return false
+            }
+        }
+
 
         /*
          * check if there is another grid next to the expansion grid and that the expansion grid is
