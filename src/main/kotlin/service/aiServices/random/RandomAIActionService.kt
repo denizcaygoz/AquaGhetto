@@ -7,6 +7,7 @@ import entity.tileTypes.GuardTile
 import entity.tileTypes.PrisonerTile
 import entity.tileTypes.Tile
 import service.RootService
+import service.PlayerActionService.*
 import java.util.Random
 
 class RandomAIActionService(private val rootService: RootService, private val randomAIService: RandomAIService) {

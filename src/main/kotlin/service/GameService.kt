@@ -41,6 +41,9 @@ class GameService(private val rootService: RootService): AbstractRefreshingServi
         /*create game*/
         val game = AquaGhetto()
 
+        /*Set current game to newly created game*/
+        rootService.currentGame = game
+
         /*Create list of players*/
         val playerList = mutableListOf<Player>()
         for (p in players) {
@@ -60,9 +63,6 @@ class GameService(private val rootService: RootService): AbstractRefreshingServi
 
         /*Create prisonBusses*/
         game.prisonBuses = rootService.boardService.createPrisonBuses(playerList.size)
-
-        /*Set current game to newly created game*/
-        rootService.currentGame = game
 
         /*Call refreshes*/
         onAllRefreshables {
@@ -152,7 +152,7 @@ class GameService(private val rootService: RootService): AbstractRefreshingServi
         }
     }
 
-    /*
+    /**
      * Initializes the board by adding the "default" 19 spaces
      * @param board the board to initialize
      */

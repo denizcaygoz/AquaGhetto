@@ -6,9 +6,11 @@ import entity.Player
 import entity.PrisonBus
 import entity.enums.PrisonerTrait
 import entity.enums.PrisonerType
+import entity.tileTypes.CoinTile
 import entity.tileTypes.GuardTile
 import entity.tileTypes.PrisonerTile
 import entity.tileTypes.Tile
+import java.util.*
 
 /**
  * Service layer class that provides basic functions for the actions a player can take
@@ -18,16 +20,132 @@ import entity.tileTypes.Tile
 class PlayerActionService(private val rootService: RootService): AbstractRefreshingService() {
 
     fun addTileToPrisonBus(tile: Tile, prisonBus: PrisonBus) {
+        val game = rootService.currentGame
+        checkNotNull(game) { "No game started yet." }
+
+        val currentPlayer = game.players.getOrNull(game.currentPlayer)
+        checkNotNull(currentPlayer) { "Invalid current player." }
+
+        // To check if the game has at least one prison bus available
+        require(game.prisonBuses.isEmpty()) {"No prison buses available."}
+
+        // To check if the current player has not taken a bus yet
+        require(currentPlayer.takenBus != null) {"Current player has already taken a bus."}
+
+        // To check tile is not an instance of GuardTile
+        require(tile is GuardTile) {"Cannot add a guard tile to a prison bus."}
+
+        // To check if there is at least one slot that is empty and not blocked
+        val emptyAndUnblockedIndex = prisonBus.tiles.indexOfFirst { it == null && !prisonBus.blockedSlots[prisonBus.tiles.indexOf(it)] }
+        require(emptyAndUnblockedIndex != -1) { "No empty slots available on the bus." }
+
+        // Add the tile to the prison bus
+        prisonBus.tiles[emptyAndUnblockedIndex] = tile
+
+        onAllRefreshables {
+            refreshPrisonBus(prisonBus)
+        }
 
     }
 
     fun takePrisonBus(prisonBus: PrisonBus) {
+        val game = rootService.currentGame ?: throw IllegalStateException("No game started yet.")
 
+        val currentPlayer = game.players.getOrNull(game.currentPlayer)
+            ?: throw IllegalStateException("Invalid current player.")
+
+        // To check if the current player has not taken a bus yet
+        require(currentPlayer.takenBus == null) { "Current player has already taken a bus." }
+
+        // To check if the game has at least one prison bus available
+        require(game.prisonBuses.isNotEmpty()) { "No prison buses available." }
+
+        // To check if the prisonBus has at least one card on it
+        require(prisonBus.tiles.any { it != null }) { "Selected prison bus has no cards." }
+
+        currentPlayer.takenBus = prisonBus
+        game.prisonBuses.remove(prisonBus)
+
+        var hasBusCoinTile = false
+        //check if one of tiles in prison bus is an instance of CoinTile
+        //then increment currentPlayer.money by 1 and remove the tile from prisonBus.tiles
+        prisonBus.tiles.forEachIndexed { index, tile ->
+            if (tile is CoinTile) {
+                currentPlayer.coins += 1
+                prisonBus.tiles[index] = null
+                hasBusCoinTile = true
+            }
+
+            onAllRefreshables {
+                if (hasBusCoinTile) {
+                    refreshScoreStats()
+                }
+                refreshPrisonBus(prisonBus)
+            }
+        }
     }
 
-    fun placePrisoner(tile: PrisonerTile, x: Int, y: Int): Pair<Boolean,PrisonerTile?> {
+    /**
+     * Places a PrisonerTile on the game board at the specified coordinates and evaluates scoring conditions.
+     *
+     * @param tile The PrisonerTile to be placed.
+     * @param x The x-coordinate on the game board.
+     * @param y The y-coordinate on the game board.
+     * @return A Pair indicating the success of the placement and the placed PrisonerTile (or null if unsuccessful or no special conditions met).
+     *   - First value (Boolean): True if the placement is successful, false otherwise.
+     *   - Second value (PrisonerTile?): The placed PrisonerTile or null if unsuccessful or no special conditions met.
+     *
+     * @throws IllegalStateException if the game has not been started yet.
+     */
+    fun placePrisoner(tile: PrisonerTile, x: Int, y: Int): Pair<Boolean, PrisonerTile?> {
+        val game = rootService.currentGame
+        checkNotNull(game) { "No game started yet." }
+        val player = game.players[game.currentPlayer]
+        val board = player.board
+
+        // Validate the tile placement
+        if (rootService.validationService.validateTilePlacement(tile, x, y)) {
+            // Set the PrisonerTile on the game board
+            board.setPrisonYard(x, y, tile)
+
+            // Calculate the count of the specified PrisonerType in the player's PrisonYard
+            val count = rootService.evaluationService.getPrisonerTypeCount(player).get(tile.prisonerType)
+
+            // Evaluate scoring conditions based on the count
+            if (count == null) {
+                // Return indicating successful placement, but no special conditions met
+                return Pair(true, null)
+            } else {
+                if (count % 3 == 0 && count != 0) {
+                    // Increment player's coins for every third tile, excluding counts of 0
+                    player.coins++
+                }
+                if (count % 5 == 0 && count != 0) {
+                    // Place a GuardTile at (-101, -101) and return it for every fifth tile, excluding count of 0
+                    board.setPrisonYard(-101, -101, GuardTile())
+                    // Return indicating successful placement with the GuardTile
+                    return Pair(true,
+                        rootService.playerActionService.checkBabyPrisoner()
+                            ?.let { rootService.boardService.getBabyTile(it) })
+                }
+            }
+
+            // Return indicating successful placement, but no special conditions met
+            return Pair(false, rootService.playerActionService.checkBabyPrisoner()
+                ?.let { rootService.boardService.getBabyTile(it) })
+        }
+
+        // Refresh score statistics and the prison layout
+        onAllRefreshables {
+            refreshScoreStats()
+            refreshPrison(tile, x, y)
+        }
+
+        // Return indicating unsuccessful placement
         return Pair(false, null)
     }
+
+
 
     /**
      * Moves a prisoner from the player's isolation area to the game board's prison yard.
@@ -226,8 +344,10 @@ class PlayerActionService(private val rootService: RootService): AbstractRefresh
         val neededMoney: Int = if(isBigExtension) 2 else 1
         val board: Board = currentPlayer.board
 
-        require(currentPlayer.coins >= neededMoney) { "The current player has not enough money" }
-        require(board.getPrisonGrid(x,y)) { "The expansion can not be placed at this (x,y)" }
+        check(currentPlayer.coins >= neededMoney) { "The current player has not enough money" }
+        check(rootService.validationService.validateExpandPrisonGrid(isBigExtension, x, y, rotation)) {
+            "Cannot place extension at ($x, $y)"
+        }
 
         val placementCoordinates: MutableList<Pair<Int, Int>> = mutableListOf()
         placementCoordinates.add(Pair(x,y))
@@ -256,13 +376,6 @@ class PlayerActionService(private val rootService: RootService): AbstractRefresh
                 }
             }
 
-        }
-
-        placementCoordinates.forEach { coordinates ->
-            require(board.getPrisonGrid(
-                coordinates.first,
-                coordinates.second)
-            ) { "The expansion can not be placed at this (x,y)" }
         }
 
         placementCoordinates.forEach { coordinates ->
@@ -308,7 +421,7 @@ class PlayerActionService(private val rootService: RootService): AbstractRefresh
         /*check for breedable prisoners*/
         for (type in PrisonerType.values()) {
             val male: PrisonerTile? = foundBreedableMale[type]
-            val female: PrisonerTile? = foundBreedableMale[type]
+            val female: PrisonerTile? = foundBreedableFemale[type]
             if (male != null && female != null) {
                 male.breedable = false
                 female.breedable = false
@@ -320,4 +433,14 @@ class PlayerActionService(private val rootService: RootService): AbstractRefresh
         return null
     }
 
+    /**
+     * Draws a card from the given Stack.
+     *
+     * @param stack The tile stack to draw from
+     * @throws IllegalArgumentException The given stack is empty.
+     */
+    fun drawCard(stack: Stack<Tile>): Tile {
+        require(stack.isNotEmpty()) { "Can't draw from an empty stack" }
+        return stack.pop()
+    }
 }

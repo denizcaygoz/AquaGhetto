@@ -35,15 +35,14 @@ class ValidationService(private val rootService: RootService): AbstractRefreshin
 
         /*check if there is no other prisonerType around*/
         /*check if there is a prisoner of the same type around*/
+        val toCheckSurrounding = mutableListOf(Pair(1,0),Pair(-1,0),Pair(0,1),Pair(0,-1))
         var surroundingSameType = false
-        for (xIterate in -1..1) {
-            for (yIterate in -1..1) {
-                val tileCheck = board.getPrisonYard(x + xIterate, y + yIterate)
-                if (tileCheck is PrisonerTile && (tileCheck.prisonerType != tile.prisonerType)) {
-                    return false
-                } else if (tileCheck is PrisonerTile && xIterate != 0 && yIterate != 0) {
-                    surroundingSameType = true
-                }
+        for (offset in toCheckSurrounding) {
+            val tileCheck = board.getPrisonYard(x + offset.first, y + offset.second)
+            if (tileCheck is PrisonerTile && (tileCheck.prisonerType != tile.prisonerType)) {
+                return false
+            } else if (tileCheck is PrisonerTile && offset.first != 0 && offset.second != 0) {
+                surroundingSameType = true
             }
         }
 
@@ -87,7 +86,8 @@ class ValidationService(private val rootService: RootService): AbstractRefreshin
     }
 
     /**
-     * Validates if an extension is allowed to be placed at a specific location
+     * Validates if an extension is allowed to be placed at a specific location, for the
+     * board of the current player
      *
      * @param x the x-coordinate to place the extension onto
      * @param y the y-coordinate to place the extension onto
@@ -132,6 +132,20 @@ class ValidationService(private val rootService: RootService): AbstractRefreshin
         }
 
         /*
+         * player is not allowed to place extension on (0,0) (1,0) (0,1)
+         */
+        for(location in placementCoordinates) {
+            val xT = location.first
+            val yT = location.second
+            if ((xT == 0 && yT == 0) ||
+                (xT == 1 && yT == 0) ||
+                (xT == 0 && yT == 1)) {
+                return false
+            }
+        }
+
+
+        /*
          * check if there is another grid next to the expansion grid and that the expansion grid is
          * not place on a currently existing grid
          */
@@ -150,15 +164,18 @@ class ValidationService(private val rootService: RootService): AbstractRefreshin
         return true
     }
 
+    /**
+     * checks whether there is a grid surrounding the supplied location
+     *
+     * @param board the board in which the check is performed
+     * @param location the location of the intended new grid
+     * @return if the location is surrounded by a grid
+     */
     private fun checkIfSurroundedByOtherGrid(board: Board, location: Pair<Int, Int>): Boolean {
-        for (xIterate in -1..1) {
-            for (yIterate in -1..1) {
-                if (board.getPrisonGrid(location.first + xIterate, location.second + yIterate)) {
-                    return true
-                }
-            }
-        }
-        return false
+        return board.getPrisonGrid(location.first + 1, location.second + 0) ||
+                board.getPrisonGrid(location.first - 1, location.second + 0) ||
+                board.getPrisonGrid(location.first + 0, location.second + 1) ||
+                board.getPrisonGrid(location.first + 0, location.second - 1)
     }
 
 }
