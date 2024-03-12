@@ -21,8 +21,8 @@ class PlayerActionServiceTest {
         val currentPlayer = game.players[game.currentPlayer]
 
         // Test big Expansion:
-        val bigExpX = 5
-        val bigExpY = 2
+        var bigExpX = 5
+        var bigExpY = 2
         currentPlayer.coins = 2
         assert(rootService.validationService.validateExpandPrisonGrid(true, bigExpX, bigExpY, 0))
         rootService.playerActionService.expandPrisonGrid(true, bigExpX, bigExpY, 0)
@@ -30,6 +30,13 @@ class PlayerActionServiceTest {
         // Testing correct resource deduction
         assertSame(0, currentPlayer.coins)
         assertSame(1, currentPlayer.remainingBigExtensions)
+
+        // Testing failure if not adjacent to any grid
+        bigExpX = 7
+        bigExpY = 7
+        currentPlayer.coins = 2
+        assert(!rootService.validationService.validateExpandPrisonGrid(true, bigExpX, bigExpY, 0))
+        assertFails { rootService.playerActionService.expandPrisonGrid(true, bigExpX, bigExpY, 0) }
     }
 
     @Test
@@ -54,9 +61,9 @@ class PlayerActionServiceTest {
 
         // These placements should all succeed:
         val validLocations = listOf(
-            Triple(0, 1, 0),
+            Triple(1, 6, 0),
             Triple(6, 3, 90),
-            Triple(4, 5, 180),
+            Triple(4, 4, 180),
             Triple(4, 0, 270),
         )
 
@@ -68,7 +75,7 @@ class PlayerActionServiceTest {
             currentPlayer.remainingSmallExtensions++
             currentPlayer.coins++
             assert(rootService.validationService.validateExpandPrisonGrid(false, xPos, yPos, rotation)) {
-                "($xPos, $yPos) is not a valid location for $rotation"
+                "($xPos, $yPos) is not a valid location for $rotation°"
             }
             rootService.playerActionService.expandPrisonGrid(false, xPos, yPos, rotation)
         }
