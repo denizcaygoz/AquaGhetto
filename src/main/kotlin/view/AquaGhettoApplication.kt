@@ -1,7 +1,10 @@
 package view
 
+/**
+
 import service.RootService
 import tools.aqua.bgw.core.BoardGameApplication
+import tools.aqua.bgw.event.KeyCode
 
 /**
  * Application and SceneManagement
@@ -20,7 +23,7 @@ class AquaGhettoApplication: BoardGameApplication("AquaGhetto"), Refreshable {
      */
     private val inGameScene = InGameScene(rootService).apply {
         onKeyPressed = {
-            if (it.keyCode.isEscape) { this@AquaGhettoApplication.showMenuScene(pauseMenuScene)}
+            if (it.keyCode == KeyCode.ESCAPE) { this@AquaGhettoApplication.showMenuScene(pauseMenuScene)}
         }
     }
 
@@ -96,3 +99,5 @@ class AquaGhettoApplication: BoardGameApplication("AquaGhetto"), Refreshable {
         this.showMenuScene(scoreboardScene)
     }
 }
+
+ */
