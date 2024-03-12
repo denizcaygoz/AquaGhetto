@@ -6,6 +6,7 @@ import entity.Player
 import entity.PrisonBus
 import entity.enums.PrisonerTrait
 import entity.enums.PrisonerType
+import entity.tileTypes.CoinTile
 import entity.tileTypes.GuardTile
 import entity.tileTypes.PrisonerTile
 import entity.tileTypes.Tile
@@ -22,7 +23,40 @@ class PlayerActionService(private val rootService: RootService): AbstractRefresh
     }
 
     fun takePrisonBus(prisonBus: PrisonBus) {
+        val game = rootService.currentGame ?: throw IllegalStateException("No game started yet.")
 
+        val currentPlayer = game.players.getOrNull(game.currentPlayer)
+            ?: throw IllegalStateException("Invalid current player.")
+
+        // To check if the current player has not taken a bus yet
+        require(currentPlayer.takenBus == null) { "Current player has already taken a bus." }
+
+        // To check if the game has at least one prison bus available
+        require(game.prisonBuses.isNotEmpty()) { "No prison buses available." }
+
+        // To check if the prisonBus has at least one card on it
+        require(prisonBus.tiles.any { it != null }) { "Selected prison bus has no cards." }
+
+        currentPlayer.takenBus = prisonBus
+        game.prisonBuses.remove(prisonBus)
+
+        var hasBusCoinTile = false
+        //check if one of tiles in prison bus is an instance of CoinTile
+        //then increment currentPlayer.money by 1 and remove the tile from prisonBus.tiles
+        prisonBus.tiles.forEachIndexed { index, tile ->
+            if (tile is CoinTile) {
+                currentPlayer.coins += 1
+                prisonBus.tiles[index] = null
+                hasBusCoinTile = true
+            }
+
+            onAllRefreshables {
+                if (hasBusCoinTile) {
+                    refreshScoreStats()
+                }
+                refreshPrisonBus(prisonBus)
+            }
+        }
     }
 
     /**
