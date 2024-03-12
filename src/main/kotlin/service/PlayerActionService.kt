@@ -18,6 +18,31 @@ import entity.tileTypes.Tile
 class PlayerActionService(private val rootService: RootService): AbstractRefreshingService() {
 
     fun addTileToPrisonBus(tile: Tile, prisonBus: PrisonBus) {
+        val game = rootService.currentGame
+        checkNotNull(game) { "No game started yet." }
+
+        val currentPlayer = game.players.getOrNull(game.currentPlayer)
+        checkNotNull(currentPlayer) { "Invalid current player." }
+
+        // To check if the game has at least one prison bus available
+        require(game.prisonBuses.isEmpty()) {"No prison buses available."}
+
+        // To check if the current player has not taken a bus yet
+        require(currentPlayer.takenBus != null) {"Current player has already taken a bus."}
+
+        // To check tile is not an instance of GuardTile
+        require(tile is GuardTile) {"Cannot add a guard tile to a prison bus."}
+
+        // To check if there is at least one slot that is empty and not blocked
+        val emptyAndUnblockedIndex = prisonBus.tiles.indexOfFirst { it == null && !prisonBus.blockedSlots[prisonBus.tiles.indexOf(it)] }
+        require(emptyAndUnblockedIndex != -1) { "No empty slots available on the bus." }
+
+        // Add the tile to the prison bus
+        prisonBus.tiles[emptyAndUnblockedIndex] = tile
+
+        onAllRefreshables {
+            refreshPrisonBus(prisonBus)
+        }
 
     }
 
