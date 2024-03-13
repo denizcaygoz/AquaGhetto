@@ -1,6 +1,7 @@
 package entity.aIActions
 
-class ActionTakeBus(score: Int,
+class ActionTakeBus(validAction: Boolean,
+                    score: Int,
                     val placeCardA: PlaceCard,
                     val placeCardB: PlaceCard? = null,
-                    val placeCardC: PlaceCard? = null): AIAction(score)
+                    val placeCardC: PlaceCard? = null): AIAction(validAction, score)

@@ -1,3 +1,4 @@
 package entity.aIActions
 
-class ActionFreePrisoner(score: Int): AIAction(score)
+class ActionFreePrisoner(validAction: Boolean,
+                         score: Int): AIAction(validAction, score)

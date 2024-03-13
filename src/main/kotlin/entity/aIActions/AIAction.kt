@@ -1,3 +1,4 @@
 package entity.aIActions
 
-open class AIAction(val score: Int)
+open class AIAction(val validAction: Boolean,
+                    val score: Int)

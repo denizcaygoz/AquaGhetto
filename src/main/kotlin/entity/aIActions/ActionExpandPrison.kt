@@ -1,5 +1,6 @@
 package entity.aIActions
 
-class ActionExpandPrison(score: Int,
+class ActionExpandPrison(validAction: Boolean,
+                         score: Int,
                          val location: Pair<Int,Int>,
-                         val rotation: Int): AIAction(score)
+                         val rotation: Int): AIAction(validAction, score)
