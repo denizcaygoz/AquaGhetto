@@ -1,4 +1,4 @@
-package service.aiServices
+package service.aiServices.smart
 
 import entity.AquaGhetto
 import entity.Player
@@ -55,7 +55,7 @@ class SmartAI(val player: Player) {
      */
     fun minMax(game: AquaGhetto, depth: Int, maximize: Boolean, actionsInspected: Int): AIAction {
         if (depth == 0 || checkGameEnd()) { /*hier überprüfung ob maximale tiefe erreicht wurde oder spiel schon geendet hat*/
-            return AIAction(evaluateCurrentPosition())
+            return AIAction(false, evaluateCurrentPosition())
         }
 
         /*die verschiedenen züge die ein spieler machen kann, wenn ein zug nicht möglich ist, hat dieser den schlechtesten wert
@@ -96,34 +96,34 @@ class SmartAI(val player: Player) {
     }
 
     fun takeBus(game: AquaGhetto, depth: Int, maximize: Boolean, amountActions: Int): ActionTakeBus {
-        return ActionTakeBus(0, PlaceCard(Pair(0,0)))
+        return ActionTakeBus(false, 0, PlaceCard(Pair(0,0)))
         /*erneuter aufruf von minmax um den score der nächsten aktion zu bekommen, hier nur score relevant*/
         /*gilt für alle methoden die ab hier kommen*/
         /*am besten kann man das hier auch auslagern später in eigende Klassen*/
     }
 
     fun freePrisoner(game: AquaGhetto, depth: Int, maximize: Boolean, amountActions: Int): ActionFreePrisoner {
-        return ActionFreePrisoner(0)
+        return ActionFreePrisoner(false, 0)
     }
 
     fun getScoreBuyPrisoner(game: AquaGhetto, depth: Int, maximize: Boolean, amountActions: Int): ActionBuyPrisoner {
-        return ActionBuyPrisoner(0, player, PlaceCard(Pair(0,0)))
+        return ActionBuyPrisoner(false, 0, player, PlaceCard(Pair(0,0)))
     }
 
     fun getScoreMoveEmployee(game: AquaGhetto, depth: Int, maximize: Boolean, amountActions: Int): ActionMoveEmployee {
-        return ActionMoveEmployee(0, Pair(0,0), Pair(0,0))
+        return ActionMoveEmployee(false, 0, Pair(0,0), Pair(0,0))
     }
 
     fun getScoreAddTileToPrisonBus(game: AquaGhetto, depth: Int, maximize: Boolean, amountActions: Int): ActionAddTileToBus {
-        return ActionAddTileToBus(0, 0)
+        return ActionAddTileToBus(false, 0, 0)
     }
 
     fun getScoreMoveOwnPrisoner(game: AquaGhetto, depth: Int, maximize: Boolean, amountActions: Int): ActionMovePrisoner {
-        return ActionMovePrisoner(0, PlaceCard(Pair(0,0)))
+        return ActionMovePrisoner(false, 0, PlaceCard(Pair(0,0)))
     }
 
     fun getScoreExpandPrisonGrid(game: AquaGhetto, depth: Int, maximize: Boolean, amountActions: Int): ActionExpandPrison {
-        return ActionExpandPrison(0, Pair(0,0) , 0)
+        return ActionExpandPrison(false, 0, Pair(0,0) , 0)
     }
 
 }

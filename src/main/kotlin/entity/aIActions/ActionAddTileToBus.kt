@@ -2,5 +2,6 @@ package entity.aIActions
 
 import entity.Player
 
-class ActionAddTileToBus(score: Int,
-                         val indexBus: Int): AIAction(score)
+class ActionAddTileToBus(validAction: Boolean,
+                         score: Int,
+                         val indexBus: Int): AIAction(validAction, score)

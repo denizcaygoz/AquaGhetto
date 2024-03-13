@@ -1,5 +1,6 @@
 package entity.aIActions
 
-class ActionMoveEmployee(score: Int,
+class ActionMoveEmployee(validAction: Boolean,
+                         score: Int,
                          val source: Pair<Int,Int>,
-                         val destination: Pair<Int,Int>): AIAction(score)
+                         val destination: Pair<Int,Int>): AIAction(validAction, score)
