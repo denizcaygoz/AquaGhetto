@@ -259,8 +259,29 @@ class NetworkService(private val rootService: RootService): AbstractRefreshingSe
 
     fun sendAddTileToTruck(tile: Tile, prisonBus: PrisonBus) {}
 
-    fun receiveAddTileToTruck(message: AddTileToTruckMessage) {
+    /**
+     * play the opponent's turn by handling the [AddTileToTruckMessage] sent through the server.
+     *
+     * @param message the message to handle
+     *
+     * @throws IllegalStateException if not currently expecting an opponent's turn
+     */
 
+    fun receiveAddTileToTruck(message: AddTileToTruckMessage) {
+        check(connectionState == ConnectionState.WAITING_FOR_TURN) {
+            "currently not expecting an opponent's turn."
+        }
+
+        val game = rootService.currentGame
+        val busId: Int = message.truckId
+
+        checkNotNull(game) { "somehow the current game doesnt exist." }
+        check(busId in 0 until  game.prisonBuses.size) { "there is no bus at this index" }
+
+        val tileToAdd: Tile = rootService.playerActionService.drawCard(game.drawStack)
+        val prisonBus: PrisonBus = game.prisonBuses[busId]
+
+        rootService.playerActionService.addTileToPrisonBus(tileToAdd, prisonBus)
     }
 
     fun sendTakeTruck(prisonBus: PrisonBus, bonuses: MutableList<Tile>) {}
