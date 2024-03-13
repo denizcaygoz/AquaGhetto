@@ -174,46 +174,4 @@ class RandomAICheckValidService(private val rootService: RootService) {
         return result
     }
 
-    /**
-     * Creates a list of pairs containing the location, where a grid would be placed, considering the
-     * placement/size of extension
-     *
-     * @param isBigExtension if this should be a big extension
-     * @param x the x coordinate of the placed extension
-     * @param y the y coordinate of the placed extension
-     * @param rotation the rotation of the tile
-     * @return a list containing the locations of the extension
-     */
-    fun createExtensionLocations(isBigExtension: Boolean, x: Int, y: Int, rotation: Int): MutableList<Pair<Int, Int>> {
-        val placementCoordinates: MutableList<Pair<Int, Int>> = mutableListOf()
-        placementCoordinates.add(Pair(x,y))
-
-        if (isBigExtension) {
-            placementCoordinates.add(Pair(x+1,y))
-            placementCoordinates.add(Pair(x,y-1))
-            placementCoordinates.add(Pair(x+1,y-1))
-        } else {
-            when(rotation) {
-                0 -> {
-                    placementCoordinates.add(Pair(x,y-1))
-                    placementCoordinates.add(Pair(x+1,y-1))
-                }
-                90 -> {
-                    placementCoordinates.add(Pair(x-1,y))
-                    placementCoordinates.add(Pair(x-1,y-1))
-                }
-                180 -> {
-                    placementCoordinates.add(Pair(x,y+1))
-                    placementCoordinates.add(Pair(x-1,y+1))
-                }
-                270 -> {
-                    placementCoordinates.add(Pair(x+1,y+1))
-                    placementCoordinates.add(Pair(x+1,y))
-                }
-            }
-        }
-
-        return placementCoordinates
-    }
-
 }
