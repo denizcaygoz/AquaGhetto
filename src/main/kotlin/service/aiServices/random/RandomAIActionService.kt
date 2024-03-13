@@ -7,19 +7,36 @@ import entity.tileTypes.GuardTile
 import entity.tileTypes.PrisonerTile
 import entity.tileTypes.Tile
 import service.RootService
-import service.PlayerActionService.*
 import java.util.Random
 
+/**
+ * Service class providing basic functions for executing a turn of a random AI
+ *
+ * @param rootService instance of the [RootService] for access to other services
+ * @param randomAIService the random AI service
+ */
 class RandomAIActionService(private val rootService: RootService, private val randomAIService: RandomAIService) {
 
     private val ran = Random()
 
+    /**
+     * Function that places a tile on a possible prison bus, the bus is selected randomly
+     *
+     * @param canTakeBuses a list of possible buses
+     * @param game the current instance of AquaGhetto
+     */
     fun addTileToPrisonBus(canTakeBuses: List<PrisonBus>, game: AquaGhetto) {
         val tileToPlace = if (game.drawStack.isNotEmpty()) game.drawStack.pop() else game.finalStack.pop()
         val busToPlaceOn = canTakeBuses[ran.nextInt(canTakeBuses.size)]
         rootService.playerActionService.addTileToPrisonBus(tileToPlace, busToPlaceOn)
     }
 
+    /**
+     * Function to place a prisoner from your own isolation
+     * on the game board, the position is selected randomly
+     *
+     * @param player the current player
+     */
     fun moveOwnPrisonerFromIsolation(player: Player) {
         val tileToPlace = player.isolation.peek()
         val validLocations = randomAIService.randomAICheckValidService.validPlaces(tileToPlace, player).toList()
@@ -34,6 +51,11 @@ class RandomAIActionService(private val rootService: RootService, private val ra
         }
     }
 
+    /**
+     * Function for moving a random prisoner to a random location
+     *
+     * @param player the current player
+     */
     fun moveEmployee(player: Player) {
         /*creates a list of booleans where an employee is*/
         val validOptionsEmployeeFrom = mutableListOf(
@@ -93,6 +115,13 @@ class RandomAIActionService(private val rootService: RootService, private val ra
                                                     locationToPlace.first, locationToPlace.second)
     }
 
+    /**
+     * Function for buying a prisoner from another random isolation
+     * and place it on a random location
+     *
+     * @param canBuyPrisonerFrom a list of possible players to buy a prisoner from
+     * @param player the current player
+     */
     fun buyPrisonerFromOtherIsolation(canBuyPrisonerFrom: List<Player> , player: Player) {
         val playerToBuy = canBuyPrisonerFrom[ran.nextInt(canBuyPrisonerFrom.size)]
         val cardToBuy = playerToBuy.isolation.peek()
@@ -112,14 +141,27 @@ class RandomAIActionService(private val rootService: RootService, private val ra
         }
     }
 
+    /**
+     * Function to free a prisoner from isolation
+     */
     fun freePrisonerFromOwnIsolation() {
         rootService.playerActionService.freePrisoner()
     }
 
+    /**
+     * Function for randomly expanding the prison grid, the expansion is placed at a random location
+     * the size and the rotation is also random
+     */
     fun expandPrisonGrid() {
         //TODO
     }
 
+    /**
+     * Function for randomly taking a prison bus and placing the tiles at random locations
+     *
+     * @param canTakeBuses the buses a player can take
+     * @param player the current player
+     */
     fun takePrisonBus(canTakeBuses: List<PrisonBus>, player: Player) {
         val busToTake = canTakeBuses[ran.nextInt(canTakeBuses.size)]
         rootService.playerActionService.takePrisonBus(busToTake)
@@ -129,6 +171,13 @@ class RandomAIActionService(private val rootService: RootService, private val ra
         }
     }
 
+    /**
+     * Function for randomly placing a tile, this function
+     * also places the bonus at a random location
+     *
+     * @param tile the tile to place
+     * @param player the current player
+     */
     private fun placeTile(tile: Tile, player: Player) {
         when (tile) {
             is GuardTile -> {
