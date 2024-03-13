@@ -257,7 +257,21 @@ class NetworkService(private val rootService: RootService): AbstractRefreshingSe
         updateConnectionState(ConnectionState.WAITING_FOR_HOST_CONFIRMATION)
     }
 
-    fun sendAddTileToTruck(tile: Tile, prisonBus: PrisonBus) {}
+    fun sendAddTileToTruck(prisonBus: PrisonBus) {
+        require(connectionState == ConnectionState.PLAYING_MY_TURN) { "not my turn" }
+
+        var selectedPrisonBus: Int = 0
+        val game = rootService.currentGame
+
+        checkNotNull(game) { "somehow the current game doesnt exist." }
+
+        game.prisonBuses.forEachIndexed { index, bus ->
+            if (bus == prisonBus) { selectedPrisonBus = index }
+        }
+
+        val message = AddTileToTruckMessage(selectedPrisonBus)
+        client?.sendGameActionMessage(message)
+    }
 
     /**
      * play the opponent's turn by handling the [AddTileToTruckMessage] sent through the server.
