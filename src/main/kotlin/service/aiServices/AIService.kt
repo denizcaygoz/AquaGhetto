@@ -5,6 +5,7 @@ import entity.enums.PlayerType
 import service.AbstractRefreshingService
 import service.RootService
 import service.aiServices.random.RandomAIService
+import service.aiServices.smart.SmartAI
 
 /**
  * Service layer class that provides one public method to determine the next move of an AI / a function
@@ -14,7 +15,8 @@ import service.aiServices.random.RandomAIService
  */
 class AIService(private val rootService: RootService): AbstractRefreshingService() {
 
-    val randomAIService = RandomAIService(rootService)
+    private val randomAIService = RandomAIService(rootService)
+    private val playerAIServiceMap = mutableMapOf<String, SmartAI>()
 
     /**
      * Executes one turn of an AI
@@ -41,13 +43,24 @@ class AIService(private val rootService: RootService): AbstractRefreshingService
         if (player.type == PlayerType.RANDOM_AI) {
             randomAIService.randomAITurn(player, game)
         } else {
-            //smart AI service
+
+            /*get the instance for the player*/
+            var serviceAI = playerAIServiceMap[player.name]
+
+            /*create new instance if no exist*/
+            if (serviceAI == null) {
+                serviceAI = SmartAI(player)
+                playerAIServiceMap[player.name] = serviceAI
+            }
+
+            /*make turn*/
+            serviceAI.makeTurn(game)
         }
 
         /*wait until delay is over*/
         val endTime = System.currentTimeMillis()
         println("Time: ${endTime - startTime}")
-        Thread.sleep(Integer.max((delay) - (endTime - startTime).toInt() , 0).toLong());
+        Thread.sleep(Integer.max((delay) - (endTime - startTime).toInt() , 0).toLong())
     }
 
 
