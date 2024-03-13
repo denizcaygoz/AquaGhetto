@@ -49,7 +49,7 @@ class AIService(private val rootService: RootService): AbstractRefreshingService
 
             /*create new instance if no exist*/
             if (serviceAI == null) {
-                serviceAI = SmartAI(player)
+                serviceAI = SmartAI(rootService, player)
                 playerAIServiceMap[player.name] = serviceAI
             }
 
