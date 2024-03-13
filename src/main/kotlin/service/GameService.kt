@@ -60,6 +60,8 @@ class GameService(private val rootService: RootService): AbstractRefreshingServi
         val bothStacks = rootService.boardService.createStacks(playerList.size)
         game.drawStack = bothStacks.first
         game.finalStack = bothStacks.second
+        println(game.drawStack)
+        println(game.finalStack)
 
         /*Create prisonBusses*/
         game.prisonBuses = rootService.boardService.createPrisonBuses(playerList.size)
