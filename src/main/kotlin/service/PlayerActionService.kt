@@ -186,17 +186,36 @@ class PlayerActionService(private val rootService: RootService): AbstractRefresh
     }
 
 
-
-    /* new employee -> sourceX = sourceY = -101 */
-    /* janitor -> sourceX = sourceY = -102 */
-    /* secretary -> sourceX = sourceY = -103 */
-    /* lawyer -> sourceX = sourceY = -104 */
+    /**
+     * Places a new employee or moves an employee from a source location to another destination.
+     * To determine if a janitor, secretary or lawyer must be moved/placed, special coordinates
+     * are used as an indicator:
+     *
+     * - new employee without a role: (-101, -101)
+     * (Note: only be used as ([sourceX], [sourceY])
+     * - janitor: (-102, -102)
+     * - secretary: (-103, -103)
+     * - lawyer: (-104, -104)
+     *
+     * All other coordinates result in a guard being placed/moved.
+     *
+     * @param sourceX X-coordinate of the employee to be moved
+     * @param sourceY Y-coordinate of the employee to be moved
+     * @param sourceY Y-coordinate of the destination
+     * @param sourceY Y-coordinate of the employee to be moved
+     *
+     * @throws IllegalStateException There is no game running
+     * @throws IllegalStateException The selected player does not have enough coins.
+     * @throws IllegalStateException Guards are moved from/to invalid locations
+     * or the player already has the maximum number of employees from a type.
+     */
     fun moveEmployee(sourceX: Int, sourceY: Int , destinationX: Int, destinationY: Int) {
         val game = rootService.currentGame
 
         checkNotNull(game) { "No game is running right now."}
 
         val currentPlayer = game.players[game.currentPlayer]
+        check(currentPlayer.coins >= 1)
         val employeeToMove: Tile = GuardTile()
         var hasSetJanitorHere = false
 
