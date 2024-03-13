@@ -2,6 +2,7 @@ package entity.aIActions
 
 import entity.Player
 
-class ActionBuyPrisoner(score: Int,
+class ActionBuyPrisoner(validAction: Boolean,
+                        score: Int,
                         val buyFrom: Player,
-                        val placeCard: PlaceCard): AIAction(score)
+                        val placeCard: PlaceCard): AIAction(validAction, score)
