@@ -4,9 +4,12 @@ import entity.AquaGhetto
 import entity.Player
 import entity.aIActions.*
 import entity.enums.PlayerType
+import entity.tileTypes.GuardTile
+import entity.tileTypes.PrisonerTile
+import service.RootService
 import service.aiServices.smart.evaluateActions.*
 
-class SmartAI(val player: Player) {
+class SmartAI(val rootService: RootService, val player: Player) {
 
     private val evaluateActionFreePrisoner = EvaluateFreePrisonerService(this)
     private val evaluateActionTakeBus = EvaluateTakeBusService(this)
@@ -28,28 +31,44 @@ class SmartAI(val player: Player) {
         this.executeAction(game, action)
     }
 
-    fun executeAction(game: AquaGhetto, aiAction: AIAction) {
+    private fun executeAction(game: AquaGhetto, aiAction: AIAction) {
         when (aiAction) {
             is ActionAddTileToBus -> {
-                /*do action in different function*/
+                val bus = game.prisonBuses[aiAction.indexBus]
+                val tile = GuardTile() //TODO replace with proper function drawCard
+                rootService.playerActionService.addTileToPrisonBus(tile, bus)
             }
             is ActionMovePrisoner -> {
-                /*do action in different function*/
+                val placeCard = aiAction.placeCard
+                val prisoner = placeCard.placePrisoner
+                val bonus = rootService.playerActionService.movePrisonerToPrisonYard(prisoner.first, prisoner.second)
+                this.placeCardBonus(aiAction.placeCard, bonus)
             }
             is ActionMoveEmployee -> {
-                /*do action in different function*/
+                val source = aiAction.source
+                val destination = aiAction.destination
+                rootService.playerActionService.moveEmployee(source.first, source.second,
+                    destination.first, destination.first)
             }
             is ActionBuyPrisoner -> {
-                /*do action in different function*/
+                val boughtFrom = aiAction.buyFrom
+                val placeCard = aiAction.placeCard
+                val prisoner = placeCard.placePrisoner
+                val bonus = rootService.playerActionService.buyPrisonerFromOtherIsolation(boughtFrom,
+                    prisoner.first, prisoner.second)
+                this.placeCardBonus(aiAction.placeCard, bonus)
             }
             is ActionFreePrisoner -> {
-                /*do action in different function*/
+                rootService.playerActionService.freePrisoner()
             }
             is ActionExpandPrison -> {
-                /*do action in different function*/
+                val isBig = aiAction.isBig
+                val location = aiAction.location
+                val rotation = aiAction.rotation
+                rootService.playerActionService.expandPrisonGrid(isBig, location.first, location.second, rotation)
             }
             is ActionTakeBus -> {
-                /*do action in different function*/
+                takeBus(aiAction, game)
             }
             else -> {
                 println("End no action")
@@ -57,6 +76,27 @@ class SmartAI(val player: Player) {
         }
     }
 
+    private fun takeBus(aiAction: ActionTakeBus, game: AquaGhetto) {
+        val takenBus = game.prisonBuses[aiAction.bus]
+        rootService.playerActionService.takePrisonBus(takenBus) /*remove coins from bus*/
+        val tiles = takenBus.tiles.filterNotNull()
+        if (aiAction.placeCards.size != tiles.size) {
+            //TODO add emergency action?
+            println("Error AI action did not matched bus tiles")
+            return
+        }
+        for (i in tiles.indices) {
+            val tile = tiles[i]
+            if (tile !is PrisonerTile) {
+                println("Found non prisoner tile in bus, this should not happen")
+                continue
+            }
+            val placeCard = aiAction.placeCards[i]
+            val prisoner = placeCard.placePrisoner
+            val bonus = rootService.playerActionService.placePrisoner(tile, prisoner.first, prisoner.second)
+            this.placeCardBonus(placeCard, bonus)
+        }
+    }
 
     /*
      * actionsInspected ist nur dafür da um zu verfolgen wie viele wege schon bewertet wurden
@@ -103,6 +143,52 @@ class SmartAI(val player: Player) {
 
     fun evaluateCurrentPosition(): Int {
         return 0 /*hier ist ne gute evaluation funktion sehr wichtig*/
+    }
+
+    /**
+     * Function to place a card bonus depending on the info provided in [placeCard] and [bonus]
+     *
+     * @param placeCard info about the location, where to place a tile
+     * @param bonus the bonus obtained by placing a card
+     */
+    private fun placeCardBonus(placeCard: PlaceCard , bonus: Pair<Boolean,PrisonerTile?>) {
+        /*place possible employee if valid*/
+        placeEmployee(bonus.first, placeCard.firstTileBonusEmployee)
+
+        /*place possible baby*/
+        var secondBonus: Pair<Boolean, PrisonerTile?>? = null
+        val bonusBaby = bonus.second
+        val bonusLocation = placeCard.placeBonusPrisoner
+        if (bonusBaby != null && bonusLocation == null) {
+            //TODO add emergency action?
+            println("Error AI action did not matched bonus")
+        } else if (bonusBaby == null && bonusLocation != null) {
+            /*do nothing I guess*/
+            println("Error AI action did not matched bonus")
+        } else if (bonusBaby != null && bonusLocation != null) {
+            secondBonus = rootService.playerActionService.placePrisoner(bonusBaby,
+                bonusLocation.first, bonusLocation.second)
+        }
+
+        /*Second bonus can only "contain" a new employee*/
+        if (secondBonus == null) return
+        placeEmployee(secondBonus.first, placeCard.secondTileBonusEmployee)
+    }
+
+    /**
+     * Places a prisoner at the location if provided and if bonus is true
+     */
+    private fun placeEmployee(bonus: Boolean, employee: Pair<Int,Int>?) {
+        if (bonus && (employee == null)) {
+            //TODO add emergency action?
+            println("Error AI action did not matched bonus")
+        } else if (!bonus && (employee != null)) {
+            /*do nothing I guess*/
+            println("Error AI action did not matched bonus")
+        } else if (bonus && employee != null) {
+            rootService.playerActionService.moveEmployee(-101,-101,
+                employee.first, employee.second)
+        }
     }
 
 }
