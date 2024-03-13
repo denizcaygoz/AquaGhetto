@@ -425,7 +425,13 @@ class PlayerActionService(private val rootService: RootService): AbstractRefresh
          **/
     }
 
-    fun checkBabyPrisoner(): PrisonerType? {
+    /**
+     * Function to determine if the current player should get a bonus tile, because a baby
+     * was born, this function sets breedable to false for the two tiles
+     *
+     * @return the type of the baby or null
+     */
+    private fun checkBabyPrisoner(): PrisonerType? {
         val game = rootService.currentGame
         checkNotNull(game) { "No game started yet." }
 
