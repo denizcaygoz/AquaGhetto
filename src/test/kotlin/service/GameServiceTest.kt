@@ -125,6 +125,7 @@ class GameServiceTest {
         assertTrue(testGame.finalStack.isNotEmpty())
         assertTrue(testGame.prisonBuses.isNotEmpty())
 
+
         testRefreshable.reset()
         assertFalse(testRefreshable.refreshAfterStartGameCalled)
         assertFalse(testRefreshable.refreshAfterNextTurnCalled)

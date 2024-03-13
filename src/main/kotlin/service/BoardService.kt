@@ -71,11 +71,11 @@ class BoardService(private val rootService: RootService): AbstractRefreshingServ
 
         tilesInGame.shuffle()
 
-        val normalStack = Stack<Tile>()
-        normalStack.addAll(tilesInGame.subList(0 , 15))
-
         val finalStack = Stack<Tile>()
-        finalStack.addAll(tilesInGame.subList(15 , tilesInGame.size))
+        finalStack.addAll(tilesInGame.reversed().subList(0 , 15))
+
+        val normalStack = Stack<Tile>()
+        normalStack.addAll(tilesInGame.subList(15 , tilesInGame.size))
 
         return Pair(normalStack, finalStack)
     }

@@ -5,6 +5,7 @@ import tools.aqua.bgw.net.client.BoardGameClient
 import tools.aqua.bgw.net.client.NetworkLogging
 import tools.aqua.bgw.core.BoardGameApplication
 import tools.aqua.bgw.net.common.annotations.GameActionReceiver
+import tools.aqua.bgw.net.common.notification.PlayerJoinedNotification
 import tools.aqua.bgw.net.common.response.*
 
 class AqueghettoNetworkClient(
@@ -23,7 +24,7 @@ class AqueghettoNetworkClient(
     var sessionID: String? = null
 
     /** the name of the opponent player; can be null if no message from the opponent received yet */
-    var otherPlayerName: String? = null
+    var otherPlayerNames: MutableList<String> = mutableListOf()
 
 
     /**
@@ -64,12 +65,32 @@ class AqueghettoNetworkClient(
 
             when (response.status) {
                 JoinGameResponseStatus.SUCCESS -> {
-                    otherPlayerName = response.opponents[0]
+                    otherPlayerNames.add(response.opponents[0])
                     sessionID = response.sessionID
                     networkService.updateConnectionState(ConnectionState.WAITING_FOR_INIT)
                 }
-                else -> disconnectAndError(response.status)
+                else -> {
+                    disconnectAndError(response.status)
+                }
             }
+        }
+
+    }
+
+    /**
+     * Handle a [PlayerJoinedNotification] sent by the server. As War only supports two players,
+     * this will immediately start the hosted game (and send the init message to the opponent).
+     *
+     * @throws IllegalStateException if not currently expecting any guests to join.
+     */
+    override fun onPlayerJoined(notification: PlayerJoinedNotification) {
+        BoardGameApplication.runOnGUIThread {
+            check(networkService.connectionState == ConnectionState.WAITING_FOR_GUEST )
+            { "not awaiting any guests."}
+
+            otherPlayerNames.add(notification.sender)
+
+            networkService.startNewHostedGame(playerName, otherPlayerNames)
         }
     }
 
@@ -99,7 +120,7 @@ class AqueghettoNetworkClient(
     @GameActionReceiver
     fun onInitReceived(message: InitGameMessage, sender: String) {
         BoardGameApplication.runOnGUIThread {
-            //networkService.startNewJoinedGame()
+            networkService.startNewJoinedGame(message, playerName)
         }
     }
 
@@ -110,7 +131,7 @@ class AqueghettoNetworkClient(
     @GameActionReceiver
     fun onAddTileToTruck(message: AddTileToTruckMessage, sender: String) {
         BoardGameApplication.runOnGUIThread {
-            //networkService.startNewJoinedGame()
+            networkService.receiveAddTileToTruck(message)
         }
     }
 
@@ -121,7 +142,7 @@ class AqueghettoNetworkClient(
     @GameActionReceiver
     fun onTakeTruck(message: TakeTruckMessage, sender: String) {
         BoardGameApplication.runOnGUIThread {
-            //networkService.startNewJoinedGame()
+            networkService.receiveTakeTruck(message)
         }
     }
 
@@ -132,7 +153,7 @@ class AqueghettoNetworkClient(
     @GameActionReceiver
     fun onBuyExpansion(message: BuyExpansionMessage, sender: String) {
         BoardGameApplication.runOnGUIThread {
-            //networkService.startNewJoinedGame()
+            networkService.receiveBuyExpansion(message)
         }
     }
 
@@ -143,7 +164,7 @@ class AqueghettoNetworkClient(
     @GameActionReceiver
     fun onMoveCoworker(message: MoveCoworkerMessage, sender: String) {
         BoardGameApplication.runOnGUIThread {
-            //networkService.startNewJoinedGame()
+            networkService.receivePlaceWorker(message)
         }
     }
 
@@ -154,7 +175,7 @@ class AqueghettoNetworkClient(
     @GameActionReceiver
     fun onMoveTile(message: MoveTileMessage, sender: String) {
         BoardGameApplication.runOnGUIThread {
-            //networkService.startNewJoinedGame()
+            networkService.receiveMoveTile(message)
         }
     }
 
@@ -165,7 +186,7 @@ class AqueghettoNetworkClient(
     @GameActionReceiver
     fun onDiscard(message: DiscardMessage, sender: String) {
         BoardGameApplication.runOnGUIThread {
-            //networkService.startNewJoinedGame()
+            networkService.receiveDiscard(message)
         }
     }
 
