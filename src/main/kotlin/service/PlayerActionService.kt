@@ -86,9 +86,10 @@ class PlayerActionService(private val rootService: RootService): AbstractRefresh
     }
 
     /**
-     * Places a PrisonerTile on the game board at the specified coordinates and evaluates scoring conditions.
+     * Places a [PrisonerTile] on the game board at the specified coordinates and evaluates scoring conditions.
+     * A [PrisonerTile] is placed in the isolation if (-100, -100) is passed as coordinate.
      *
-     * @param tile The PrisonerTile to be placed.
+     * @param tile The [PrisonerTile] to be placed.
      * @param x The x-coordinate on the game board.
      * @param y The y-coordinate on the game board.
      * @return A Pair indicating the success of the placement and a [PrisonerTile] with a [PrisonerTrait.BABY], if applicable.
@@ -133,6 +134,16 @@ class PlayerActionService(private val rootService: RootService): AbstractRefresh
             onAllRefreshables {
                 refreshScoreStats()
                 refreshPrison(tile, x, y)
+            }
+            return result
+
+        } else if (x == y && x == -100) { // To put prisoners into a player's isolation
+            player.isolation.push(tile)
+            result = Pair(true, null)
+
+            onAllRefreshables {
+                refreshIsolation(player)
+                refreshScoreStats()
             }
 
             return result
