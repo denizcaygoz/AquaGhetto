@@ -1,0 +1,12 @@
+package service.networkService
+
+enum class ConnectionState {
+    DISCONNECTED,
+    CONNECTED,
+    WAITING_FOR_HOST_CONFIRMATION,
+    WAITING_FOR_JOIN_CONFIRMATION,
+    WAITING_FOR_GUEST,
+    WAITING_FOR_TURN,
+    WAITING_FOR_INIT,
+    PLAYING_MY_TURN
+}

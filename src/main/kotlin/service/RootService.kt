@@ -2,6 +2,7 @@ package service
 
 import entity.AquaGhetto
 import service.aiServices.AIService
+import service.networkService.NetworkService
 import view.Refreshable
 
 /**
@@ -18,6 +19,7 @@ class RootService {
     val aiService = AIService(this)
     val playerActionService = PlayerActionService(this)
     val validationService = ValidationService(this)
+    val networkService = NetworkService(this)
 
     var currentGame: AquaGhetto? = null
 
