@@ -60,7 +60,7 @@ class RandomAIService(rootService: RootService) {
                 randomAIActionService.freePrisonerFromOwnIsolation()
             }
             5 -> { /*expand prison yard*/
-                randomAIActionService.expandPrisonGrid()
+                randomAIActionService.expandPrisonGrid(player)
             }
             6 -> { /*take prison bus*/
                 randomAIActionService.takePrisonBus(canTakeBuses.toList() , player)

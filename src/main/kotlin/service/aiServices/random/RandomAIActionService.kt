@@ -1,6 +1,7 @@
 package service.aiServices.random
 
 import entity.AquaGhetto
+import entity.Board
 import entity.Player
 import entity.PrisonBus
 import entity.tileTypes.GuardTile
@@ -151,9 +152,92 @@ class RandomAIActionService(private val rootService: RootService, private val ra
     /**
      * Function for randomly expanding the prison grid, the expansion is placed at a random location
      * the size and the rotation is also random
+     *
+     * @param player the current player
      */
-    fun expandPrisonGrid() {
-        //TODO
+    fun expandPrisonGrid(player: Player) {
+        val optionList = mutableListOf<Boolean>((player.remainingSmallExtensions > 0 && player.coins >= 1),
+                                                (player.remainingBigExtensions > 0 && player.coins >= 2))
+        val option = randomAIService.getRandomValidOption(optionList)
+        when (option) {
+            0 -> {
+                this.placeExtension(player.board, false)
+            }
+            1 -> {
+                this.placeExtension(player.board, true)
+            }
+        }
+    }
+
+
+    /**
+     * Places an extension at a random valid location
+     * This function is very expensive and should not get called often
+     *
+     * @param board the board of a player
+     * @param isBig if the tile should be big or small
+     */
+    private fun placeExtension(board: Board, isBig: Boolean) {
+        val validPlacements = mutableListOf<Triple<Int,Int,Int>>()
+
+        /*get all grid locations surrounding the outer grid*/
+        val borderTiles = mutableSetOf<Pair<Int,Int>>()
+        for (firstIterator in board.getPrisonGridIterator()) {
+            for (secondIterator in firstIterator.value) {
+                borderTiles.add(Pair(firstIterator.key + 0, secondIterator.key + 1))
+                borderTiles.add(Pair(firstIterator.key + 0, secondIterator.key - 1))
+                borderTiles.add(Pair(firstIterator.key + 1, secondIterator.key + 0))
+                borderTiles.add(Pair(firstIterator.key - 1, secondIterator.key + 0))
+
+                borderTiles.add(Pair(firstIterator.key + 1, secondIterator.key + 1))
+                borderTiles.add(Pair(firstIterator.key - 1, secondIterator.key - 1))
+                borderTiles.add(Pair(firstIterator.key + 1, secondIterator.key - 1))
+                borderTiles.add(Pair(firstIterator.key - 1, secondIterator.key + 1))
+            }
+        }
+
+        /*iterate through all border tiles*/
+        for (location in borderTiles) {
+            /*remove locations, where there is a grid*/
+            if (board.getPrisonGrid(location.first, location.second)) continue
+
+            /*add grid location if valid*/
+            addExtensionPlacesToList(validPlacements, location.first, location.second, isBig)
+        }
+
+        /*get a random valid location*/
+        val location = validPlacements[ran.nextInt(validPlacements.size)]
+
+        /*place the expansion*/
+        rootService.playerActionService.expandPrisonGrid(isBig, location.first, location.second, location.third)
+    }
+
+    /**
+     * Adds valid locations for placing an extension in the list, the function
+     * test every rotation for the provided location and adds them to a list if
+     * these arguments would be valid
+     *
+     * @param list the list in which the locations should be inserted
+     * @param x the x-coordinate of the desired placement
+     * @param y the y-coordinate of the desired placement
+     * @param isBig if the tile should be big or small
+     */
+    private fun addExtensionPlacesToList(list: MutableList<Triple<Int,Int,Int>>
+                                         , x: Int, y: Int, isBig: Boolean) {
+        /*basic pre-check*/
+        if (x == 0 && y == 0) return
+        if (x == 1 && y == 0) return
+        if (x == 0 && y == 1) return
+
+        /*all possible rotations*/
+        val validRotations = mutableListOf(0,90,180,270)
+
+        /*check every rotation if it is valid*/
+        for (rot in validRotations) {
+            if (!rootService.validationService.validateExpandPrisonGrid(isBig, x , y , rot)) continue
+            list.add(Triple(x,y,rot))
+        }
+
     }
 
     /**
