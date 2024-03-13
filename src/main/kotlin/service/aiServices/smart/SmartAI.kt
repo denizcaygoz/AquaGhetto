@@ -4,8 +4,17 @@ import entity.AquaGhetto
 import entity.Player
 import entity.aIActions.*
 import entity.enums.PlayerType
+import service.aiServices.smart.evaluateActions.*
 
 class SmartAI(val player: Player) {
+
+    private val evaluateActionFreePrisoner = EvaluateFreePrisonerService(this)
+    private val evaluateActionTakeBus = EvaluateTakeBusService(this)
+    private val evaluateAddTileToBus = EvaluateAddTileToPrisonBusService(this)
+    private val evaluateBuyPrisoner = EvaluateBuyPrisonerService(this)
+    private val evaluateExpandPrison = EvaluateExpandPrisonGridService(this)
+    private val evaluateMoveEmployee = EvaluateMoveEmployeeService(this)
+    private val evaluateMoveOwnPrisoner = EvaluateMoveOwnPrisonerService(this)
 
     init {
         require(player.type == PlayerType.AI) {"Player is not an AI"} /*der spieler der die züge machen soll*/
@@ -16,9 +25,10 @@ class SmartAI(val player: Player) {
     /*mal schauen ob wir hier multithreading einbauen, mehr als ein rechner zur berechnung?*/
     fun makeTurn(game: AquaGhetto) {
         val action = this.minMax(game, 10, true, 0)
+        this.executeAction(game, action)
     }
 
-    fun executeAction(ame: AquaGhetto, aiAction: AIAction) {
+    fun executeAction(game: AquaGhetto, aiAction: AIAction) {
         when (aiAction) {
             is ActionAddTileToBus -> {
                 /*do action in different function*/
@@ -53,7 +63,7 @@ class SmartAI(val player: Player) {
      * damit kann einfacher gesagt werden welche optimierungen weniger wege betrachten
      * kann später sonst auch gelöscht werden
      */
-    fun minMax(game: AquaGhetto, depth: Int, maximize: Boolean, actionsInspected: Int): AIAction {
+    fun minMax(game: AquaGhetto, depth: Int, maximize: Boolean, actionsChecked: Int): AIAction {
         if (depth == 0 || checkGameEnd()) { /*hier überprüfung ob maximale tiefe erreicht wurde oder spiel schon geendet hat*/
             return AIAction(false, evaluateCurrentPosition())
         }
@@ -63,13 +73,13 @@ class SmartAI(val player: Player) {
         /*funktion gibt den score des standes nach der aktion zurück und was gemacht werden muss damit man zu diesem
         * score kommt, damit dies nicht ernuet berechnet werden muss*/
         /*erstelle objekte sollten sich (hoffentlich) in grenzen halten*/
-        val scoreAddTileToPrisonBus = this.getScoreAddTileToPrisonBus(game, depth, maximize, actionsInspected)
-        val scoreMoveOwnPrisoner = this.getScoreMoveOwnPrisoner(game, depth, maximize, actionsInspected)
-        val scoreMoveEmployee = this.getScoreMoveEmployee(game, depth, maximize, actionsInspected)
-        val scoreBuyPrisoner = this.getScoreBuyPrisoner(game, depth, maximize, actionsInspected)
-        val scoreFreePrisoner = this.freePrisoner(game, depth, maximize, actionsInspected)
-        val scoreExpandPrison = this.getScoreExpandPrisonGrid(game, depth, maximize, actionsInspected)
-        val scoreTakeBus = this.takeBus(game, depth, maximize, actionsInspected)
+        val scoreAddTileToPrisonBus = evaluateAddTileToBus.getScoreAddTileToPrisonBus(game, depth, maximize, actionsChecked)
+        val scoreMoveOwnPrisoner = evaluateMoveOwnPrisoner.getScoreMoveOwnPrisoner(game, depth, maximize, actionsChecked)
+        val scoreMoveEmployee = evaluateMoveEmployee.getScoreMoveEmployee(game, depth, maximize, actionsChecked)
+        val scoreBuyPrisoner = evaluateBuyPrisoner.getScoreBuyPrisoner(game, depth, maximize, actionsChecked)
+        val scoreFreePrisoner = evaluateActionFreePrisoner.freePrisoner(game, depth, maximize, actionsChecked)
+        val scoreExpandPrison = evaluateExpandPrison.getScoreExpandPrisonGrid(game, depth, maximize, actionsChecked)
+        val scoreTakeBus = evaluateActionTakeBus.takeBus(game, depth, maximize, actionsChecked)
 
         val scoreList = mutableListOf(scoreAddTileToPrisonBus, scoreMoveOwnPrisoner, scoreMoveEmployee,
             scoreBuyPrisoner, scoreFreePrisoner, scoreExpandPrison, scoreTakeBus)
@@ -93,37 +103,6 @@ class SmartAI(val player: Player) {
 
     fun evaluateCurrentPosition(): Int {
         return 0 /*hier ist ne gute evaluation funktion sehr wichtig*/
-    }
-
-    fun takeBus(game: AquaGhetto, depth: Int, maximize: Boolean, amountActions: Int): ActionTakeBus {
-        return ActionTakeBus(false, 0, PlaceCard(Pair(0,0)))
-        /*erneuter aufruf von minmax um den score der nächsten aktion zu bekommen, hier nur score relevant*/
-        /*gilt für alle methoden die ab hier kommen*/
-        /*am besten kann man das hier auch auslagern später in eigende Klassen*/
-    }
-
-    fun freePrisoner(game: AquaGhetto, depth: Int, maximize: Boolean, amountActions: Int): ActionFreePrisoner {
-        return ActionFreePrisoner(false, 0)
-    }
-
-    fun getScoreBuyPrisoner(game: AquaGhetto, depth: Int, maximize: Boolean, amountActions: Int): ActionBuyPrisoner {
-        return ActionBuyPrisoner(false, 0, player, PlaceCard(Pair(0,0)))
-    }
-
-    fun getScoreMoveEmployee(game: AquaGhetto, depth: Int, maximize: Boolean, amountActions: Int): ActionMoveEmployee {
-        return ActionMoveEmployee(false, 0, Pair(0,0), Pair(0,0))
-    }
-
-    fun getScoreAddTileToPrisonBus(game: AquaGhetto, depth: Int, maximize: Boolean, amountActions: Int): ActionAddTileToBus {
-        return ActionAddTileToBus(false, 0, 0)
-    }
-
-    fun getScoreMoveOwnPrisoner(game: AquaGhetto, depth: Int, maximize: Boolean, amountActions: Int): ActionMovePrisoner {
-        return ActionMovePrisoner(false, 0, PlaceCard(Pair(0,0)))
-    }
-
-    fun getScoreExpandPrisonGrid(game: AquaGhetto, depth: Int, maximize: Boolean, amountActions: Int): ActionExpandPrison {
-        return ActionExpandPrison(false, 0, Pair(0,0) , 0)
     }
 
 }
