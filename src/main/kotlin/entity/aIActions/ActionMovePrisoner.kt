@@ -1,4 +1,5 @@
 package entity.aIActions
 
-class ActionMovePrisoner(score: Int,
-                         val placeCard: PlaceCard): AIAction(score)
+class ActionMovePrisoner(validAction: Boolean,
+                         score: Int,
+                         val placeCard: PlaceCard): AIAction(validAction, score)
