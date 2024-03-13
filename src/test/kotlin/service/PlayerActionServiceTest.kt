@@ -16,6 +16,7 @@ class PlayerActionServiceTest {
             Pair("P1", PlayerType.PLAYER),
             Pair("P2", PlayerType.PLAYER)
         )
+        testRefreshable.reset()
         rootService.gameService.startNewGame(players)
         rootService.addRefreshable(testRefreshable)
     }
@@ -217,5 +218,63 @@ class PlayerActionServiceTest {
         currentPlayer.coins = 1
 
         assertFails{rootService.playerActionService.moveEmployee(3, 3, -103, -103)}
+    }
+
+    /**
+     * Tests a valid purchase from one player's isolation.
+     */
+    @Test
+    fun `buy Prisoner from valid isolation to valid location`() {
+        val game = rootService.currentGame!!
+        val currentPlayer = game.players[game.currentPlayer]
+        currentPlayer.coins += 2
+
+        val prisonerTile = PrisonerTile(3, PrisonerTrait.NONE, PrisonerType.RED)
+
+        val playerToBuyFrom = game.players[game.currentPlayer + 1]
+
+        playerToBuyFrom.isolation.push(prisonerTile)
+
+        val oldCoins = playerToBuyFrom.coins
+        val oldCoinsCurrentPlayer = currentPlayer.coins
+        val placementResult = rootService.playerActionService.buyPrisonerFromOtherIsolation(playerToBuyFrom, 2, 2)
+
+        assertTrue { testRefreshable.refreshScoreStatsCalled }
+        assertTrue { testRefreshable.refreshPrisonCalled }
+        assertTrue { testRefreshable.refreshIsolationCalled }
+
+        assertFails { playerToBuyFrom.isolation.peek() }
+        assertEquals(oldCoinsCurrentPlayer - 2, currentPlayer.coins)
+        assertEquals(oldCoins + 1, playerToBuyFrom.coins)
+        assertTrue(placementResult.first)
+        assertNull(placementResult.second)
+    }
+
+    /**
+     * Tests all cases where a purchase can fail or is invalid.
+     */
+    @Test
+    fun `buy Prisoner failing`() {
+        val game = rootService.currentGame!!
+        val currentPlayer = game.players[game.currentPlayer]
+        val playerToBuyFrom = game.players[game.currentPlayer + 1]
+        val prisonerTile = PrisonerTile(3, PrisonerTrait.NONE, PrisonerType.RED)
+
+        // Should fail because not enough coins
+        assertFails { rootService.playerActionService.buyPrisonerFromOtherIsolation(playerToBuyFrom, 2, 2) }
+        currentPlayer.coins += 2
+
+        // Should fail because empty isolation
+        assertFails { rootService.playerActionService.buyPrisonerFromOtherIsolation(playerToBuyFrom, 2, 2) }
+        playerToBuyFrom.isolation.push(prisonerTile)
+
+        // Should fail because selectedPlayer == currentPlayer
+        assertFails { rootService.playerActionService.buyPrisonerFromOtherIsolation(currentPlayer, 2, 2) }
+
+        // Should fail because invalid location
+        val result = rootService.playerActionService.buyPrisonerFromOtherIsolation(playerToBuyFrom, 2, 69)
+
+        assertFalse(result.first)
+        assertNull(result.second)
     }
 }
