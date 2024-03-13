@@ -1,11 +1,15 @@
 package service
 
 import entity.enums.PlayerType
+import entity.enums.PrisonerTrait
+import entity.enums.PrisonerType
 import entity.tileTypes.GuardTile
+import entity.tileTypes.PrisonerTile
 import kotlin.test.*
 
 class PlayerActionServiceTest {
     private val rootService = RootService()
+    private val testRefreshable = TestRefreshable()
     @BeforeTest
     fun setUpMockGame() {
         val players = mutableListOf(
@@ -13,6 +17,79 @@ class PlayerActionServiceTest {
             Pair("P2", PlayerType.PLAYER)
         )
         rootService.gameService.startNewGame(players)
+        rootService.addRefreshable(testRefreshable)
+    }
+
+    /**
+     * Tests whether a PrisonerTile can be placed on valid locations
+     * and not placed on invalid locations
+     */
+    @Test
+    fun `test placePrisoner on (in)valid grid postion`() {
+        val tileToPlace = PrisonerTile(
+            11, PrisonerTrait.FEMALE, PrisonerType.RED
+        )
+
+        // Testing if placed on valid location
+        val tilePlaced = rootService.playerActionService.placePrisoner(
+            tileToPlace, x = 2, y = 2
+        )
+
+        assert(tilePlaced.first) { "Placing a Tile did not succeed" }
+        assertNull(tilePlaced.second)
+        assert(testRefreshable.refreshScoreStatsCalled)
+        assert(testRefreshable.refreshPrisonCalled)
+
+        // Testing if placing on wrong postion:
+        val invalidTilePlaced = rootService.playerActionService.placePrisoner(
+            tileToPlace, x = 100, y = 100
+        )
+        assert(!invalidTilePlaced.first)
+        assertNull(invalidTilePlaced.second)
+    }
+
+    /**
+     * Tests whether placePrisoner gives out boni if applicable.
+     */
+    @Test
+    fun `test if placePrisoner gives out boni`() {
+        val game = rootService.currentGame!!
+        val currentPlayer = game.players[game.currentPlayer]
+
+        val malePrisoner = PrisonerTile(13, PrisonerTrait.MALE, PrisonerType.RED)
+        val femalePrisoner = PrisonerTile(11, PrisonerTrait.FEMALE, PrisonerType.RED)
+
+        val maleResult = rootService.playerActionService.placePrisoner(malePrisoner, 2, 2)
+        val femaleResult = rootService.playerActionService.placePrisoner(femalePrisoner, 3, 2)
+
+        // First placement should result in no child
+        assert(maleResult.first)
+        assertNull(maleResult.second)
+
+        // Second placement should result in a child of a red prisoner
+        assert(femaleResult.first)
+        assertSame(PrisonerTrait.BABY, femaleResult.second?.prisonerTrait)
+        assert(femaleResult.second?.id in setOf(22, 23))
+
+        // both parents should be infertile now
+        assert(!malePrisoner.breedable)
+        assert(!femalePrisoner.breedable)
+
+        // Placing the baby should also yield a coin bonus
+        val oldCoins = currentPlayer.coins
+        val babyResult = rootService.playerActionService.placePrisoner(
+            femaleResult.second!!, 2, 3
+        )
+        assert(babyResult.first)
+        assertNull(babyResult.second)
+        assertSame(oldCoins + 1, currentPlayer.coins)
+
+        // Placing two more tiles for the employee bonus:
+        val firstTile = PrisonerTile(15, PrisonerTrait.NONE, PrisonerType.RED)
+        val secondTile = PrisonerTile(16, PrisonerTrait.NONE, PrisonerType.RED)
+        rootService.playerActionService.placePrisoner(firstTile, 4, 2)
+        rootService.playerActionService.placePrisoner(secondTile, 4, 3)
+        assert(currentPlayer.board.getPrisonYard(-101, -101) is GuardTile)
     }
 
     @Test

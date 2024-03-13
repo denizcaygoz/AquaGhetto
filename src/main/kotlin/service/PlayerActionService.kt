@@ -91,9 +91,10 @@ class PlayerActionService(private val rootService: RootService): AbstractRefresh
      * @param tile The PrisonerTile to be placed.
      * @param x The x-coordinate on the game board.
      * @param y The y-coordinate on the game board.
-     * @return A Pair indicating the success of the placement and the placed PrisonerTile (or null if unsuccessful or no special conditions met).
+     * @return A Pair indicating the success of the placement and a [PrisonerTile] with a [PrisonerTrait.BABY], if applicable.
      *   - First value (Boolean): True if the placement is successful, false otherwise.
-     *   - Second value (PrisonerTile?): The placed PrisonerTile or null if unsuccessful or no special conditions met.
+     *   - Second value (PrisonerTile?): A [PrisonerTile] with [PrisonerTrait.BABY] if a baby can be conceived,
+     *   otherwise null.
      *
      * @throws IllegalStateException if the game has not been started yet.
      */
@@ -103,43 +104,40 @@ class PlayerActionService(private val rootService: RootService): AbstractRefresh
         val player = game.players[game.currentPlayer]
         val board = player.board
 
+        val result: Pair<Boolean, PrisonerTile?>
+
         // Validate the tile placement
         if (rootService.validationService.validateTilePlacement(tile, x, y)) {
             // Set the PrisonerTile on the game board
             board.setPrisonYard(x, y, tile)
 
             // Calculate the count of the specified PrisonerType in the player's PrisonYard
-            val count = rootService.evaluationService.getPrisonerTypeCount(player).get(tile.prisonerType)
+            val count = rootService.evaluationService.getPrisonerTypeCount(player).get(tile.prisonerType)!!
+            // Never null because of setPrisonYard
 
             // Evaluate scoring conditions based on the count
-            if (count == null) {
-                // Return indicating successful placement, but no special conditions met
-                return Pair(true, null)
-            } else {
-                if (count % 3 == 0 && count != 0) {
-                    // Increment player's coins for every third tile, excluding counts of 0
-                    player.coins++
-                }
-                if (count % 5 == 0 && count != 0) {
-                    // Place a GuardTile at (-101, -101) and return it for every fifth tile, excluding count of 0
-                    board.setPrisonYard(-101, -101, GuardTile())
-                    // Return indicating successful placement with the GuardTile
-                    return Pair(true,
-                        rootService.playerActionService.checkBabyPrisoner()
-                            ?.let { rootService.boardService.getBabyTile(it) })
-                }
+            if (count % 3 == 0 && count != 0) {
+                // Increment player's coins for every third tile, excluding counts of 0
+                player.coins++
+            }
+            if (count % 5 == 0 && count != 0) {
+                // Place a GuardTile at (-101, -101) and return it for every fifth tile, excluding count of 0
+                board.setPrisonYard(-101, -101, GuardTile())
+            }
+            // Checking for baby prisoner
+            result = Pair(true,
+                rootService.playerActionService.checkBabyPrisoner()
+                    ?.let { rootService.boardService.getBabyTile(it) })
+
+            // Refresh score statistics and the prison layout
+            onAllRefreshables {
+                refreshScoreStats()
+                refreshPrison(tile, x, y)
             }
 
-            // Return indicating successful placement, but no special conditions met
-            return Pair(false, rootService.playerActionService.checkBabyPrisoner()
-                ?.let { rootService.boardService.getBabyTile(it) })
+            return result
         }
 
-        // Refresh score statistics and the prison layout
-        onAllRefreshables {
-            refreshScoreStats()
-            refreshPrison(tile, x, y)
-        }
 
         // Return indicating unsuccessful placement
         return Pair(false, null)
