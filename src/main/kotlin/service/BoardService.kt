@@ -44,14 +44,14 @@ class BoardService(private val rootService: RootService): AbstractRefreshingServ
         val typesNotAdd = mutableListOf<PrisonerType>()
 
         when (playerCount) {
-            2 -> {
+            4 -> {
                 typesNotAdd.add(PrisonerType.CYAN)
             }
             3 -> {
                 typesNotAdd.add(PrisonerType.CYAN)
                 typesNotAdd.add(PrisonerType.BROWN)
             }
-            4 -> {
+            2 -> {
                 typesNotAdd.add(PrisonerType.CYAN)
                 typesNotAdd.add(PrisonerType.BROWN)
                 typesNotAdd.add(PrisonerType.PURPLE)
