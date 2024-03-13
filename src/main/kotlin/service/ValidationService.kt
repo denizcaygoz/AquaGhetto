@@ -41,7 +41,7 @@ class ValidationService(private val rootService: RootService): AbstractRefreshin
             val tileCheck = board.getPrisonYard(x + offset.first, y + offset.second)
             if (tileCheck is PrisonerTile && (tileCheck.prisonerType != tile.prisonerType)) {
                 return false
-            } else if (tileCheck is PrisonerTile && offset.first != 0 && offset.second != 0) {
+            } else if (tileCheck is PrisonerTile) {
                 surroundingSameType = true
             }
         }
