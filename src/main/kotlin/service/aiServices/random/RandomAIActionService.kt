@@ -26,8 +26,8 @@ class RandomAIActionService(private val rootService: RootService, private val ra
      * @param canTakeBuses a list of possible buses
      * @param game the current instance of AquaGhetto
      */
-    fun addTileToPrisonBus(canTakeBuses: List<PrisonBus>, game: AquaGhetto) {
-        val tileToPlace = if (game.drawStack.isNotEmpty()) game.drawStack.pop() else game.finalStack.pop()
+    fun addTileToPrisonBus(canTakeBuses: List<PrisonBus>) {
+        val tileToPlace = rootService.playerActionService.drawCard()
         val busToPlaceOn = canTakeBuses[ran.nextInt(canTakeBuses.size)]
         rootService.playerActionService.addTileToPrisonBus(tileToPlace, busToPlaceOn)
     }
