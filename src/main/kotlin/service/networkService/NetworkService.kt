@@ -292,7 +292,7 @@ class NetworkService(private val rootService: RootService): AbstractRefreshingSe
         checkNotNull(game) { "somehow the current game doesnt exist." }
         check(busId in 0 until  game.prisonBuses.size) { "there is no bus at this index" }
 
-        val tileToAdd: Tile = rootService.playerActionService.drawCard(game.drawStack)
+        val tileToAdd: Tile = rootService.playerActionService.drawCard()
         val prisonBus: PrisonBus = game.prisonBuses[busId]
 
         rootService.playerActionService.addTileToPrisonBus(tileToAdd, prisonBus)
