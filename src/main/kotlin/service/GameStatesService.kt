@@ -93,6 +93,7 @@ class GameStatesService(private val rootService: RootService): AbstractRefreshin
         val gzipOut = GZIPOutputStream(fileOut)
         val objOut = ObjectOutputStream(gzipOut)
         objOut.writeObject(aquaGhetto)
+        objOut.close()
     }
 
     /**
