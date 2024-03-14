@@ -5,6 +5,9 @@ import entity.enums.PrisonerTrait
 import entity.enums.PrisonerType
 import entity.tileTypes.GuardTile
 import entity.tileTypes.PrisonerTile
+import entity.tileTypes.Tile
+import org.opentest4j.AssertionFailedError
+import java.lang.IndexOutOfBoundsException
 import kotlin.test.*
 
 class PlayerActionServiceTest {
@@ -276,5 +279,92 @@ class PlayerActionServiceTest {
 
         assertFalse(result.first)
         assertNull(result.second)
+    }
+
+
+    /**
+     * This function tests to take a bus from the middle successfully by a player.
+     */
+    @Test
+    fun `test attempting to take a bus successfully`() {
+        val game = rootService.currentGame
+        checkNotNull(game)
+        val currentPlayer = game.players[game.currentPlayer]
+
+        //initial prison bus number are saved.
+        val prisonBuses = game.prisonBuses.size
+        //Player should not have a bus since he hasn't taken a bus yet.
+        assertEquals(null,currentPlayer.takenBus, "In the inital state Player do not have a Bus.")
+
+        val tile = game.drawStack.pop()
+        //saving a tile to prison bus the player want to take.
+        game.prisonBuses[0].tiles[2] = tile
+        //take prison bus action is executed.
+        rootService.playerActionService.takePrisonBus(game.prisonBuses[0])
+        //Busses on the mid should be decremented by 1.
+        assertEquals(prisonBuses-1,game.prisonBuses.size,"1 Bus taken from the mid by Player.")
+        //we're excepting that player takes a bus.
+        checkNotNull(currentPlayer.takenBus)
+    }
+
+
+    /**
+     * This function tests player trying to take a bus when there is no bus on the mid.
+     */
+    @Test
+    fun `test attempting to take a bus when there are no buses available`() {
+        val game = rootService.currentGame
+        checkNotNull(game)
+        val currentPlayer = game.players[game.currentPlayer]
+
+        //to clear prison busses on the mid.
+        game.prisonBuses.clear()
+
+        //Player should not have a bus since he hasn't taken a bus yet.
+        assertEquals(null,currentPlayer.takenBus, "In the inital state Player do not have a Bus.")
+
+        assertFailsWith<IndexOutOfBoundsException> {
+            rootService.playerActionService.takePrisonBus(game.prisonBuses[0])
+        }
+    }
+
+    /**
+     * tests to take a bus when there is no tile on it.
+     */
+    @Test
+    fun `test attempting to take a bus with no tiles`() {
+        val game = rootService.currentGame
+        checkNotNull(game)
+        val currentPlayer = game.players[game.currentPlayer]
+
+        assertEquals(null,currentPlayer.takenBus, "In the inital state Player do not have a Bus.")
+
+        assertFailsWith<IllegalArgumentException> {
+            rootService.playerActionService.takePrisonBus(game.prisonBuses[0])
+        }
+    }
+
+    /**
+     * tests the Player taking a bus while he has already a one.
+     */
+    @Test
+    fun `test attempting to take a bus when already having one`() {
+        val game = rootService.currentGame
+        checkNotNull(game)
+        val currentPlayer = game.players[game.currentPlayer]
+
+        //assigning the second bus as player's bus.
+        currentPlayer.takenBus = game.prisonBuses[1]
+
+        //Player should have a bus.
+        checkNotNull(currentPlayer.takenBus)
+
+        val tile = game.drawStack.pop()
+        //saving a tile to prison bus the player want to take.
+        game.prisonBuses[0].tiles[2] = tile
+
+        assertFailsWith<java.lang.IllegalArgumentException> {
+            rootService.playerActionService.takePrisonBus(game.prisonBuses[0])
+        }
     }
 }
