@@ -33,7 +33,6 @@ class AIService(private val rootService: RootService): AbstractRefreshingService
      * @throws IllegalArgumentException if the provided player is not the current player
      */
     fun makeTurn(player: Player, delay: Int) {
-        println("Play turn")
         /*get the time when function is called*/
         val startTime = System.currentTimeMillis()
 
