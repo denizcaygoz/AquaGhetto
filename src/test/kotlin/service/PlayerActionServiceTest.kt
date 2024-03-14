@@ -367,4 +367,13 @@ class PlayerActionServiceTest {
             rootService.playerActionService.takePrisonBus(game.prisonBuses[0])
         }
     }
+
+    @Test
+    fun `add valid tile to prison bus with empty slot`() {
+        // Set up your game, players, and prison bus
+        // Add a valid tile to the bus
+        // Assert that the tile was successfully added
+    }
+
+
 }
