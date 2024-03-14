@@ -17,15 +17,19 @@ import kotlin.test.*
 
 class BoardServiceTest {
 
+    // Declaring necessary variables
     private lateinit var boardService: BoardService
     private lateinit var rootService: RootService
     private lateinit var gameStatesService: GameStatesService
     private var expected: AquaGhetto? = null
 
+    // Setting up initial conditions before each test
     @BeforeTest
     fun setUp() {
+        // Initializing services
         rootService = RootService()
         boardService = BoardService(rootService)
+        // Creating player list for game initialization
         val players = mutableListOf(
             Pair("P1", PlayerType.PLAYER),
             Pair("P2", PlayerType.PLAYER),
@@ -33,11 +37,12 @@ class BoardServiceTest {
             Pair("P4", PlayerType.PLAYER)
 
         )
+        // Starting a new game with the given players
         rootService.gameService.startNewGame(players)
         gameStatesService = GameStatesService(rootService)
     }
 
-
+    // Test case for checking the creation of prison buses
     @Test
     fun testCreatePrisonBuses() {
         val buses = boardService.createPrisonBuses(3)
@@ -53,6 +58,7 @@ class BoardServiceTest {
         assertEquals(2, buses2[2].blockedSlots.count { it })
     }
 
+    // Test case for checking the creation of all tiles
     @Test
     fun testCreateAllTiles() {
         boardService.createAllTiles()
@@ -61,6 +67,7 @@ class BoardServiceTest {
         assertEquals(114, allTiles.size)
     }
 
+    // Test case for checking the retrieval of baby tile
     @Test
     fun getBabyTileTest(){
         val players = mutableListOf(
