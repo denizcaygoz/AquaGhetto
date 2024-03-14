@@ -373,10 +373,14 @@ class NetworkService(private val rootService: RootService): AbstractRefreshingSe
     }
 
     /**
-     * wo werden in der Message Coins gespeichert die auf dem Truck liegen?
-     * truck is dabei die position auf dem Truck
-     * tile id fangen bei 1 an daher tileId-1
-     * wenn tileId ist der index dann allTiles[tileID ] ansonsten allTiles[tileID -1]
+     * play the opponent's turn by handling the [TakeTruckMessage] sent through the server.
+     * placing all prisoners, children and workers on the given coordinates.
+     *
+     * @param message the message to handle
+     *
+     * @throws IllegalStateException if not currently expecting an opponent's turn
+     * @throws IllegalStateException if there is no game running
+     * @throws IllegalStateException if bus id is out of range
      **/
     fun receiveTakeTruck(message: TakeTruckMessage) {
         check(connectionState == ConnectionState.WAITING_FOR_TURN) {
@@ -453,12 +457,84 @@ class NetworkService(private val rootService: RootService): AbstractRefreshingSe
 
     }
 
+    /**
+     * send a [MoveCoworkerMessage] to the opponent
+     *
+     * @param srcX is the x position from which the worker is being moved
+     * @param srcY is the y position from which the worker is being moved
+     * @param destX is the x position to which the worker is being moved
+     * @param destY is the y position to which the worker is being moved
+     *
+     * @throws IllegalArgumentException if it's not currently my turn
+     * @throws IllegalStateException if there is no game running
+     */
     fun sendPlaceWorker(srcX: Int, srcY: Int, destX: Int, destY: Int ) {
+        require(connectionState == ConnectionState.PLAYING_MY_TURN) { "not my turn" }
 
+        val game = rootService.currentGame
+
+        checkNotNull(game) { "somehow the current game doesnt exist." }
+        /** determing jobEnum for soruce position **/
+        val start: WorkerTriple = when {
+            srcX == srcY && srcX == -102 -> { WorkerTriple(0, 0, JobEnum.MANAGER ) }
+            // where do they place them?
+            srcX == srcY && srcX == -103 -> { WorkerTriple(999, 999, JobEnum.CASHIER ) }
+            // where do they place them?
+            srcX == srcY && srcX == -104 -> { WorkerTriple(999, 999, JobEnum.KEEPER ) }
+            else -> { WorkerTriple(srcX, srcY, JobEnum.TRAINER ) }
+        }
+        /** determing jobEnum for destination position **/
+        val dest: WorkerTriple = when {
+            destX == destY && destX == -102 -> { WorkerTriple(0, 0, JobEnum.MANAGER ) }
+            // where do they place them?
+            destX == destY && destX == -103 -> { WorkerTriple(999, 999, JobEnum.CASHIER ) }
+            // where do they place them?
+            destX == destY && destX == -104 -> { WorkerTriple(999, 999, JobEnum.KEEPER ) }
+            else -> { WorkerTriple(srcX, srcY, JobEnum.TRAINER ) }
+        }
+        /**create TakeTruckMessage **/
+        val message = MoveCoworkerMessage(start, dest)
+        /**send message **/
+        client?.sendGameActionMessage(message)
     }
 
+    /**
+     * play the opponent's turn by handling the [MoveCoworkerMessage] sent through the server.
+     * transferring the workers to their given position.
+     *
+     * @param message the message to handle
+     *
+     * @throws IllegalStateException if not currently expecting an opponent's turn
+     * @throws IllegalStateException if there is no game running
+     **/
     fun receivePlaceWorker(message: MoveCoworkerMessage) {
+        check(connectionState == ConnectionState.WAITING_FOR_TURN) {
+            "currently not expecting an opponent's turn."
+        }
 
+        checkNotNull(rootService.currentGame) { "somehow the current game doesnt exist." }
+
+        val srcWorker: WorkerTriple = message.start
+        val destWorker: WorkerTriple = message.destination
+
+        var source: Pair<Int, Int> = Pair(0, 0)
+        var dest: Pair<Int, Int> = Pair(0, 0)
+        /** map src jobEnum to our magic numbers **/
+        source = when(srcWorker.jobEnum) {
+            JobEnum.MANAGER -> { Pair(-102, -102) }
+            JobEnum.CASHIER -> { Pair(-103, -103) }
+            JobEnum.KEEPER -> { Pair(-104, -104) }
+            JobEnum.TRAINER -> { Pair(srcWorker.x, srcWorker.y) }
+        }
+        /** map dest jobEnum to our magic numbers **/
+        dest = when(destWorker.jobEnum) {
+            JobEnum.MANAGER -> { Pair(-102, -102) }
+            JobEnum.CASHIER -> { Pair(-103, -103) }
+            JobEnum.KEEPER -> {Pair(-104, -104) }
+            JobEnum.TRAINER -> {Pair(srcWorker.x, srcWorker.y) }
+        }
+
+        rootService.playerActionService.moveEmployee(source.first, source.second, dest.first, dest.second)
     }
 
     fun sendMoveTile(playerName: String, tile: PrisonerTile, x: Int, y: Int){
