@@ -28,7 +28,7 @@ class SmartAI(val rootService: RootService, val player: Player) {
     /*ruft dann intern minMax auf und so*/
     /*mal schauen ob wir hier multithreading einbauen, mehr als ein rechner zur berechnung?*/
     fun makeTurn(game: AquaGhetto) {
-        val action = this.minMax(game, 10, true, 0)
+        val action = this.minMax(game, 10, 0, 0)
         this.executeAction(game, action)
     }
 
@@ -104,7 +104,7 @@ class SmartAI(val rootService: RootService, val player: Player) {
      * damit kann einfacher gesagt werden welche optimierungen weniger wege betrachten
      * kann später sonst auch gelöscht werden
      */
-    fun minMax(game: AquaGhetto, depth: Int, maximize: Boolean, actionsChecked: Int): AIAction {
+    fun minMax(game: AquaGhetto, depth: Int, maximize: Int, actionsChecked: Int): AIAction {
         if (depth == 0 || checkGameEnd(game)) { /*hier überprüfung ob maximale tiefe erreicht wurde oder spiel schon geendet hat*/
             return AIAction(false, evaluateGamePosition.evaluateCurrentPosition())
         }
@@ -125,14 +125,25 @@ class SmartAI(val rootService: RootService, val player: Player) {
         val scoreList = mutableListOf(scoreAddTileToPrisonBus, scoreMoveOwnPrisoner, scoreMoveEmployee,
             scoreBuyPrisoner, scoreFreePrisoner, scoreExpandPrison, scoreTakeBus)
 
-        val bestAction = this.getBestAction(maximize, scoreList)
+        val bestAction = this.getBestAction(maximize, scoreList, game)
 
         return bestAction
     }
 
-
-    private fun getBestAction(maximize: Boolean, actionList: List<AIAction>): AIAction {
-        return if (maximize) {
+    /**
+     * Function to get the best action depending on the current value of maximize
+     * If maximize % playerCount is 0 the value should be maximized, because this would be the turn
+     * of the AI, if maximize % playerCount is not 0 this would mean another AI/player is making this
+     * turn and the lowest possible value is taken (because we assume the other players are always making the
+     * best decision)
+     *
+     * @param maximize the player taking the turn, 0 is the AI making the turn
+     * @param actionList a list of possible actions the AI/player could make
+     * @param game the current game
+     * @return the action this AI/player should/would perform
+     */
+    private fun getBestAction(maximize: Int, actionList: List<AIAction> , game: AquaGhetto): AIAction {
+        return if ((maximize % game.players.size) == 0) {
             actionList.maxBy { action: AIAction ->  action.score}
         } else {
             actionList.minBy { action: AIAction ->  action.score}

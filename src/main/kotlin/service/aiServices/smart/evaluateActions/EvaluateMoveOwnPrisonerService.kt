@@ -7,7 +7,7 @@ import service.aiServices.smart.SmartAI
 
 class EvaluateMoveOwnPrisonerService(val smartAI: SmartAI) {
 
-    fun getScoreMoveOwnPrisoner(game: AquaGhetto, depth: Int, maximize: Boolean, amountActions: Int): ActionMovePrisoner {
+    fun getScoreMoveOwnPrisoner(game: AquaGhetto, depth: Int, maximize: Int, amountActions: Int): ActionMovePrisoner {
         return ActionMovePrisoner(false, 0, PlaceCard(Pair(0,0)))
     }
 
