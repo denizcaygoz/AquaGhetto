@@ -27,16 +27,22 @@ class PlayerActionService(private val rootService: RootService): AbstractRefresh
         checkNotNull(currentPlayer) { "Invalid current player." }
 
         // To check if the game has at least one prison bus available
-        require(game.prisonBuses.isEmpty()) {"No prison buses available."}
+        require(game.prisonBuses.isNotEmpty()) {"No prison buses available."}
 
         // To check if the current player has not taken a bus yet
-        require(currentPlayer.takenBus != null) {"Current player has already taken a bus."}
+        require(currentPlayer.takenBus == null) {"Current player has already taken a bus."}
 
         // To check tile is not an instance of GuardTile
-        require(tile is GuardTile) {"Cannot add a guard tile to a prison bus."}
+        require(tile !is GuardTile) {"Cannot add a guard tile to a prison bus."}
 
         // To check if there is at least one slot that is empty and not blocked
-        val emptyAndUnblockedIndex = prisonBus.tiles.indexOfFirst { it == null && !prisonBus.blockedSlots[prisonBus.tiles.indexOf(it)] }
+        var emptyAndUnblockedIndex = -1
+        for (index in prisonBus.tiles.indices) {
+            if (prisonBus.tiles[index] == null && !prisonBus.blockedSlots[index]) {
+                emptyAndUnblockedIndex = index
+                break
+            }
+        }
         require(emptyAndUnblockedIndex != -1) { "No empty slots available on the bus." }
 
         // Add the tile to the prison bus
@@ -45,7 +51,6 @@ class PlayerActionService(private val rootService: RootService): AbstractRefresh
         onAllRefreshables {
             refreshPrisonBus(prisonBus)
         }
-
     }
 
     fun takePrisonBus(prisonBus: PrisonBus) {
@@ -478,4 +483,5 @@ class PlayerActionService(private val rootService: RootService): AbstractRefresh
         val stackToDrawFrom = game.drawStack.ifEmpty { game.finalStack }
         return stackToDrawFrom.removeAt(0)
     }
+
 }
