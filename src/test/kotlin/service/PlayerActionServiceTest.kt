@@ -483,4 +483,28 @@ class PlayerActionServiceTest {
         actualTopCard = rootService.playerActionService.drawCard()
         assertEquals(finalStackTopCard, actualTopCard)
     }
+
+    /**
+     * Tests the functionality of freeing a prisoner.
+     * It verifies that when a player has sufficient coins and a prisoner in isolation,
+     * calling the freePrisoner() function reduces the player's coins by 2 and removes the prisoner from isolation.
+     */
+    @Test
+    fun testFreePrisoner() {
+        // Set up the game state
+        val game = rootService.currentGame!!
+        val currentPlayer = game.players[game.currentPlayer]
+        currentPlayer.coins = 5
+        currentPlayer.isolation.push(PrisonerTile(1, PrisonerTrait.MALE, PrisonerType.RED))
+
+        // Call the function under test
+        rootService.playerActionService.freePrisoner()
+
+        // Verify the expected behavior
+        assertEquals(3, currentPlayer.coins)
+        assertTrue(currentPlayer.isolation.isEmpty())
+    }
+
+
+
 }
