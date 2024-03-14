@@ -394,10 +394,129 @@ class NetworkService(private val rootService: RootService): AbstractRefreshingSe
         placeWorker(message.workerList)
     }
 
-    fun sendBuyExpansion(isBigExpansion: Boolean, x: Int, y: Int, rotation: Int) {}
+    /**
+     * send a [BuyExpansionMessage] to the opponent.
+     * when rotation is 0 it is the top left corner that is being sent.
+     *
+     * @param isBigExpansion is true when big expansion else false
+     * @param x is the x coordinate of expansion
+     * @param y is the y coordinate of expansion
+     * @param rotation is degree of the rotation
+     *
+     * @throws IllegalArgumentException if it's not currently my turn
+     * @throws IllegalStateException if there is no game running
+     */
+    fun sendBuyExpansion(isBigExpansion: Boolean, x: Int, y: Int, rotation: Int) {
+        require(connectionState == ConnectionState.PLAYING_MY_TURN) { "not my turn" }
 
+        val game = rootService.currentGame
+
+        checkNotNull(game) { "somehow the current game doesnt exist." }
+
+        val placementCoordinates: MutableList<PositionPair> = mutableListOf()
+        placementCoordinates.add(PositionPair(x,y))
+
+        if (isBigExpansion) {
+            placementCoordinates.add(PositionPair(x+1,y))
+            placementCoordinates.add(PositionPair(x,y-1))
+            placementCoordinates.add(PositionPair(x+1,y-1))
+        } else {
+            when(rotation) {
+                0 -> {
+                    placementCoordinates.add(PositionPair(x,y-1))
+                    placementCoordinates.add(PositionPair(x+1,y-1))
+                }
+                90 -> {
+                    placementCoordinates.add(PositionPair(x-1,y))
+                    placementCoordinates.add(PositionPair(x-1,y-1))
+                }
+                180 -> {
+                    placementCoordinates.add(PositionPair(x,y+1))
+                    placementCoordinates.add(PositionPair(x-1,y+1))
+                }
+                270 -> {
+                    placementCoordinates.add(PositionPair(x+1,y+1))
+                    placementCoordinates.add(PositionPair(x+1,y))
+                }
+            }
+
+        }
+
+        /**create TakeTruckMessage **/
+        val message = BuyExpansionMessage(
+            placementCoordinates.toList()
+        )
+        /**send message **/
+        client?.sendGameActionMessage(message)
+    }
+
+    /**
+     * play the opponent's turn by handling the [BuyExpansionMessage] sent through the server.
+     * placing the expansion on given coordinates.
+     *
+     * @param message the message to handle
+     *
+     * @throws IllegalStateException if not currently expecting an opponent's turn
+     * @throws IllegalStateException if there is no game running
+     * @throws IllegalArgumentException if the list has the wrong size
+     **/
     fun receiveBuyExpansion(message: BuyExpansionMessage) {
+        check(connectionState == ConnectionState.WAITING_FOR_TURN) {
+            "currently not expecting an opponent's turn."
+        }
 
+        val game = rootService.currentGame
+
+        checkNotNull(game) { "somehow the current game doesnt exist." }
+
+        val positions: MutableList<PositionPair> = message.positionList.toMutableList()
+
+        require(positions.size in  1 .. 4) { "there is no element in this list" }
+
+        val highest: Int = positions.maxOf { it.x + it.y }
+        val lowest: Int = positions.minOf { it.x + it.y }
+        val highestCandidates: List<PositionPair> = positions.filter { it.x + it.y == highest }
+        val lowestCandidates: List<PositionPair> = positions.filter { it.x + it.y == lowest }
+
+        if(message.positionList.size == 4) {
+            val point = highestCandidates[0]
+            rootService.playerActionService.expandPrisonGrid(
+                true, point.x-1, point.y, 0
+            )
+        } else {
+            when{
+                (highestCandidates.size == 2 && lowestCandidates.size == 1) -> {
+                    val point = lowestCandidates[0]
+                    rootService.playerActionService.expandPrisonGrid(
+                        false, point.x, point.y+1, 0
+                    )
+                }
+                (highest-lowest == 2) -> {
+                    positions.remove(lowestCandidates[0])
+                    positions.remove(highestCandidates[0])
+                    val point: PositionPair
+                    val rotation: Int
+                    if (positions[0].x < highestCandidates[0].x) {
+                        point = highestCandidates[0]
+                        rotation = 90
+
+                    } else {
+                        point = lowestCandidates[0]
+                        rotation = 180
+                    }
+
+                    rootService.playerActionService.expandPrisonGrid(
+                        false, point.x, point.y, rotation
+                    )
+                }
+                (highestCandidates.size == 1 && lowestCandidates.size == 2) -> {
+                    val point = highestCandidates[0]
+                    rootService.playerActionService.expandPrisonGrid(
+                        false, point.x-1, point.y, 270
+                    )
+                }
+            }
+        }
     }
 
     /**
