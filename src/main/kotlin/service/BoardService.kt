@@ -81,6 +81,35 @@ class BoardService(private val rootService: RootService): AbstractRefreshingServ
     }
 
     /**
+     * Returns a pair containing the amount of coin tiles in the game and a map containing
+     * the amount of remaining cardTypes in the game
+     * This information is known to all players (by checking what cards were removed from the drawStack)
+     * The information about the card type is not carried on
+     *
+     * @return a Pair containing the amount of coins and a map containing the amount of prisonerTypes
+     */
+    fun getCardsStillInGame(): Pair<Int, MutableMap<PrisonerType, Int>> {
+        val game = rootService.currentGame
+        checkNotNull(game) { "No running game." }
+
+        val allCardsLeft = mutableListOf<Tile>()
+        allCardsLeft.addAll(game.drawStack)
+        allCardsLeft.addAll(game.finalStack)
+
+        val map = mutableMapOf<PrisonerType,Int>()
+        var coins = 0
+
+        for (card in allCardsLeft) {
+            if (card is CoinTile) coins++
+            if (card !is PrisonerTile) continue
+            val current = map[card.prisonerType] ?: 0
+            map[card.prisonerType] = current + 1
+        }
+
+        return Pair(coins, map)
+    }
+
+    /**
      * Creates a list of prisonBuses depending on the amount of players
      * 5, 4 or 3 players -> same amount of buses no slots blocked
      * 2 -> 3 buses, one slot blocked, two slots blocked, no slot blocked
