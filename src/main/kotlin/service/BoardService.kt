@@ -37,8 +37,8 @@ class BoardService(private val rootService: RootService): AbstractRefreshingServ
         val game = rootService.currentGame
         checkNotNull(game) { "No running game." }
 
-        require(game.allTiles.size == 114) {"Not all cards are on the allTiles stack. Call createAllTiles first."}
-
+        check(game.allTiles.size == 114) {"Not all cards are on the allTiles stack. Call createAllTiles first."}
+        check(playerCount in 2..5) { "Not a valid amount of players."}
         val tilesInGame = mutableListOf<Tile>()
 
         val typesNotAdd = mutableListOf<PrisonerType>()

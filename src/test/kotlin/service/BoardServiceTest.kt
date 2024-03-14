@@ -1,17 +1,10 @@
-import entity.AquaGhetto
-import entity.PrisonBus
-import entity.tileTypes.*
-import entity.*
 import entity.enums.PlayerType
-import entity.enums.PrisonerTrait
 import entity.enums.PrisonerType
-import entity.tileTypes.CoinTile
 import entity.tileTypes.PrisonerTile
 import org.junit.jupiter.api.assertThrows
 import service.BoardService
 import service.GameStatesService
 import service.RootService
-import java.util.Stack
 import kotlin.test.BeforeTest
 import kotlin.test.*
 
@@ -21,7 +14,6 @@ class BoardServiceTest {
     private lateinit var boardService: BoardService
     private lateinit var rootService: RootService
     private lateinit var gameStatesService: GameStatesService
-    private var expected: AquaGhetto? = null
 
     // Setting up initial conditions before each test
     @BeforeTest
@@ -84,4 +76,36 @@ class BoardServiceTest {
 
     }
 
+    /**
+     * Test if the right PrisonerTypes from the game are removed
+     */
+    @Test
+    fun `test createDrawAndFinalStack`() {
+        // Testing if the animal cards are missing
+        val typesThatShouldBeDropped = listOf(
+            PrisonerType.CYAN, PrisonerType.BROWN, PrisonerType.PURPLE
+        )
+
+        for (playerCount in 2..4) {
+            val drawStacks = rootService.boardService.createStacks(playerCount)
+            assertFalse(drawStacks.first.any {
+                it is PrisonerTile && it.prisonerType in typesThatShouldBeDropped.take(5 - playerCount)
+            })
+            assertFalse(drawStacks.second.any {
+                it is PrisonerTile && it.prisonerType in typesThatShouldBeDropped.take(5 - playerCount)
+            })
+        }
+    }
+
+    /**
+     * Tests whether deck creation fails if an invalid player count was specified.
+     */
+    @Test
+    fun `test createDrawAndFinalStack failing`() {
+        val invalidPlayerCounts = listOf(0, 1, 6)
+        for (count in invalidPlayerCounts) {
+            val exception = assertThrows<IllegalStateException> { rootService.boardService.createStacks(count) }
+            assertEquals("Not a valid amount of players.", exception.message)
+        }
+    }
 }
