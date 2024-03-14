@@ -71,6 +71,10 @@ class GameService(private val rootService: RootService): AbstractRefreshingServi
             refreshAfterStartGame()
             refreshAfterNextTurn(game.players[game.currentPlayer])
         }
+
+        /*if the first player is an AI call the AI service*/
+        this.checkAITurn(game.players[game.currentPlayer], 1500)
+
     }
 
     /**

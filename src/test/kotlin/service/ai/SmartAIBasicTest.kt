@@ -16,27 +16,13 @@ class SmartAIBasicTest {
             Pair("P1", PlayerType.AI),
             Pair("P2", PlayerType.AI)
         )
-        printStackSize()
+
         rootService.gameService.startNewGame(players)
         val game = rootService.currentGame
         require(game != null)
-
+        println("Last DrawStack: ${game.drawStack.size}    FinalStack: ${game.finalStack.size}")
     }
 
-    fun printStackSize() {
-        thread {
-            println("ABC")
-            while (true) {
-                //println("1")
-                Thread.sleep(1)
-                //println("2")
-                val game = rootService.currentGame ?: continue
-                //println("3")
-                println("DrawStack: ${game.drawStack.size}    FinalStack: ${game.finalStack.size}")
-                //println("4")
-            }
-        }
-    }
 
 
 
