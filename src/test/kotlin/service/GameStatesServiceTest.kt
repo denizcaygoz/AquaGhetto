@@ -3,12 +3,15 @@ import kotlin.test.*
 import entity.enums.PlayerType
 import org.junit.jupiter.api.assertThrows
 import service.*
+import java.io.File
 
 class GameStatesServiceTest {
     val rootService = RootService()
         @Test
         fun loadInvalidGameTest(){
             // Test when no saved file exists
+            val saveFile = File("saveFile")
+            if (saveFile.exists()) saveFile.delete()
             val game1 = assertThrows<IllegalStateException> { rootService.gameStatesService.loadGame() }
             assertEquals( "There is no game to load", game1.message)
         }
