@@ -3,7 +3,6 @@ package service
 import entity.AquaGhetto
 import java.io.File
 import java.io.FileInputStream
-import java.io.FileNotFoundException
 import java.io.FileOutputStream
 import java.io.IOException
 import java.io.ObjectInputStream
@@ -102,7 +101,6 @@ class GameStatesService(private val rootService: RootService): AbstractRefreshin
      * set the current game to the loaded one and does not call a refresh.
      *
      * @return an instance of AquaGhetto saved in the file "saveFile"
-     * @param aquaGhetto the instance to save
      * @throws IOException see [FileInputStream], [GZIPInputStream], [ObjectInputStream]
      * @throws SecurityException see [FileInputStream], [ObjectInputStream]
      * @throws NullPointerException see [ObjectInputStream], [File]
