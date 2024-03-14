@@ -8,6 +8,7 @@ import entity.tileTypes.PrisonerTile
 import entity.tileTypes.Tile
 import org.opentest4j.AssertionFailedError
 import java.lang.IndexOutOfBoundsException
+import java.util.*
 import kotlin.test.*
 
 class PlayerActionServiceTest {
@@ -375,5 +376,17 @@ class PlayerActionServiceTest {
         // Assert that the tile was successfully added
     }
 
+    @Test
+    fun `draw card test`() {
+        val game = rootService.currentGame!!
 
+        val topCard = game.drawStack[0]
+        var actualTopCard = rootService.playerActionService.drawCard()
+        assertEquals(topCard, actualTopCard)
+
+        game.drawStack = Stack()
+        val finalStackTopCard = game.finalStack[0]
+        actualTopCard = rootService.playerActionService.drawCard()
+        assertEquals(finalStackTopCard, actualTopCard)
+    }
 }
