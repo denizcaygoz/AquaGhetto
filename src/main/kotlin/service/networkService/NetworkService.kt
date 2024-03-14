@@ -323,50 +323,20 @@ class NetworkService(private val rootService: RootService): AbstractRefreshingSe
 
         var selectedPrisonBus: Int = 0
         val game = rootService.currentGame
-        val animalList: MutableList<AnimalTriple> = mutableListOf()
-        val childrenList: MutableList<OffspringTriple> = mutableListOf()
-        val workerList: MutableList<WorkerTriple> = mutableListOf()
 
         checkNotNull(game) { "somehow the current game doesnt exist." }
         /** get the id from given bus **/
         game.prisonBuses.forEachIndexed { index, bus ->
             if (bus == prisonBus) { selectedPrisonBus = index }
         }
-        /** get all tiles and positions of tiles being placed **/
-        prisoners.forEach { prisoner ->
-            if (prisoner.first == prisoner.second && prisoner.first == -100) { //place on depot
-                animalList.add(AnimalTriple(0, 0, prisoner.third))
-            } else { //place on field
-                animalList.add(AnimalTriple(prisoner.first, prisoner.second, prisoner.third))
-            }
-        }
-        /** get all children and positions of tiles being placed **/
-        children.forEach { child ->
-            if (child.first == child.second && child.first == -100) { //place on depot
-                childrenList.add(OffspringTriple(0, 0, child.third.id))
-            } else {
-                childrenList.add(OffspringTriple(child.first, child.second, child.third.id))
-            }
-        }
-        /** get all workers and positions of workers being placed **/
-        workers.forEach { child ->
-            if (child.first == child.second) {
-                when(child.first) {
-                    -102 -> { workerList.add(WorkerTriple(0, 0, JobEnum.MANAGER )) }
-                    // where do they place them?
-                    -103 -> { workerList.add(WorkerTriple(999, 999, JobEnum.CASHIER )) }
-                    // where do they place them?
-                    -104 -> { workerList.add(WorkerTriple(0, 0, JobEnum.KEEPER )) }
-                    else -> { workerList.add(WorkerTriple(child.first, child.second, JobEnum.TRAINER )) }
-                }
-            }
-        }
+
+        val listsToSend = prepareLists()
         /**create TakeTruckMessage **/
         val message = TakeTruckMessage(
             selectedPrisonBus,
-            animalList.toList(),
-            childrenList.toList(),
-            workerList.toList()
+            listsToSend.first.toList(),
+            listsToSend.second.toList(),
+            listsToSend.third.toList()
         )
         /**send message **/
         client?.sendGameActionMessage(message)
@@ -420,35 +390,8 @@ class NetworkService(private val rootService: RootService): AbstractRefreshingSe
             if (tile is CoinTile) { currentPlayer.coins += 1 }
         }
 
-        /** handle children and place them **/
-        message.offspringList.forEach { offsprings ->
-            val childToPlace: Tile = game.allTiles[offsprings.tileId-1]
-            require(childToPlace is PrisonerTile) { "the given tile is not a Prisoner" }
-
-            if (offsprings.x == 0 && offsprings.y == 0) {
-                rootService.playerActionService.placePrisoner(childToPlace, -100, -100)
-            } else {
-                rootService.playerActionService.placePrisoner(childToPlace, offsprings.x, offsprings.y)
-            }
-        }
-
-        /** handle workers and place them **/
-        message.workerList.forEach { workers ->
-            when(workers.jobEnum){
-                JobEnum.MANAGER -> { rootService.playerActionService.moveEmployee(
-                        -102, -102, -102, -102 )
-                }
-                JobEnum.CASHIER -> { rootService.playerActionService.moveEmployee(
-                        -103, -103, -103, -103 )
-                }
-                JobEnum.KEEPER -> { rootService.playerActionService.moveEmployee(
-                        -104, -104, -104, -104 )
-                }
-                JobEnum.TRAINER -> { rootService.playerActionService.moveEmployee(
-                        -101, -101, workers.x, workers.y )
-                }
-            }
-        }
+        placeChildren(message.offspringList)
+        placeWorker(message.workerList)
     }
 
     fun sendBuyExpansion(isBigExpansion: Boolean, x: Int, y: Int, rotation: Int) {}
@@ -537,12 +480,74 @@ class NetworkService(private val rootService: RootService): AbstractRefreshingSe
         rootService.playerActionService.moveEmployee(source.first, source.second, dest.first, dest.second)
     }
 
-    fun sendMoveTile(playerName: String, tile: PrisonerTile, x: Int, y: Int){
+    /**
+     * send a [MoveTileMessage] to the opponent
+     *
+     * @param playerName is the name of the player from which a prisoner is being taken
+     * @param x is the x position to which the prisoner is being moved
+     * @param y is the y position to which the prisoner is being moved
+     *
+     * @throws IllegalArgumentException if it's not currently my turn
+     * @throws IllegalStateException if there is no game running
+     */
+    fun sendMoveTile(playerName: String, x: Int, y: Int){
+        require(connectionState == ConnectionState.PLAYING_MY_TURN) { "not my turn" }
 
+        val game = rootService.currentGame
+
+        checkNotNull(game) { "somehow the current game doesnt exist." }
+
+        val listsToSend = prepareLists()
+
+        /**create TakeTruckMessage **/
+        val message = MoveTileMessage(
+            playerName,
+            PositionPair(x,y),
+            listsToSend.second.toList(),
+            listsToSend.third.toList()
+        )
+        /**send message **/
+        client?.sendGameActionMessage(message)
     }
 
+    /**
+     * play the opponent's turn by handling the [MoveTileMessage] sent through the server.
+     * transferring the workers to their given position.
+     *
+     * @param message the message to handle
+     *
+     * @throws IllegalStateException if not currently expecting an opponent's turn
+     * @throws IllegalStateException if there is no game running
+     **/
     fun receiveMoveTile(message: MoveTileMessage){
+        check(connectionState == ConnectionState.WAITING_FOR_TURN) {
+            "currently not expecting an opponent's turn."
+        }
 
+        val game = rootService.currentGame
+        checkNotNull(game) { "somehow the current game doesnt exist." }
+
+        val currentPlayer: Player = game.players[game.currentPlayer]
+        val fromPlayer: Player = game.players.filter { it.name == message.playerName }[0]
+        val posX: Int = message.position.x
+        val posY: Int = message.position.y
+        val dest: Pair<Int, Int> = if (posX == posY && posY == 0) Pair(-100,-100) else Pair(posX, posY)
+
+        if (message.playerName == currentPlayer.name) {
+            rootService.playerActionService.movePrisonerToPrisonYard(
+                posX,
+                posY
+            )
+        } else {
+            rootService.playerActionService.buyPrisonerFromOtherIsolation(
+                fromPlayer,
+                dest.first,
+                dest.second
+            )
+        }
+
+        placeChildren(message.offspringList)
+        placeWorker(message.workerList)
     }
 
     fun sendDiscard(id: Int){}
@@ -576,5 +581,112 @@ class NetworkService(private val rootService: RootService): AbstractRefreshingSe
      * [increaseWorkers] adds a new worker element to the prisoners list.
      **/
     fun increaseWorkers(worker: Triple<Int, Int, GuardTile>) { workers.add(worker) }
+
+    /**
+     * [resetLists] resets all network list.
+     **/
+    private fun resetLists() {
+        prisoners.clear()
+        children.clear()
+        workers.clear()
+    }
+
+    /**
+     * [prepareLists] transforms all elements from network mutable lists to list
+     * that can bei send to another network player.
+     *
+     * @return a triple that holds lists of animals (first),
+     * list of offsprings (second), list of workers (third)
+     **/
+    private fun prepareLists():
+            Triple<MutableList<AnimalTriple>,
+            MutableList<OffspringTriple>,
+            MutableList<WorkerTriple>>
+    {
+        val animalList: MutableList<AnimalTriple> = mutableListOf()
+        val childrenList: MutableList<OffspringTriple> = mutableListOf()
+        val workerList: MutableList<WorkerTriple> = mutableListOf()
+        /** get all tiles and positions of tiles being placed **/
+        prisoners.forEach { prisoner ->
+            if (prisoner.first == prisoner.second && prisoner.first == -100) { //place on depot
+                animalList.add(AnimalTriple(0, 0, prisoner.third))
+            } else { //place on field
+                animalList.add(AnimalTriple(prisoner.first, prisoner.second, prisoner.third))
+            }
+        }
+        /** get all children and positions of tiles being placed **/
+        children.forEach { child ->
+            if (child.first == child.second && child.first == -100) { //place on depot
+                childrenList.add(OffspringTriple(0, 0, child.third.id))
+            } else {
+                childrenList.add(OffspringTriple(child.first, child.second, child.third.id))
+            }
+        }
+        /** get all workers and positions of workers being placed **/
+        workers.forEach { worker ->
+            if (worker.first == worker.second) {
+                when(worker.first) {
+                    -102 -> { workerList.add(WorkerTriple(0, 0, JobEnum.MANAGER )) }
+                    // where do they place them?
+                    -103 -> { workerList.add(WorkerTriple(999, 999, JobEnum.CASHIER )) }
+                    // where do they place them?
+                    -104 -> { workerList.add(WorkerTriple(999, 999, JobEnum.KEEPER )) }
+                    else -> { workerList.add(WorkerTriple(worker.first, worker.second, JobEnum.TRAINER )) }
+                }
+            }
+        }
+
+        return Triple(animalList, childrenList, workerList)
+    }
+
+    /**
+     * [placeChildren] places the children given in the offspringList.
+     *
+     * @param offspringList is a list that holds coordinates for all children to be placed
+     *
+     * @throws IllegalStateException when no game is running
+     **/
+    private fun placeChildren(offspringList: List<OffspringTriple>) {
+        val game = rootService.currentGame
+        checkNotNull(game) { "somehow the current game doesnt exist." }
+        /** handle children and place them **/
+        offspringList.forEach { offsprings ->
+            val childToPlace: Tile = game.allTiles[offsprings.tileId-1]
+            require(childToPlace is PrisonerTile) { "the given tile is not a Prisoner" }
+
+            if (offsprings.x == 0 && offsprings.y == 0) {
+                rootService.playerActionService.placePrisoner(childToPlace, -100, -100)
+            } else {
+                rootService.playerActionService.placePrisoner(childToPlace, offsprings.x, offsprings.y)
+            }
+        }
+    }
+
+    /**
+     * [placeWorker] places the workers given in the workerList.
+     *
+     * @param workerList is a list that holds coordinates for all workers to be placed
+     *
+     * @throws IllegalStateException when no game is running
+     **/
+    private fun placeWorker(workerList: List<WorkerTriple>) {
+        /** handle workers and place them **/
+        workerList.forEach { workers ->
+            when(workers.jobEnum){
+                JobEnum.MANAGER -> { rootService.playerActionService.moveEmployee(
+                    -102, -102, -102, -102 )
+                }
+                JobEnum.CASHIER -> { rootService.playerActionService.moveEmployee(
+                    -103, -103, -103, -103 )
+                }
+                JobEnum.KEEPER -> { rootService.playerActionService.moveEmployee(
+                    -104, -104, -104, -104 )
+                }
+                JobEnum.TRAINER -> { rootService.playerActionService.moveEmployee(
+                    -101, -101, workers.x, workers.y )
+                }
+            }
+        }
+    }
 
 }
