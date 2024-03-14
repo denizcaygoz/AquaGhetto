@@ -1,20 +1,16 @@
 package service.networkService
 
-import edu.udo.cs.sopra.ntf.AddTileToTruckMessage
+import edu.udo.cs.sopra.ntf.*
 import entity.Player
 import entity.PrisonBus
 import entity.tileTypes.PrisonerTile
 import entity.tileTypes.Tile
 import service.AbstractRefreshingService
 import service.RootService
-import edu.udo.cs.sopra.ntf.InitGameMessage
-import edu.udo.cs.sopra.ntf.TakeTruckMessage
-import edu.udo.cs.sopra.ntf.MoveTileMessage
-import edu.udo.cs.sopra.ntf.BuyExpansionMessage
-import edu.udo.cs.sopra.ntf.MoveCoworkerMessage
-import edu.udo.cs.sopra.ntf.DiscardMessage
 import entity.AquaGhetto
 import entity.enums.PlayerType
+import entity.tileTypes.CoinTile
+import entity.tileTypes.GuardTile
 import java.util.*
 
 class NetworkService(private val rootService: RootService): AbstractRefreshingService() {
@@ -36,6 +32,13 @@ class NetworkService(private val rootService: RootService): AbstractRefreshingSe
      */
     var connectionState: ConnectionState = ConnectionState.DISCONNECTED
         private set
+
+    /**
+     * lists to hold elements that need to be sent when taking a bus
+     **/
+    val prisoners: MutableList<Triple<Int, Int, Int>> = mutableListOf()
+    val children: MutableList<Triple<Int, Int, Tile>> = mutableListOf()
+    val workers: MutableList<Triple<Int, Int, GuardTile>> = mutableListOf()
 
     /**
      * Connects to server, sets the [NetworkService.client] if successful and returns `true` on success.
@@ -257,6 +260,14 @@ class NetworkService(private val rootService: RootService): AbstractRefreshingSe
         updateConnectionState(ConnectionState.WAITING_FOR_HOST_CONFIRMATION)
     }
 
+    /**
+     * send a [AddTileToTruckMessage] to the opponent
+     *
+     * @param prisonBus is the prison bus where the tile is being placed
+     *
+     * @throws IllegalArgumentException if it's not currently my turn
+     * @throws IllegalStateException if there is no game running
+     */
     fun sendAddTileToTruck(prisonBus: PrisonBus) {
         require(connectionState == ConnectionState.PLAYING_MY_TURN) { "not my turn" }
 
@@ -279,8 +290,9 @@ class NetworkService(private val rootService: RootService): AbstractRefreshingSe
      * @param message the message to handle
      *
      * @throws IllegalStateException if not currently expecting an opponent's turn
+     * @throws IllegalStateException if there is no game running
+     * @throws IllegalStateException if bus id is out of range
      */
-
     fun receiveAddTileToTruck(message: AddTileToTruckMessage) {
         check(connectionState == ConnectionState.WAITING_FOR_TURN) {
             "currently not expecting an opponent's turn."
@@ -298,10 +310,141 @@ class NetworkService(private val rootService: RootService): AbstractRefreshingSe
         rootService.playerActionService.addTileToPrisonBus(tileToAdd, prisonBus)
     }
 
-    fun sendTakeTruck(prisonBus: PrisonBus, bonuses: MutableList<Tile>) {}
+    /**
+     * send a [TakeTruckMessage] to the opponent
+     *
+     * @param prisonBus is the prison bus that is being taken
+     *
+     * @throws IllegalArgumentException if it's not currently my turn
+     * @throws IllegalStateException if there is no game running
+     */
+    fun sendTakeTruck(prisonBus: PrisonBus) {
+        require(connectionState == ConnectionState.PLAYING_MY_TURN) { "not my turn" }
 
+        var selectedPrisonBus: Int = 0
+        val game = rootService.currentGame
+        val animalList: MutableList<AnimalTriple> = mutableListOf()
+        val childrenList: MutableList<OffspringTriple> = mutableListOf()
+        val workerList: MutableList<WorkerTriple> = mutableListOf()
+
+        checkNotNull(game) { "somehow the current game doesnt exist." }
+        /** get the id from given bus **/
+        game.prisonBuses.forEachIndexed { index, bus ->
+            if (bus == prisonBus) { selectedPrisonBus = index }
+        }
+        /** get all tiles and positions of tiles being placed **/
+        prisoners.forEach { prisoner ->
+            if (prisoner.first == prisoner.second && prisoner.first == -100) { //place on depot
+                animalList.add(AnimalTriple(0, 0, prisoner.third))
+            } else { //place on field
+                animalList.add(AnimalTriple(prisoner.first, prisoner.second, prisoner.third))
+            }
+        }
+        /** get all children and positions of tiles being placed **/
+        children.forEach { child ->
+            if (child.first == child.second && child.first == -100) { //place on depot
+                childrenList.add(OffspringTriple(0, 0, child.third.id))
+            } else {
+                childrenList.add(OffspringTriple(child.first, child.second, child.third.id))
+            }
+        }
+        /** get all workers and positions of workers being placed **/
+        workers.forEach { child ->
+            if (child.first == child.second) {
+                when(child.first) {
+                    -102 -> { workerList.add(WorkerTriple(0, 0, JobEnum.MANAGER )) }
+                    // where do they place them?
+                    -103 -> { workerList.add(WorkerTriple(999, 999, JobEnum.CASHIER )) }
+                    // where do they place them?
+                    -104 -> { workerList.add(WorkerTriple(0, 0, JobEnum.KEEPER )) }
+                    else -> { workerList.add(WorkerTriple(child.first, child.second, JobEnum.TRAINER )) }
+                }
+            }
+        }
+        /**create TakeTruckMessage **/
+        val message = TakeTruckMessage(
+            selectedPrisonBus,
+            animalList.toList(),
+            childrenList.toList(),
+            workerList.toList()
+        )
+        /**send message **/
+        client?.sendGameActionMessage(message)
+    }
+
+    /**
+     * wo werden in der Message Coins gespeichert die auf dem Truck liegen?
+     * truck is dabei die position auf dem Truck
+     * tile id fangen bei 1 an daher tileId-1
+     * wenn tileId ist der index dann allTiles[tileID ] ansonsten allTiles[tileID -1]
+     **/
     fun receiveTakeTruck(message: TakeTruckMessage) {
+        check(connectionState == ConnectionState.WAITING_FOR_TURN) {
+            "currently not expecting an opponent's turn."
+        }
 
+        val game = rootService.currentGame
+        val busId: Int = message.truckId
+
+        checkNotNull(game) { "somehow the current game doesnt exist." }
+        check(busId in 0 until  game.prisonBuses.size) { "there is no bus at this index" }
+
+        val currentPlayer: Player = game.players[game.currentPlayer]
+        val prisonBus: PrisonBus = game.prisonBuses[busId]
+        val takenBus: PrisonBus? = currentPlayer.takenBus
+
+        rootService.playerActionService.takePrisonBus(prisonBus)
+
+        requireNotNull(takenBus) { "the player has a wrong bus" }
+        require(currentPlayer.takenBus == prisonBus) { "the player has a wrong bus" }
+
+        /** handle tiles on truck and place them **/
+        message.animalList.forEach {animals ->
+            val tileToPlace: Int? = takenBus.tiles[animals.truck]?.id
+
+            require(!takenBus.blockedSlots[animals.truck]) { "this slot is blocked" }
+            requireNotNull(tileToPlace) { "tile does not exist" }
+
+            val tile =  game.allTiles[tileToPlace-1]
+            if (tile is PrisonerTile){
+                if (animals.x == 0 && animals.y == 0) {
+                    rootService.playerActionService.placePrisoner(tile, -100, -100)
+                } else {
+                    rootService.playerActionService.placePrisoner(tile, animals.x, animals.y)
+                }
+            }
+            if (tile is CoinTile) { currentPlayer.coins += 1 }
+        }
+
+        /** handle children and place them **/
+        message.offspringList.forEach { offsprings ->
+            val childToPlace: Tile = game.allTiles[offsprings.tileId-1]
+            require(childToPlace is PrisonerTile) { "the given tile is not a Prisoner" }
+
+            if (offsprings.x == 0 && offsprings.y == 0) {
+                rootService.playerActionService.placePrisoner(childToPlace, -100, -100)
+            } else {
+                rootService.playerActionService.placePrisoner(childToPlace, offsprings.x, offsprings.y)
+            }
+        }
+
+        /** handle workers and place them **/
+        message.workerList.forEach { workers ->
+            when(workers.jobEnum){
+                JobEnum.MANAGER -> { rootService.playerActionService.moveEmployee(
+                        -102, -102, -102, -102 )
+                }
+                JobEnum.CASHIER -> { rootService.playerActionService.moveEmployee(
+                        -103, -103, -103, -103 )
+                }
+                JobEnum.KEEPER -> { rootService.playerActionService.moveEmployee(
+                        -104, -104, -104, -104 )
+                }
+                JobEnum.TRAINER -> { rootService.playerActionService.moveEmployee(
+                        -101, -101, workers.x, workers.y )
+                }
+            }
+        }
     }
 
     fun sendBuyExpansion(isBigExpansion: Boolean, x: Int, y: Int, rotation: Int) {}
@@ -342,5 +485,20 @@ class NetworkService(private val rootService: RootService): AbstractRefreshingSe
         }
 
     }
+
+    /**
+     * [increasePrisoners] adds a new prisoner element to the prisoners list.
+     **/
+    fun increasePrisoners(prisoner: Triple<Int, Int, Int>) { prisoners.add(prisoner) }
+
+    /**
+     * [increaseChildren] adds a new child element to the prisoners list.
+     **/
+    fun increaseChildren(child: Triple<Int, Int, Tile>) { children.add(child) }
+
+    /**
+     * [increaseWorkers] adds a new worker element to the prisoners list.
+     **/
+    fun increaseWorkers(worker: Triple<Int, Int, GuardTile>) { workers.add(worker) }
 
 }
