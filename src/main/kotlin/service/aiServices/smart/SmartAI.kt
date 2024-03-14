@@ -36,8 +36,8 @@ class SmartAI(val rootService: RootService, val player: Player) {
         when (aiAction) {
             is ActionAddTileToBus -> {
                 val bus = game.prisonBuses[aiAction.indexBus]
-                val tile = GuardTile() //TODO replace with proper function drawCard
-                rootService.playerActionService.addTileToPrisonBus(tile, bus)
+                val card = rootService.playerActionService.drawCard()
+                rootService.playerActionService.addTileToPrisonBus(card, bus)
             }
             is ActionMovePrisoner -> {
                 val placeCard = aiAction.placeCard
@@ -77,6 +77,14 @@ class SmartAI(val rootService: RootService, val player: Player) {
         }
     }
 
+    /**
+     * Function executing the ActionTakeBus
+     * Takes a bus depending on the information in [aiAction] and places the cards, bonuses on the
+     * locations defined in [aiAction]
+     *
+     * @param aiAction information about performing the action
+     * @param game the current game
+     */
     private fun takeBus(aiAction: ActionTakeBus, game: AquaGhetto) {
         val takenBus = game.prisonBuses[aiAction.bus]
         rootService.playerActionService.takePrisonBus(takenBus) /*remove coins from bus*/
