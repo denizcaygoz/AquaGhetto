@@ -104,7 +104,7 @@ class SmartAI(val rootService: RootService, val player: Player) {
      * kann später sonst auch gelöscht werden
      */
     fun minMax(game: AquaGhetto, depth: Int, maximize: Boolean, actionsChecked: Int): AIAction {
-        if (depth == 0 || checkGameEnd()) { /*hier überprüfung ob maximale tiefe erreicht wurde oder spiel schon geendet hat*/
+        if (depth == 0 || checkGameEnd(game)) { /*hier überprüfung ob maximale tiefe erreicht wurde oder spiel schon geendet hat*/
             return AIAction(false, evaluateCurrentPosition())
         }
 
@@ -137,8 +137,21 @@ class SmartAI(val rootService: RootService, val player: Player) {
         }
     }
 
-    fun checkGameEnd(): Boolean {
-        return false /*game end wenn alle spieler fertig und finalStack.size != 15*/
+    /**
+     * Checks if a game has ended, by checking if all players have taken a bus and the final stack does not
+     * contain exactly 15 cards
+     *
+     * @param game the game of AquaGhetto
+     * @return true if the game has ended, otherwise false
+     */
+    private fun checkGameEnd(game: AquaGhetto): Boolean {
+        /*check if all players have taken a bus*/
+        for (p in game.players) {
+            if (p.takenBus == null) return false
+        }
+
+        /*if all players have taken a bus and the final stack does not contain 15 cards the game has ended*/
+        return game.finalStack.size != 15
     }
 
     fun evaluateCurrentPosition(): Int {
