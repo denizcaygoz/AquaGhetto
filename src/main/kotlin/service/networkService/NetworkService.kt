@@ -669,9 +669,43 @@ class NetworkService(private val rootService: RootService): AbstractRefreshingSe
         placeWorker(message.workerList)
     }
 
-    fun sendDiscard(id: Int){}
-    fun receiveDiscard(message: DiscardMessage){
+    /**
+     * send a [DiscardMessage] to the opponent
+     *
+     * @throws IllegalArgumentException if it's not currently my turn
+     * @throws IllegalStateException if there is no game running
+     */
+    fun sendDiscard(id: Int){
+        require(connectionState == ConnectionState.PLAYING_MY_TURN) { "not my turn" }
 
+        val game = rootService.currentGame
+
+        checkNotNull(game) { "somehow the current game doesnt exist." }
+
+        /**create TakeTruckMessage **/
+        val message = DiscardMessage()
+        /**send message **/
+        client?.sendGameActionMessage(message)
+    }
+
+    /**
+     * play the opponent's turn by handling the [DiscardMessage] sent through the server.
+     * discarding the top card from isolation.
+     *
+     * @param message the message to handle
+     *
+     * @throws IllegalStateException if not currently expecting an opponent's turn
+     * @throws IllegalStateException if there is no game running
+     **/
+    fun receiveDiscard(){
+        check(connectionState == ConnectionState.WAITING_FOR_TURN) {
+            "currently not expecting an opponent's turn."
+        }
+
+        val game = rootService.currentGame
+        checkNotNull(game) { "somehow the current game doesnt exist." }
+
+        rootService.playerActionService.freePrisoner()
     }
 
     /**

@@ -186,7 +186,7 @@ class AqueghettoNetworkClient(
     @GameActionReceiver
     fun onDiscard(message: DiscardMessage, sender: String) {
         BoardGameApplication.runOnGUIThread {
-            networkService.receiveDiscard(message)
+            networkService.receiveDiscard()
         }
     }
 
