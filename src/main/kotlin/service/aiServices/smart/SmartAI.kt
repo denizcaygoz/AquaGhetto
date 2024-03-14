@@ -31,6 +31,9 @@ class SmartAI(val rootService: RootService, val player: Player) {
     /*mal schauen ob wir hier multithreading einbauen, mehr als ein rechner zur berechnung?*/
     fun makeTurn(game: AquaGhetto) {
         val action = this.minMax(game, checkLayers, 0, 0)
+        if (!action.validAction) {
+            println("Found no valid action?")
+        }
         this.executeAction(game, action)
     }
 
@@ -201,11 +204,27 @@ class SmartAI(val rootService: RootService, val player: Player) {
      * @param game the current game
      * @return the action this AI/player should/would perform
      */
-    private fun getBestAction(maximize: Int, actionList: List<AIAction> , game: AquaGhetto): AIAction {
+    fun getBestAction(maximize: Int, actionList: List<AIAction> , game: AquaGhetto): AIAction {
         return if ((maximize % game.players.size) == 0) {
-            actionList.maxBy { action: AIAction ->  action.score}
+            var bestScore = Integer.MIN_VALUE
+            var bestAction: AIAction? = null
+            for (element in actionList) {
+                if (element.score > bestScore && element.validAction) {
+                    bestAction = element
+                    bestScore = element.score
+                }
+            }
+            bestAction ?: AIAction(false,0)
         } else {
-            actionList.minBy { action: AIAction ->  action.score}
+            var bestScore = Integer.MAX_VALUE
+            var bestAction: AIAction? = null
+            for (element in actionList) {
+                if (element.score < bestScore && element.validAction) {
+                    bestAction = element
+                    bestScore = element.score
+                }
+            }
+            bestAction ?: AIAction(false,0)
         }
     }
 

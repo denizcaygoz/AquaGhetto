@@ -37,4 +37,8 @@ class AquaGhetto: Serializable {
     var nextState: AquaGhetto? = null
     var allTiles: MutableList<Tile> = mutableListOf()
 
+    fun clone(): AquaGhetto {
+        return this
+    }
+
 }
