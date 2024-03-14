@@ -10,6 +10,7 @@ import entity.tileTypes.CoinTile
 import entity.tileTypes.GuardTile
 import entity.tileTypes.PrisonerTile
 import entity.tileTypes.Tile
+import service.networkService.ConnectionState
 
 
 /**
@@ -20,6 +21,7 @@ import entity.tileTypes.Tile
 class PlayerActionService(private val rootService: RootService): AbstractRefreshingService() {
 
     fun addTileToPrisonBus(tile: Tile, prisonBus: PrisonBus) {
+        val isNetworkGame = rootService.networkService.connectionState != ConnectionState.DISCONNECTED
         val game = rootService.currentGame
         checkNotNull(game) { "No game started yet." }
 
@@ -41,6 +43,11 @@ class PlayerActionService(private val rootService: RootService): AbstractRefresh
 
         // Add the tile to the prison bus
         prisonBus.tiles[emptyAndUnblockedIndex] = tile
+
+        if (isNetworkGame) {
+            rootService.networkService.sendAddTileToTruck(prisonBus)
+            rootService.networkService.updateConnectionState(ConnectionState.WAITING_FOR_TURN)
+        }
 
         onAllRefreshables {
             refreshPrisonBus(prisonBus)
