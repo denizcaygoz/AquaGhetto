@@ -368,12 +368,108 @@ class PlayerActionServiceTest {
             rootService.playerActionService.takePrisonBus(game.prisonBuses[0])
         }
     }
-
+    /**
+     * tests if player can add a tile to the empty prison slot.
+     * test function for addTileToPrisonBus
+     */
     @Test
     fun `add valid tile to prison bus with empty slot`() {
-        // Set up your game, players, and prison bus
-        // Add a valid tile to the bus
-        // Assert that the tile was successfully added
+        val game = rootService.currentGame
+        checkNotNull(game)
+
+        //check that all members of game.prisonBuses[0].tiles are equal to null.
+        //Since this is the initial state of buses on the mid.
+        assertTrue(game.prisonBuses[0].tiles.all { it == null }
+            , "All slots in the prison bus should initially be empty")
+
+        val tile = game.drawStack.pop()
+        rootService.playerActionService.addTileToPrisonBus(tile,game.prisonBuses[0])
+
+        //check at least one member of the Array<Tile?> of game.prisonBuses[0].tiles are not equal to null
+        assertTrue(game.prisonBuses[0].tiles.any { it != null }
+            , "tile is added to the prison bus.")
+
+    }
+
+    /**
+     * tests if player can not add a Guard Tile.
+     * test function for addTileToPrisonBus
+     */
+    @Test
+    fun `attempt to add GuardTile to prison bus`() {
+        val game = rootService.currentGame
+        checkNotNull(game)
+
+        val tile = GuardTile(-1)
+
+        assertFailsWith<IllegalArgumentException> {
+            rootService.playerActionService.addTileToPrisonBus(tile,game.prisonBuses[0])
+        }
+    }
+
+    /**
+     * tests if player can not a tile to a bus that is full.
+     * test function for addTileToPrisonBus
+     */
+    @Test
+    fun `add tile to a full prison bus`() {
+        val game = rootService.currentGame
+        checkNotNull(game)
+
+        //making the bus slots full.
+        val tile1 = game.drawStack.pop()
+        rootService.playerActionService.addTileToPrisonBus(tile1,game.prisonBuses[0])
+        val tile2 = game.drawStack.pop()
+        rootService.playerActionService.addTileToPrisonBus(tile2,game.prisonBuses[0])
+        val tile3 = game.drawStack.pop()
+        rootService.playerActionService.addTileToPrisonBus(tile3,game.prisonBuses[0])
+
+        val tile4 = game.drawStack.pop()
+        assertFailsWith<IllegalArgumentException> {
+            rootService.playerActionService.addTileToPrisonBus(tile4,game.prisonBuses[0])
+        }
+    }
+
+    /**
+     * add a tile to a blocked slot.
+     * test function for addTileToPrisonBus
+     */
+    @Test
+    fun `add tile to blocked slot of the bus`() {
+        val game = rootService.currentGame
+        checkNotNull(game)
+
+        val tile1 = game.drawStack.pop()
+        //Bus 3 is now full since it has 2 blocked slots.
+        rootService.playerActionService.addTileToPrisonBus(tile1,game.prisonBuses[2])
+
+        val tile2 = game.drawStack.pop()
+        assertFailsWith<IllegalArgumentException> {
+            rootService.playerActionService.addTileToPrisonBus(tile2,game.prisonBuses[2])
+        }
+
+    }
+
+    /**
+     * test if player can not a bus when he has already a one.
+     * test function for addTileToPrisonBus
+     */
+    @Test
+    fun `add tile when player has already taken a bus`() {
+        val game = rootService.currentGame
+        checkNotNull(game)
+
+        //setting up the situation where player already taken a bus.
+        val tile = game.drawStack.pop()
+        rootService.playerActionService.addTileToPrisonBus(tile,game.prisonBuses[0])
+        rootService.playerActionService.takePrisonBus(game.prisonBuses[0])
+
+
+        val tile1 = game.drawStack.pop()
+        assertFailsWith<IllegalArgumentException> {
+            rootService.playerActionService.addTileToPrisonBus(tile1,game.prisonBuses[1])
+        }
+
     }
 
     @Test
