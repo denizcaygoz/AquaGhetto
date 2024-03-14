@@ -5,8 +5,6 @@ import entity.enums.PrisonerTrait
 import entity.enums.PrisonerType
 import entity.tileTypes.GuardTile
 import entity.tileTypes.PrisonerTile
-import entity.tileTypes.Tile
-import org.opentest4j.AssertionFailedError
 import java.lang.IndexOutOfBoundsException
 import java.util.*
 import kotlin.test.*
