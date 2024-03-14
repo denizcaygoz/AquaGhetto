@@ -18,6 +18,7 @@ class SmartAI(val rootService: RootService, val player: Player) {
     private val evaluateExpandPrison = EvaluateExpandPrisonGridService(this)
     private val evaluateMoveEmployee = EvaluateMoveEmployeeService(this)
     private val evaluateMoveOwnPrisoner = EvaluateMoveOwnPrisonerService(this)
+    private val evaluateGamePosition = EvaluateGamePositionService(this)
 
     init {
         require(player.type == PlayerType.AI) {"Player is not an AI"} /*der spieler der die züge machen soll*/
@@ -105,7 +106,7 @@ class SmartAI(val rootService: RootService, val player: Player) {
      */
     fun minMax(game: AquaGhetto, depth: Int, maximize: Boolean, actionsChecked: Int): AIAction {
         if (depth == 0 || checkGameEnd(game)) { /*hier überprüfung ob maximale tiefe erreicht wurde oder spiel schon geendet hat*/
-            return AIAction(false, evaluateCurrentPosition())
+            return AIAction(false, evaluateGamePosition.evaluateCurrentPosition())
         }
 
         /*die verschiedenen züge die ein spieler machen kann, wenn ein zug nicht möglich ist, hat dieser den schlechtesten wert
@@ -128,6 +129,7 @@ class SmartAI(val rootService: RootService, val player: Player) {
 
         return bestAction
     }
+
 
     private fun getBestAction(maximize: Boolean, actionList: List<AIAction>): AIAction {
         return if (maximize) {
@@ -152,10 +154,6 @@ class SmartAI(val rootService: RootService, val player: Player) {
 
         /*if all players have taken a bus and the final stack does not contain 15 cards the game has ended*/
         return game.finalStack.size != 15
-    }
-
-    fun evaluateCurrentPosition(): Int {
-        return 0 /*hier ist ne gute evaluation funktion sehr wichtig*/
     }
 
     /**
