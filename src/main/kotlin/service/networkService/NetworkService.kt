@@ -490,7 +490,7 @@ class NetworkService(private val rootService: RootService): AbstractRefreshingSe
 
         val positions: MutableList<PositionPair> = message.positionList.toMutableList()
 
-        require(positions.size in  1 .. 4) { "there is no element in this list" }
+        require(positions.size in  1 .. 4) { "there is a wrong amount in this list" }
 
         val highest: Int = positions.maxOf { it.x + it.y }
         val lowest: Int = positions.minOf { it.x + it.y }
@@ -500,14 +500,15 @@ class NetworkService(private val rootService: RootService): AbstractRefreshingSe
         if(message.positionList.size == 4) {
             val point = highestCandidates[0]
             rootService.playerActionService.expandPrisonGrid(
-                true, point.x-1, point.y, 0
+                true, point.x-1, point.y, 0, PlayerType.NETWORK
             )
         } else {
             when{
                 (highestCandidates.size == 2 && lowestCandidates.size == 1) -> {
+                    println("One")
                     val point = lowestCandidates[0]
                     rootService.playerActionService.expandPrisonGrid(
-                        false, point.x, point.y+1, 0
+                        false, point.x, point.y+1, 0, PlayerType.NETWORK
                     )
                 }
                 (highest-lowest == 2) -> {
@@ -516,22 +517,25 @@ class NetworkService(private val rootService: RootService): AbstractRefreshingSe
                     val point: PositionPair
                     val rotation: Int
                     if (positions[0].x < highestCandidates[0].x) {
+                        println("Two")
                         point = highestCandidates[0]
                         rotation = 90
 
                     } else {
+                        println("Three")
                         point = lowestCandidates[0]
-                        rotation = 180
+                        rotation = 270
                     }
 
                     rootService.playerActionService.expandPrisonGrid(
-                        false, point.x, point.y, rotation
+                        false, point.x, point.y, rotation, PlayerType.NETWORK
                     )
                 }
                 (highestCandidates.size == 1 && lowestCandidates.size == 2) -> {
+                    println("Four")
                     val point = highestCandidates[0]
                     rootService.playerActionService.expandPrisonGrid(
-                        false, point.x-1, point.y, 270
+                        false, point.x, point.y-1, 180, PlayerType.NETWORK
                     )
                 }
             }
