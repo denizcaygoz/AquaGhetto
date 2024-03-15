@@ -21,7 +21,7 @@ class SmartAI(val rootService: RootService, val player: Player) {
     private val evaluateMoveOwnPrisoner = EvaluateMoveOwnPrisonerService(this)
     private val evaluateGamePosition = EvaluateGamePositionService(this)
 
-    private val checkLayers = 5
+    private val checkLayers = 4
 
     init {
         require(player.type == PlayerType.AI) {"Player is not an AI"}
@@ -35,6 +35,7 @@ class SmartAI(val rootService: RootService, val player: Player) {
         if (!action.validAction) {
             println("Found no valid action?")
         }
+        println(count)
         this.executeAction(game, action)
     }
 
@@ -131,13 +132,15 @@ class SmartAI(val rootService: RootService, val player: Player) {
         }
     }
 
+    var count = 0
+
     /*
      * actionsInspected ist nur dafür da um zu verfolgen wie viele wege schon bewertet wurden
      * damit kann einfacher gesagt werden welche optimierungen weniger wege betrachten
      * kann später sonst auch gelöscht werden
      */
     fun minMax(game: AquaGhetto, depth: Int, maximize: Int, actionsChecked: Int): AIAction {
-
+        count++
         //println("call min max function $actionsChecked")
 
         if (depth == 0 || checkGameEnd(game)) { /*hier überprüfung ob maximale tiefe erreicht wurde oder spiel schon geendet hat*/
