@@ -4,6 +4,7 @@ import entity.AquaGhetto
 import entity.Board
 import entity.Player
 import entity.PrisonBus
+import entity.enums.PlayerType
 import entity.enums.PrisonerTrait
 import entity.enums.PrisonerType
 import entity.tileTypes.CoinTile
@@ -20,7 +21,7 @@ import service.networkService.ConnectionState
  */
 class PlayerActionService(private val rootService: RootService): AbstractRefreshingService() {
 
-    fun addTileToPrisonBus(tile: Tile, prisonBus: PrisonBus) {
+    fun addTileToPrisonBus(tile: Tile, prisonBus: PrisonBus, sender: PlayerType = PlayerType.PLAYER) {
         val isNetworkGame = rootService.networkService.connectionState != ConnectionState.DISCONNECTED
         val game = rootService.currentGame
         checkNotNull(game) { "No game started yet." }
@@ -50,8 +51,9 @@ class PlayerActionService(private val rootService: RootService): AbstractRefresh
         // Add the tile to the prison bus
         prisonBus.tiles[emptyAndUnblockedIndex] = tile
 
-        if (isNetworkGame) {
+        if (isNetworkGame && sender == PlayerType.PLAYER) {
             rootService.networkService.sendAddTileToTruck(prisonBus)
+            // Nur weil determineNextPlayer nicht implementiert wurde
             rootService.networkService.updateConnectionState(ConnectionState.WAITING_FOR_TURN)
         }
 
@@ -346,13 +348,14 @@ class PlayerActionService(private val rootService: RootService): AbstractRefresh
      * @throws IllegalArgumentException when there is no prisoner on his isolation stack
      *
      **/
-    fun freePrisoner() {
+    fun freePrisoner(sender: PlayerType = PlayerType.PLAYER) {
+        val isNetworkGame = rootService.networkService.connectionState != ConnectionState.DISCONNECTED
         val game: AquaGhetto? = rootService.currentGame
 
         checkNotNull(game) { "There is no game running" }
 
         val currentPlayer: Player = game.players[game.currentPlayer]
-        require(currentPlayer.coins >= 2) { "The current player has not enough money" }
+        require(currentPlayer.coins >= 2) { "The current player: ${currentPlayer.name} has not enough money" }
         require(!currentPlayer.isolation.empty()) { "There is not prisoner to be freed" }
 
         currentPlayer.isolation.pop()
@@ -361,6 +364,12 @@ class PlayerActionService(private val rootService: RootService): AbstractRefresh
         rootService.evaluationService.evaluatePlayer(currentPlayer)
 
         //rootService.gameService.determineNextPlayer()
+
+        if (isNetworkGame && sender == PlayerType.PLAYER) {
+            rootService.networkService.sendDiscard()
+            // Nur weil determineNextPlayer nicht implementiert wurde
+            rootService.networkService.updateConnectionState(ConnectionState.WAITING_FOR_TURN)
+        }
 
         /**
          * onAllRefreshables { refreshIsolation() }

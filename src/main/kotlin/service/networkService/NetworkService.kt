@@ -117,7 +117,12 @@ class NetworkService(private val rootService: RootService): AbstractRefreshingSe
 
         /**Add guestPlayers to players and to messagePlayerList **/
         guestPlayers.forEach { playerName ->
-            players.add(Pair(playerName, PlayerType.PLAYER))
+            if (playerName == hostPlayerName) {
+                players.add(Pair(playerName, PlayerType.NETWORK))
+            } else {
+                players.add(Pair(playerName, PlayerType.PLAYER))
+            }
+
             messagePlayerList.add(playerName)
         }
 
@@ -177,7 +182,12 @@ class NetworkService(private val rootService: RootService): AbstractRefreshingSe
         rootService.currentGame = game
 
         players.forEach { playerName ->
-            val player = Player(playerName, PlayerType.PLAYER)
+            val player = if(playerName == sender) {
+                Player(playerName, PlayerType.PLAYER)
+            } else {
+                Player(playerName, PlayerType.NETWORK)
+            }
+
             playerList.add(player)
             for (x in 1..4) {
                 for (y in 1..4) {
@@ -311,7 +321,9 @@ class NetworkService(private val rootService: RootService): AbstractRefreshingSe
         val tileToAdd: Tile = rootService.playerActionService.drawCard()
         val prisonBus: PrisonBus = game.prisonBuses[busId]
 
-        rootService.playerActionService.addTileToPrisonBus(tileToAdd, prisonBus)
+        rootService.playerActionService.addTileToPrisonBus(tileToAdd, prisonBus, PlayerType.NETWORK)
+        // Nur weil determineNextPlayer nicht implementiert wurde
+        updateConnectionState(ConnectionState.PLAYING_MY_TURN)
     }
 
     /**
@@ -396,6 +408,9 @@ class NetworkService(private val rootService: RootService): AbstractRefreshingSe
 
         placeChildren(message.offspringList)
         placeWorker(message.workerList)
+
+        // Nur weil determineNextPlayer nicht implementiert wurde
+        updateConnectionState(ConnectionState.PLAYING_MY_TURN)
     }
 
     /**
@@ -521,6 +536,9 @@ class NetworkService(private val rootService: RootService): AbstractRefreshingSe
                 }
             }
         }
+
+        // Nur weil determineNextPlayer nicht implementiert wurde
+        updateConnectionState(ConnectionState.PLAYING_MY_TURN)
     }
 
     /**
@@ -601,6 +619,8 @@ class NetworkService(private val rootService: RootService): AbstractRefreshingSe
         }
 
         rootService.playerActionService.moveEmployee(source.first, source.second, dest.first, dest.second)
+        // Nur weil determineNextPlayer nicht implementiert wurde
+        updateConnectionState(ConnectionState.PLAYING_MY_TURN)
     }
 
     /**
@@ -671,6 +691,9 @@ class NetworkService(private val rootService: RootService): AbstractRefreshingSe
 
         placeChildren(message.offspringList)
         placeWorker(message.workerList)
+
+        // Nur weil determineNextPlayer nicht implementiert wurde
+        updateConnectionState(ConnectionState.PLAYING_MY_TURN)
     }
 
     /**
@@ -679,7 +702,7 @@ class NetworkService(private val rootService: RootService): AbstractRefreshingSe
      * @throws IllegalArgumentException if it's not currently my turn
      * @throws IllegalStateException if there is no game running
      */
-    fun sendDiscard(id: Int){
+    fun sendDiscard(){
         require(connectionState == ConnectionState.PLAYING_MY_TURN) { "not my turn" }
 
         val game = rootService.currentGame
@@ -709,7 +732,11 @@ class NetworkService(private val rootService: RootService): AbstractRefreshingSe
         val game = rootService.currentGame
         checkNotNull(game) { "somehow the current game doesnt exist." }
 
-        rootService.playerActionService.freePrisoner()
+        rootService.playerActionService.freePrisoner(PlayerType.NETWORK)
+
+        // Nur weil determineNextPlayer nicht implementiert wurde
+        updateConnectionState(ConnectionState.PLAYING_MY_TURN)
+
     }
 
     /**
