@@ -57,7 +57,7 @@ class PlayerActionService(private val rootService: RootService): AbstractRefresh
             rootService.networkService.updateConnectionState(ConnectionState.WAITING_FOR_TURN)
         }
 
-        rootService.gameService.determineNextPlayer()
+        rootService.gameService.determineNextPlayer(false)
 
         onAllRefreshables {
             refreshPrisonBus(prisonBus)
@@ -101,7 +101,7 @@ class PlayerActionService(private val rootService: RootService): AbstractRefresh
             }
         }
 
-        rootService.gameService.determineNextPlayer()
+        rootService.gameService.determineNextPlayer(true)
 
         onAllRefreshables {
             refreshAfterNextTurn(game.players[game.currentPlayer])
@@ -160,7 +160,7 @@ class PlayerActionService(private val rootService: RootService): AbstractRefresh
             }
 
             if (result.second != null) { // No baby tile, turn is over
-                rootService.gameService.determineNextPlayer()
+                rootService.gameService.determineNextPlayer(false)
                 onAllRefreshables { refreshAfterNextTurn(game.players[game.currentPlayer]) }
             }
 
@@ -170,7 +170,7 @@ class PlayerActionService(private val rootService: RootService): AbstractRefresh
             player.isolation.push(tile)
             result = Pair(true, null)
 
-            rootService.gameService.determineNextPlayer()
+            rootService.gameService.determineNextPlayer(false)
 
             onAllRefreshables {
                 refreshIsolation(player)
@@ -317,7 +317,7 @@ class PlayerActionService(private val rootService: RootService): AbstractRefresh
             currentPlayer.board.guardPosition.add(Pair(destinationX, destinationY))
         }
 
-        rootService.gameService.determineNextPlayer()
+        rootService.gameService.determineNextPlayer(false)
 
         if (isNetworkGame && sender == PlayerType.PLAYER) {
             rootService.networkService.sendPlaceWorker(
@@ -397,7 +397,7 @@ class PlayerActionService(private val rootService: RootService): AbstractRefresh
 
         rootService.evaluationService.evaluatePlayer(currentPlayer)
 
-        rootService.gameService.determineNextPlayer()
+        rootService.gameService.determineNextPlayer(false)
 
         if (isNetworkGame && sender == PlayerType.PLAYER) {
             rootService.networkService.sendDiscard()
@@ -487,7 +487,7 @@ class PlayerActionService(private val rootService: RootService): AbstractRefresh
             rootService.networkService.updateConnectionState(ConnectionState.WAITING_FOR_TURN)
         }
 
-        rootService.gameService.determineNextPlayer()
+        rootService.gameService.determineNextPlayer(false)
 
         onAllRefreshables {
             refreshPrison(null, -1, -1)
