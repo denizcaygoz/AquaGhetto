@@ -1,7 +1,10 @@
 package tools.aqua.bgw.examples.war.service
 
 import edu.udo.cs.sopra.ntf.AddTileToTruckMessage
+import edu.udo.cs.sopra.ntf.DiscardMessage
 import entity.PrisonBus
+import entity.enums.PrisonerTrait
+import entity.enums.PrisonerType
 import entity.tileTypes.PrisonerTile
 import entity.tileTypes.Tile
 import org.junit.jupiter.api.assertThrows
@@ -121,7 +124,11 @@ class NetworkServiceTest {
 
         rootServiceHost.playerActionService.addTileToPrisonBus(hostTileToPlace, hostBusToPlaceOn)
 
-        val guestBusToPlaceOn: PrisonBus = hostGame.prisonBuses[0]
+        val guestBusToPlaceOn: PrisonBus = guestGame.prisonBuses[0]
+
+        rootServiceHost.waitForState(ConnectionState.WAITING_FOR_TURN)
+        rootServiceGuest.waitForState(ConnectionState.PLAYING_MY_TURN)
+
         assertTrue { hostTileToPlace.id == guestBusToPlaceOn.tiles[0]?.id }
 
         rootServiceHost.currentGame = null
@@ -129,6 +136,54 @@ class NetworkServiceTest {
 
         assertThrows<IllegalStateException> {
             rootServiceHost.playerActionService.addTileToPrisonBus(hostTileToPlace, hostBusToPlaceOn) }
+    }
+
+    /**
+     * Tests if the discarding cards works properly on the network.
+     */
+    @Test
+    fun testDiscard() {
+        initConnections()
+
+        assertEquals(rootServiceHost.networkService.connectionState, ConnectionState.PLAYING_MY_TURN)
+        assertEquals(rootServiceGuest.networkService.connectionState, ConnectionState.WAITING_FOR_TURN)
+
+        val hostGame = rootServiceHost.currentGame
+        val guestGame = rootServiceGuest.currentGame
+
+        assertNotNull(hostGame)
+        assertNotNull(guestGame)
+
+        val hostCurrentPlayer = hostGame.players[hostGame.currentPlayer]
+        val guestCurrentPlayer = guestGame.players[guestGame.currentPlayer]
+
+        assertThrows<IllegalArgumentException> { rootServiceGuest.playerActionService.freePrisoner() }
+
+        assertTrue { hostCurrentPlayer.name == guestCurrentPlayer.name }
+
+        hostCurrentPlayer.isolation.add(PrisonerTile(4, PrisonerTrait.MALE, PrisonerType.RED))
+        hostCurrentPlayer.isolation.add(PrisonerTile(5, PrisonerTrait.OLD, PrisonerType.BROWN))
+        hostCurrentPlayer.coins = 6
+
+        guestCurrentPlayer.isolation.add(PrisonerTile(4, PrisonerTrait.MALE, PrisonerType.RED))
+        guestCurrentPlayer.isolation.add(PrisonerTile(5, PrisonerTrait.OLD, PrisonerType.BROWN))
+        guestCurrentPlayer.coins = 6
+
+        assertTrue { hostCurrentPlayer.isolation.peek().id == guestCurrentPlayer.isolation.peek().id}
+
+        rootServiceHost.playerActionService.freePrisoner()
+
+        rootServiceHost.waitForState(ConnectionState.WAITING_FOR_TURN)
+        rootServiceGuest.waitForState(ConnectionState.PLAYING_MY_TURN)
+
+        assertTrue { hostCurrentPlayer.isolation.peek().id == 4 }
+        assertTrue { guestCurrentPlayer.isolation.peek().id == hostCurrentPlayer.isolation.peek().id }
+
+        rootServiceHost.currentGame = null
+        rootServiceGuest.currentGame = null
+
+        assertThrows<IllegalStateException> { rootServiceGuest.playerActionService.freePrisoner() }
+
     }
 
 
