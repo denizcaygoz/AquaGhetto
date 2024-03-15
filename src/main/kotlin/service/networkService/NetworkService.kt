@@ -408,9 +408,6 @@ class NetworkService(private val rootService: RootService): AbstractRefreshingSe
 
         placeChildren(message.offspringList)
         placeWorker(message.workerList)
-
-        // Nur weil determineNextPlayer nicht implementiert wurde
-        updateConnectionState(ConnectionState.PLAYING_MY_TURN)
     }
 
     /**
@@ -540,7 +537,6 @@ class NetworkService(private val rootService: RootService): AbstractRefreshingSe
                 }
             }
         }
-
         // Nur weil determineNextPlayer nicht implementiert wurde
         updateConnectionState(ConnectionState.PLAYING_MY_TURN)
     }
@@ -556,7 +552,7 @@ class NetworkService(private val rootService: RootService): AbstractRefreshingSe
      * @throws IllegalArgumentException if it's not currently my turn
      * @throws IllegalStateException if there is no game running
      */
-    fun sendPlaceWorker(srcX: Int, srcY: Int, destX: Int, destY: Int ) {
+    fun sendPlaceWorker(srcX: Int, srcY: Int, destX: Int, destY: Int) {
         require(connectionState == ConnectionState.PLAYING_MY_TURN) { "not my turn" }
 
         val game = rootService.currentGame
@@ -578,7 +574,7 @@ class NetworkService(private val rootService: RootService): AbstractRefreshingSe
             destX == destY && destX == -103 -> { WorkerTriple(999, 999, JobEnum.CASHIER ) }
             // where do they place them?
             destX == destY && destX == -104 -> { WorkerTriple(999, 999, JobEnum.KEEPER ) }
-            else -> { WorkerTriple(srcX, srcY, JobEnum.TRAINER ) }
+            else -> { WorkerTriple(destX, destY, JobEnum.TRAINER ) }
         }
         /**create TakeTruckMessage **/
         val message = MoveCoworkerMessage(start, dest)
@@ -619,10 +615,12 @@ class NetworkService(private val rootService: RootService): AbstractRefreshingSe
             JobEnum.MANAGER -> { Pair(-102, -102) }
             JobEnum.CASHIER -> { Pair(-103, -103) }
             JobEnum.KEEPER -> {Pair(-104, -104) }
-            JobEnum.TRAINER -> {Pair(srcWorker.x, srcWorker.y) }
+            JobEnum.TRAINER -> {Pair(destWorker.x, destWorker.y) }
         }
 
-        rootService.playerActionService.moveEmployee(source.first, source.second, dest.first, dest.second)
+        rootService.playerActionService.moveEmployee(
+            source.first, source.second, dest.first, dest.second, PlayerType.NETWORK)
+
         // Nur weil determineNextPlayer nicht implementiert wurde
         updateConnectionState(ConnectionState.PLAYING_MY_TURN)
     }

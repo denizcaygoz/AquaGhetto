@@ -249,7 +249,14 @@ class PlayerActionService(private val rootService: RootService): AbstractRefresh
      * @throws IllegalStateException Guards are moved from/to invalid locations
      * or the player already has the maximum number of employees from a type.
      */
-    fun moveEmployee(sourceX: Int, sourceY: Int , destinationX: Int, destinationY: Int) {
+    fun moveEmployee(
+        sourceX: Int,
+        sourceY: Int,
+        destinationX: Int,
+        destinationY: Int,
+        sender: PlayerType = PlayerType.PLAYER
+    ) {
+        val isNetworkGame = rootService.networkService.connectionState != ConnectionState.DISCONNECTED
         val game = rootService.currentGame
 
         checkNotNull(game) { "No game is running right now."}
@@ -311,6 +318,17 @@ class PlayerActionService(private val rootService: RootService): AbstractRefresh
         }
 
         rootService.gameService.determineNextPlayer()
+
+        if (isNetworkGame && sender == PlayerType.PLAYER) {
+            rootService.networkService.sendPlaceWorker(
+                sourceX,
+                sourceY,
+                destinationX,
+                destinationY
+            )
+            // Nur weil determineNextPlayer nicht implementiert wurde
+            rootService.networkService.updateConnectionState(ConnectionState.WAITING_FOR_TURN)
+        }
 
         onAllRefreshables {
             refreshEmployee(currentPlayer) // aktualisiert refreshEmployee auch die GuardTiles?
