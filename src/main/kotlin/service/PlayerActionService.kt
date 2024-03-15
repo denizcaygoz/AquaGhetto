@@ -384,7 +384,14 @@ class PlayerActionService(private val rootService: RootService): AbstractRefresh
      * @throws IllegalArgumentException when the placement of the extension is not valid
      *
      **/
-    fun expandPrisonGrid(isBigExtension: Boolean, x: Int, y: Int , rotation: Int) {
+    fun expandPrisonGrid(
+        isBigExtension: Boolean,
+        x: Int,
+        y: Int ,
+        rotation: Int,
+        sender: PlayerType = PlayerType.PLAYER
+    ) {
+        val isNetworkGame = rootService.networkService.connectionState != ConnectionState.DISCONNECTED
         val game: AquaGhetto? = rootService.currentGame
 
         checkNotNull(game) { "There is no game running" }
@@ -437,6 +444,12 @@ class PlayerActionService(private val rootService: RootService): AbstractRefresh
             currentPlayer.maxPrisonerTypes += 1
         } else {
             currentPlayer.remainingSmallExtensions -= 1
+        }
+
+        if (isNetworkGame && sender == PlayerType.PLAYER) {
+            rootService.networkService.sendBuyExpansion(isBigExtension, x, y, rotation)
+            // Nur weil determineNextPlayer nicht implementiert wurde
+            rootService.networkService.updateConnectionState(ConnectionState.WAITING_FOR_TURN)
         }
 
         //rootService.gameService.determineNextPlayer()
