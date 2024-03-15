@@ -2,8 +2,6 @@ package service.aiServices.smart.evaluateActions
 
 import entity.AquaGhetto
 import entity.aIActions.*
-import entity.tileTypes.GuardTile
-import entity.tileTypes.PrisonerTile
 import service.aiServices.smart.EvaluateBestPosition
 import service.aiServices.smart.SmartAI
 
