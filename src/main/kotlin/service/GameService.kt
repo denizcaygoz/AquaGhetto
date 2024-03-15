@@ -3,6 +3,7 @@ package service
 import entity.AquaGhetto
 import entity.Board
 import entity.Player
+import entity.PrisonBus
 import entity.enums.PlayerType
 
 /**
@@ -83,19 +84,27 @@ class GameService(private val rootService: RootService): AbstractRefreshingServi
      * taken buses
      * If a card was taken from the finalStack and all players have taken a
      * bus the game will end, evaluateGame is called
+     *
+     * @param busWasTakenInThisRound Whether a [PrisonBus] was taken in this Round.
      */
-    fun determineNextPlayer() {
+    fun determineNextPlayer(busWasTakenInThisRound: Boolean) {
         val game = rootService.currentGame
         checkNotNull(game) { "No running game." }
-        var amountTakenBusses = 0
-        for (player in game.players) {
-            if (player.takenBus == null) {
-                amountTakenBusses++
-            }
+
+        val isTwoPlayerGame = game.players.size == 2
+
+        val numberOfBussesLeft = if (isTwoPlayerGame) {
+            game.players.count { it.takenBus == null }
+        } else {
+            game.prisonBuses.size
         }
 
-        when (amountTakenBusses) {
+        when (numberOfBussesLeft) {
             1 ->  {
+                // Without that, it would still be the second-to-last player's turn
+                if (busWasTakenInThisRound)
+                    game.currentPlayer = (game.currentPlayer + 1) % game.players.size
+
                 onAllRefreshables {
                     refreshAfterNextTurn(game.players[game.currentPlayer])
                 }
@@ -110,8 +119,16 @@ class GameService(private val rootService: RootService): AbstractRefreshingServi
                     startNewRound(game)
                 }
             }
-            else -> { /*sets the current player to the next player*/
-                game.currentPlayer = (game.currentPlayer + 1) % game.players.size
+            else -> {
+                /*
+                sets the current player to the next player
+                provided that they didn't take a bus
+                */
+
+                do {
+                    game.currentPlayer = (game.currentPlayer + 1) % game.players.size
+                } while (game.players[game.currentPlayer].takenBus != null)
+
                 onAllRefreshables {
                     refreshAfterNextTurn(game.players[game.currentPlayer])
                 }
