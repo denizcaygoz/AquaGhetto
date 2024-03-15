@@ -1,5 +1,10 @@
 package tools.aqua.bgw.examples.war.service
 
+import edu.udo.cs.sopra.ntf.AddTileToTruckMessage
+import entity.PrisonBus
+import entity.tileTypes.PrisonerTile
+import entity.tileTypes.Tile
+import org.junit.jupiter.api.assertThrows
 import service.RootService
 import service.networkService.ConnectionState
 import kotlin.test.*
@@ -87,6 +92,43 @@ class NetworkServiceTest {
         assertFailsWith<IllegalStateException> {
             rootServiceHost.networkService.hostGame("thiswillneverbethesecret", "Test", null)
         }
+    }
+
+    /**
+     * Tests if the adding tile to a truck works properly on the network.
+     */
+    @Test
+    fun testAddTileToTruck() {
+        initConnections()
+
+        assertEquals(rootServiceHost.networkService.connectionState, ConnectionState.PLAYING_MY_TURN)
+        assertEquals(rootServiceGuest.networkService.connectionState, ConnectionState.WAITING_FOR_TURN)
+
+        val hostGame = rootServiceHost.currentGame
+        val guestGame = rootServiceGuest.currentGame
+
+        assertNotNull(hostGame)
+        assertNotNull(guestGame)
+
+        val hostTileToPlace: Tile = rootServiceHost.playerActionService.drawCard()
+        val hostBusToPlaceOn: PrisonBus = hostGame.prisonBuses[0]
+
+        assertThrows<IllegalArgumentException> {
+            rootServiceGuest.playerActionService.addTileToPrisonBus(hostTileToPlace, hostBusToPlaceOn) }
+
+        val wrongMessage = AddTileToTruckMessage(4)
+        assertThrows<IllegalStateException> { rootServiceGuest.networkService.receiveAddTileToTruck(wrongMessage) }
+
+        rootServiceHost.playerActionService.addTileToPrisonBus(hostTileToPlace, hostBusToPlaceOn)
+
+        val guestBusToPlaceOn: PrisonBus = hostGame.prisonBuses[0]
+        assertTrue { hostTileToPlace.id == guestBusToPlaceOn.tiles[0]?.id }
+
+        rootServiceHost.currentGame = null
+        rootServiceGuest.currentGame = null
+
+        assertThrows<IllegalStateException> {
+            rootServiceHost.playerActionService.addTileToPrisonBus(hostTileToPlace, hostBusToPlaceOn) }
     }
 
 

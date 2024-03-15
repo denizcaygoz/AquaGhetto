@@ -13,6 +13,10 @@ import entity.tileTypes.CoinTile
 import entity.tileTypes.GuardTile
 import java.util.*
 
+/**
+ * Service layer class that realizes the necessary logic for sending and receiving messages
+ * in multiplayer network games. Bridges between the [AqueghettoNetworkClient] and the other services.
+ */
 class NetworkService(private val rootService: RootService): AbstractRefreshingService() {
 
     companion object {
@@ -271,7 +275,7 @@ class NetworkService(private val rootService: RootService): AbstractRefreshingSe
     fun sendAddTileToTruck(prisonBus: PrisonBus) {
         require(connectionState == ConnectionState.PLAYING_MY_TURN) { "not my turn" }
 
-        var selectedPrisonBus: Int = 0
+        var selectedPrisonBus = 0
         val game = rootService.currentGame
 
         checkNotNull(game) { "somehow the current game doesnt exist." }
