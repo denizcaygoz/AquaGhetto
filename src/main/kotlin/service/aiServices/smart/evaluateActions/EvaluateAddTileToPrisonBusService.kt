@@ -12,6 +12,8 @@ import service.aiServices.smart.SmartAI
 class EvaluateAddTileToPrisonBusService(private val smartAI: SmartAI) {
 
     fun getScoreAddTileToPrisonBus(game: AquaGhetto, depth: Int, maximize: Int, amountActions: Int): ActionAddTileToBus {
+        /*by simulation all possible tiles being drawn (trait is ignored) the AI
+        has no advantage compared to a normal player*/
 
         val tilesLeftInGame = smartAI.rootService.boardService.getCardsStillInGame()
         val allCardsAmount = game.drawStack.size + game.finalStack.size
@@ -31,12 +33,14 @@ class EvaluateAddTileToPrisonBusService(private val smartAI: SmartAI) {
         var chooseBusCoin =  -1
         var validOption = false
 
-        val coinAction = this.simulateCoinTileWasDrawn(game, prisonBusesLeftToPlace, depth,
-            maximize, amountActions, coinsLeft / allCardsAmount.toDouble())
-        if (coinAction.first) {
-            totalScore += coinAction.second
-            chooseBusCoin = coinAction.third
-            validOption = true
+        if (coinsLeft > 0) {
+            val coinAction = this.simulateCoinTileWasDrawn(game, prisonBusesLeftToPlace, depth,
+                maximize, amountActions, coinsLeft / allCardsAmount.toDouble())
+            if (coinAction.first) {
+                totalScore += coinAction.second
+                chooseBusCoin = coinAction.third
+                validOption = true
+            }
         }
 
         val optionMapPrisoner = mutableMapOf<PrisonerType,Int>()
@@ -68,6 +72,8 @@ class EvaluateAddTileToPrisonBusService(private val smartAI: SmartAI) {
         allCardsLeft.addAll(game.finalStack)
         allCardsLeft.addAll(game.drawStack)
 
+        /*simulates the occurrence of a coin tile, removes the card and inserts it again later at the same position*/
+        /*this means that the AI has no advantage over other players*/
         var index = -1
         for (i in allCardsLeft.indices) {
             if (allCardsLeft[i] is CoinTile) index = i
@@ -81,6 +87,7 @@ class EvaluateAddTileToPrisonBusService(private val smartAI: SmartAI) {
             game.drawStack.removeAt(index - 15)
         }
 
+        /*simulates future actions*/
         var bestBus = -1
         var best: Int
         if (maximize % game.players.size == 0) {
@@ -128,6 +135,9 @@ class EvaluateAddTileToPrisonBusService(private val smartAI: SmartAI) {
         allCardsLeft.addAll(game.finalStack)
         allCardsLeft.addAll(game.drawStack)
 
+        /*simulates the occurrence of a prisoner tile with the specified type,
+        removes the card and inserts it again later at the same position*/
+        /*this means that the AI has no advantage over other players*/
         var index = -1
         for (i in allCardsLeft.indices) {
             val card = allCardsLeft[i]
@@ -142,6 +152,7 @@ class EvaluateAddTileToPrisonBusService(private val smartAI: SmartAI) {
             game.drawStack.removeAt(index - 15)
         }
 
+        /*simulates future actions*/
         var bestBus = -1
         var best: Int
         if (maximize % game.players.size == 0) {
