@@ -30,7 +30,7 @@ interface Refreshable {
 
     fun refreshScoreStats() {}
 
-    fun refreshPrison(tile: PrisonerTile, x: Int, y: Int) {}
+    fun refreshPrison(tile: PrisonerTile?, x: Int, y: Int) {}
 
     fun refreshAfterSelectGameMode(multiplayer: Boolean) {}
 

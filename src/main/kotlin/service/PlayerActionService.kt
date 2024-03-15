@@ -57,8 +57,11 @@ class PlayerActionService(private val rootService: RootService): AbstractRefresh
             rootService.networkService.updateConnectionState(ConnectionState.WAITING_FOR_TURN)
         }
 
+        rootService.gameService.determineNextPlayer()
+
         onAllRefreshables {
             refreshPrisonBus(prisonBus)
+            refreshAfterNextTurn(game.players[game.currentPlayer])
         }
     }
 
@@ -96,6 +99,12 @@ class PlayerActionService(private val rootService: RootService): AbstractRefresh
                 }
                 refreshPrisonBus(prisonBus)
             }
+        }
+
+        rootService.gameService.determineNextPlayer()
+
+        onAllRefreshables {
+            refreshAfterNextTurn(game.players[game.currentPlayer])
         }
     }
 
@@ -149,15 +158,24 @@ class PlayerActionService(private val rootService: RootService): AbstractRefresh
                 refreshScoreStats()
                 refreshPrison(tile, x, y)
             }
+
+            if (result.second != null) { // No baby tile, turn is over
+                rootService.gameService.determineNextPlayer()
+                onAllRefreshables { refreshAfterNextTurn(game.players[game.currentPlayer]) }
+            }
+
             return result
 
         } else if (x == y && x == -100) { // To put prisoners into a player's isolation
             player.isolation.push(tile)
             result = Pair(true, null)
 
+            rootService.gameService.determineNextPlayer()
+
             onAllRefreshables {
                 refreshIsolation(player)
                 refreshScoreStats()
+                refreshAfterNextTurn(game.players[game.currentPlayer])
             }
 
             return result
@@ -195,19 +213,16 @@ class PlayerActionService(private val rootService: RootService): AbstractRefresh
         // Pop a prisoner tile from the player's isolation area
         val tile = player.isolation.pop()
 
-        // Place the prisoner on the game board's prison yard
-        val bonus = placePrisoner(tile, x, y)
-
         // Deduct one coin from the player
         player.coins--
 
         // Refresh isolation area and prison layout for all observers
         onAllRefreshables {
             refreshIsolation(player)
-            refreshPrison(tile, x, y)
         }
 
-        return bonus
+        // Place the prisoner on the game board's prison yard
+        return placePrisoner(tile, x, y)
     }
 
 
@@ -295,12 +310,15 @@ class PlayerActionService(private val rootService: RootService): AbstractRefresh
             currentPlayer.board.guardPosition.add(Pair(destinationX, destinationY))
         }
 
+        rootService.gameService.determineNextPlayer()
+
         onAllRefreshables {
             refreshEmployee(currentPlayer) // aktualisiert refreshEmployee auch die GuardTiles?
             if (hasSetJanitorHere) {
                 refreshIsolation(currentPlayer)
             }
             refreshScoreStats()
+            refreshAfterNextTurn(game.players[game.currentPlayer])
         }
     }
 
@@ -329,15 +347,13 @@ class PlayerActionService(private val rootService: RootService): AbstractRefresh
 
         // Fetching the Prisoner from the selected player
         val prisonerFromSelectedPlayersIsolation = player.isolation.pop()
-        val bonusTile = placePrisoner(prisonerFromSelectedPlayersIsolation, x, y)
 
         onAllRefreshables {
             refreshScoreStats()
             refreshIsolation(player)
-            refreshPrison(prisonerFromSelectedPlayersIsolation, x, y)
         }
 
-        return bonusTile
+        return placePrisoner(prisonerFromSelectedPlayersIsolation, x, y)
     }
 
     /**
@@ -363,7 +379,7 @@ class PlayerActionService(private val rootService: RootService): AbstractRefresh
 
         rootService.evaluationService.evaluatePlayer(currentPlayer)
 
-        //rootService.gameService.determineNextPlayer()
+        rootService.gameService.determineNextPlayer()
 
         if (isNetworkGame && sender == PlayerType.PLAYER) {
             rootService.networkService.sendDiscard()
@@ -371,9 +387,10 @@ class PlayerActionService(private val rootService: RootService): AbstractRefresh
             rootService.networkService.updateConnectionState(ConnectionState.WAITING_FOR_TURN)
         }
 
-        /**
-         * onAllRefreshables { refreshIsolation() }
-         * */
+        onAllRefreshables {
+            refreshIsolation(currentPlayer)
+            refreshAfterNextTurn(game.players[game.currentPlayer])
+        }
     }
 
     /**
@@ -452,11 +469,12 @@ class PlayerActionService(private val rootService: RootService): AbstractRefresh
             rootService.networkService.updateConnectionState(ConnectionState.WAITING_FOR_TURN)
         }
 
-        //rootService.gameService.determineNextPlayer()
+        rootService.gameService.determineNextPlayer()
 
-        /**
-         * onAllRefreshables { refreshPrison() }
-         **/
+        onAllRefreshables {
+            refreshPrison(null, -1, -1)
+            refreshAfterNextTurn(game.players[game.currentPlayer])
+        }
     }
 
     /**

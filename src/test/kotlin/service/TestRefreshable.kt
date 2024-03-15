@@ -92,7 +92,7 @@ class TestRefreshable: Refreshable {
     /**
      * [refreshPrison] sets [refreshPrisonCalled] to true.
      */
-    override fun refreshPrison(tile: PrisonerTile, x: Int, y: Int) {
+    override fun refreshPrison(tile: PrisonerTile?, x: Int, y: Int) {
         refreshPrisonCalled = true
     }
 
