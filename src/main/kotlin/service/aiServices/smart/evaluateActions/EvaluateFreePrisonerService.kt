@@ -8,7 +8,7 @@ class EvaluateFreePrisonerService(val smartAI: SmartAI) {
 
     fun freePrisoner(game: AquaGhetto, depth: Int, maximize: Int, amountActions: Int): ActionFreePrisoner {
         val player = game.players[game.currentPlayer]
-        if (player.coins < 2) {
+        if (player.coins < 2 || player.isolation.isEmpty()) {
             return ActionFreePrisoner(false, 0)
         }
 

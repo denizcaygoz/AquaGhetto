@@ -75,7 +75,7 @@ class EvaluationService(private val rootService: RootService): AbstractRefreshin
      * @param board the board of the player
      * @return the extraPoints from the guard
      */
-    private fun getExtraPointsForGuard(x: Int, y: Int, board: Board): Int {
+    fun getExtraPointsForGuard(x: Int, y: Int, board: Board): Int {
         var extraPoints = 0
         for (xIterator in -1..1) {
             for (yIterator in -1..1) {

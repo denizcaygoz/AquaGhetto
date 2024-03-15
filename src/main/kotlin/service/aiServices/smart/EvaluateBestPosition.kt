@@ -3,6 +3,7 @@ package service.aiServices.smart
 import entity.Player
 import entity.aIActions.PlaceCard
 import entity.enums.PrisonerTrait
+import entity.enums.PrisonerType
 import entity.tileTypes.GuardTile
 import entity.tileTypes.PrisonerTile
 import kotlin.math.abs
@@ -11,15 +12,129 @@ import kotlin.math.min
 class EvaluateBestPosition(private val smartAI: SmartAI) {
 
     private val nextTo = mutableListOf(Pair(0,1),Pair(1,0),Pair(0,-1),Pair(-1,0))
+    private val specialPos = mutableListOf(Pair(-102,-102),Pair(-103,-103),Pair(-104,-104))
 
-    fun getBestPositions(tileToPlace: PrisonerTile, player: Player): MutableList<PlaceCard> {
+    fun getBestPositions(tileToPlace: PrisonerTile, player: Player): PlaceCard? {
 
-        return mutableListOf()
+        val tileType = tileToPlace.prisonerType
+
+        val bestLocation = getBestLocationPrisoner(tileToPlace, player) ?: return null
+        var locationFirstEmployee: Pair<Int,Int>? = null
+        var locationBaby: Pair<Int,Int>? = null
+        var locationSecondEmployee: Pair<Int,Int>? = null
+
+        /*simulate placement of tile at the location*/
+        player.board.setPrisonYard(bestLocation.first, bestLocation.second, tileToPlace)
+
+        val getEmployeeOne = checkShouldGetEmployee(player, tileType)
+        if (getEmployeeOne) {
+            locationFirstEmployee = getBestLocationEmployee(player)
+            player.board.setPrisonYard(locationFirstEmployee.first, locationFirstEmployee.second, GuardTile())
+        }
+
+        val shouldGetBaby = this.checkBabyNotRemove(player)
+        if (shouldGetBaby != null) {
+            val babyToPlace = PrisonerTile(-1, PrisonerTrait.BABY, shouldGetBaby.first.prisonerType)
+            val bestBabyLocation = getBestLocationPrisoner(tileToPlace, player)
+            if (bestBabyLocation != null) {
+
+                player.board.setPrisonYard(bestBabyLocation.first, bestBabyLocation.second, babyToPlace)
+                val getEmployeeTwo = checkShouldGetEmployee(player, tileType)
+                if (getEmployeeTwo) {
+                    locationSecondEmployee = getBestLocationEmployee(player)
+                }
+                player.board.setPrisonYard(bestBabyLocation.first, bestBabyLocation.second, null)
+
+            } else {
+                locationBaby = Pair(-101,-101)
+            }
+        }
 
 
+        /*undo all actions, to allow AquaGhetto instance to be used further*/
+        player.board.setPrisonYard(bestLocation.first, bestLocation.second, null)
+        if (locationFirstEmployee != null) {
+            player.board.setPrisonYard(locationFirstEmployee.first, locationFirstEmployee.second, null)
+        }
+
+        return PlaceCard(bestLocation, locationBaby, locationFirstEmployee, locationSecondEmployee)
     }
 
-    private fun getBestLocationPrisoner(tileToPlace: PrisonerTile, player: Player): Pair<Int,Int> {
+    fun getBestLocationEmployee(player: Player): Pair<Int,Int> {
+
+        val allValidPositions = mutableListOf<Pair<Pair<Int,Int>, Int>>()
+
+        /*add guard positions*/
+        for (firstIterator in player.board.getPrisonGridIterator()) {
+            for (secondIterator in firstIterator.value) {
+                val tile = player.board.getPrisonYard(firstIterator.key, secondIterator.key)
+                if (tile != null) continue
+                val scoreOfPlacement = smartAI.rootService.evaluationService.getExtraPointsForGuard(firstIterator.key,
+                                                                    secondIterator.key, player.board)
+                allValidPositions.add(Pair(Pair(firstIterator.key, secondIterator.key), scoreOfPlacement))
+            }
+        }
+
+        /*add special employee positions*/
+        for (pos in specialPos) {
+            val score = this.checkPossibleBonus(pos.first, pos.second, player)
+            allValidPositions.add(Pair(pos,score))
+        }
+
+        return allValidPositions.maxBy { it.second }.first
+    }
+
+    private fun checkPossibleBonus(x: Int, y: Int, player: Player): Int {
+        when (x) {
+            -102 -> {
+                /*janitor*/
+                if (player.hasJanitor) return -1
+                return this.getPointsJanitor(player)
+            }
+            -103 -> {
+                /*secretary*/
+                if (player.secretaryCount >= 2) return -1
+                return this.getPointsSecretary(player)
+            }
+            -104 -> {
+                /*lawyer*/
+                if (player.lawyerCount >= 2) return -1
+                return getPointsLawyer(player)
+            } else -> {
+                /*guard*/
+                return smartAI.rootService.evaluationService.getExtraPointsForGuard(x, y, player.board)
+            }
+        }
+    }
+
+    private fun getPointsJanitor(player: Player): Int {
+        val isolationPrisonerTypes = mutableSetOf<PrisonerType>()
+        for (prisonerTile in player.isolation) {
+            isolationPrisonerTypes.add(prisonerTile.prisonerType)
+        }
+        return (isolationPrisonerTypes.size / 2.0).toInt()
+    }
+
+    private fun getPointsSecretary(player: Player): Int {
+        /*AI should not like placing a secretary it should invest the coins if possible*/
+        return (player.coins * (player.secretaryCount + 1) * 0.3).toInt()
+    }
+
+    private fun getPointsLawyer(player: Player): Int {
+        var points = 0
+        for (xIterator in player.board.getPrisonYardIterator()) {
+            for (yIterator in xIterator.value) {
+                val tile = yIterator.value
+                if (tile !is PrisonerTile) continue
+                if (tile.prisonerTrait == PrisonerTrait.RICH) {
+                    points += (player.lawyerCount + 1)
+                }
+            }
+        }
+        return points
+    }
+
+    private fun getBestLocationPrisoner(tileToPlace: PrisonerTile, player: Player): Pair<Int,Int>? {
 
         val allValidPositions = mutableListOf<Pair<Pair<Int,Int>, Int>>()
 
@@ -45,6 +160,8 @@ class EvaluateBestPosition(private val smartAI: SmartAI) {
             if (bestOption.isNotEmpty()) break
         }
 
+        if (bestOption.isEmpty()) return null
+
         /*get spaces with the maximum distance to other cards*/
         var secondCheckBest = mutableListOf<Pair<Pair<Int,Int>, Int>>()
         for (pos in bestOption) {
@@ -56,8 +173,12 @@ class EvaluateBestPosition(private val smartAI: SmartAI) {
 
         /*if prisoner is old last check is ignored*/
         if (tileToPlace.prisonerTrait == PrisonerTrait.OLD) {
-            val best = secondCheckBest.first()
-            return Pair(best.first.first, best.first.second)
+            if (secondCheckBest.isNotEmpty()) {
+                val best = secondCheckBest.first()
+                return Pair(best.first.first, best.first.second)
+            } else {
+                return null
+            }
         }
 
         /*get position with the most guards*/
@@ -67,8 +188,12 @@ class EvaluateBestPosition(private val smartAI: SmartAI) {
                 checkForWorkers(player, pos.first.first, pos.first.second)))
         }
 
-        val best = thirdCheckBest.maxBy { it.second }
-        return Pair(best.first.first, best.first.second)
+        if (thirdCheckBest.isNotEmpty()) {
+            val best = thirdCheckBest.maxBy { it.second }
+            return Pair(best.first.first, best.first.second)
+        } else {
+            return null
+        }
     }
 
     private fun checkForWorkers(player: Player, x: Int, y: Int): Int {
@@ -102,6 +227,46 @@ class EvaluateBestPosition(private val smartAI: SmartAI) {
             if (!player.board.getPrisonGrid(x,y)) count++
         }
         return count
+    }
+
+    private fun checkBabyNotRemove(player: Player): Pair<PrisonerTile, PrisonerTile>?{
+        /*get breedable prisoners*/
+        val foundBreedableMale = mutableMapOf<PrisonerType, PrisonerTile>()
+        val foundBreedableFemale = mutableMapOf<PrisonerType, PrisonerTile>()
+        val board = player.board
+        for (entry1 in board.getPrisonYardIterator()) {
+            val secondMap = entry1.value
+            for (entry2 in secondMap) {
+                val tile = entry2.value
+                if (tile !is PrisonerTile) continue
+                val trait = tile.prisonerTrait
+                val type = tile.prisonerType
+                if (trait == PrisonerTrait.MALE && tile.breedable) foundBreedableMale[type] = tile
+                if (trait == PrisonerTrait.FEMALE && tile.breedable) foundBreedableFemale[type] = tile
+            }
+        }
+
+        /*check for breedable prisoners*/
+        for (type in PrisonerType.values()) {
+            val male: PrisonerTile? = foundBreedableMale[type]
+            val female: PrisonerTile? = foundBreedableFemale[type]
+            if (male != null && female != null) {
+                return Pair(male, female)
+            }
+        }
+
+        /*no breedable prisoner was found*/
+        return null
+    }
+
+    private fun checkShouldGetEmployee(player: Player, type: PrisonerType): Boolean {
+        val map = smartAI.rootService.evaluationService.getPrisonerTypeCount(player)
+        val tCount = (map[type] ?: 0)
+        return if (tCount % 5 == 0 && tCount != 0) {
+            true /*first boolean is get coin second is get employee*/
+        } else {
+            false /*first boolean is get coin second is get employee*/
+        }
     }
 
 }
