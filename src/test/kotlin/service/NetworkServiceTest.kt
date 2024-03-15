@@ -7,6 +7,7 @@ import edu.udo.cs.sopra.ntf.PositionPair
 import entity.PrisonBus
 import entity.enums.PrisonerTrait
 import entity.enums.PrisonerType
+import entity.tileTypes.GuardTile
 import entity.tileTypes.PrisonerTile
 import entity.tileTypes.Tile
 import org.junit.jupiter.api.assertThrows
@@ -365,6 +366,124 @@ class NetworkServiceTest {
         assertTrue { guestCurrentPlayer.board.getPrisonGrid(1,5) }
         assertTrue { guestCurrentPlayer.board.getPrisonGrid(2,6) }
         assertTrue { guestCurrentPlayer.board.getPrisonGrid(2,5) }
+    }
+
+    /**
+     * Tests if moving a Janitor to Secretary works properly on the network.
+     */
+    @Test
+    fun testPlaceJanitorToSecretary() {
+        initConnections()
+
+        val hostGame = rootServiceHost.currentGame
+        val guestGame = rootServiceGuest.currentGame
+
+        assertNotNull(hostGame)
+        assertNotNull(guestGame)
+
+        val hostCurrentPlayer = hostGame.players[hostGame.currentPlayer]
+        val guestCurrentPlayer = guestGame.players[guestGame.currentPlayer]
+
+        hostCurrentPlayer.coins = 20
+        hostCurrentPlayer.hasJanitor = true
+        guestCurrentPlayer.coins = 20
+        guestCurrentPlayer.hasJanitor = true
+
+        rootServiceHost.playerActionService.moveEmployee(-102, -102, -103,-103)
+        rootServiceHost.waitForState(ConnectionState.WAITING_FOR_TURN)
+        rootServiceGuest.waitForState(ConnectionState.PLAYING_MY_TURN)
+
+        assertTrue { hostCurrentPlayer.secretaryCount == 1 && !hostCurrentPlayer.hasJanitor }
+        assertTrue { guestCurrentPlayer.secretaryCount == 1 && !guestCurrentPlayer.hasJanitor }
+    }
+
+    /**
+     * Tests if moving a Secretary to Lawyer works properly on the network.
+     */
+    @Test
+    fun testPlaceSecretaryToLawyer() {
+        initConnections()
+
+        val hostGame = rootServiceHost.currentGame
+        val guestGame = rootServiceGuest.currentGame
+
+        assertNotNull(hostGame)
+        assertNotNull(guestGame)
+
+        val hostCurrentPlayer = hostGame.players[hostGame.currentPlayer]
+        val guestCurrentPlayer = guestGame.players[guestGame.currentPlayer]
+
+        hostCurrentPlayer.coins = 20
+        hostCurrentPlayer.secretaryCount = 1
+        guestCurrentPlayer.coins = 20
+        guestCurrentPlayer.secretaryCount = 1
+
+        rootServiceHost.playerActionService.moveEmployee(-103, -103, -104,-104)
+        rootServiceHost.waitForState(ConnectionState.WAITING_FOR_TURN)
+        rootServiceGuest.waitForState(ConnectionState.PLAYING_MY_TURN)
+
+        assertTrue { hostCurrentPlayer.secretaryCount == 0 && hostCurrentPlayer.lawyerCount == 1 }
+        assertTrue { guestCurrentPlayer.secretaryCount == 0 && hostCurrentPlayer.lawyerCount == 1 }
+    }
+
+    /**
+     * Tests if moving a Lawyer to Janitor works properly on the network.
+     */
+    @Test
+    fun testPlaceLawyerToJanitor() {
+        initConnections()
+
+        val hostGame = rootServiceHost.currentGame
+        val guestGame = rootServiceGuest.currentGame
+
+        assertNotNull(hostGame)
+        assertNotNull(guestGame)
+
+        val hostCurrentPlayer = hostGame.players[hostGame.currentPlayer]
+        val guestCurrentPlayer = guestGame.players[guestGame.currentPlayer]
+
+        hostCurrentPlayer.coins = 20
+        hostCurrentPlayer.lawyerCount = 1
+        guestCurrentPlayer.coins = 20
+        guestCurrentPlayer.lawyerCount = 1
+
+        rootServiceHost.playerActionService.moveEmployee(-104, -104, -102,-102)
+        rootServiceHost.waitForState(ConnectionState.WAITING_FOR_TURN)
+        rootServiceGuest.waitForState(ConnectionState.PLAYING_MY_TURN)
+
+        assertTrue { hostCurrentPlayer.lawyerCount == 0 && hostCurrentPlayer.hasJanitor }
+        assertTrue { guestCurrentPlayer.lawyerCount == 0 && hostCurrentPlayer.hasJanitor }
+    }
+
+    /**
+     * Tests if moving a Guard works properly on the network.
+     */
+    @Test
+    fun testPlaceGuard() {
+        initConnections()
+
+        val hostGame = rootServiceHost.currentGame
+        val guestGame = rootServiceGuest.currentGame
+
+        assertNotNull(hostGame)
+        assertNotNull(guestGame)
+
+        val hostCurrentPlayer = hostGame.players[hostGame.currentPlayer]
+        val guestCurrentPlayer = guestGame.players[guestGame.currentPlayer]
+
+        hostCurrentPlayer.coins = 20
+        hostCurrentPlayer.board.setPrisonYard(2,2, GuardTile())
+        guestCurrentPlayer.coins = 20
+        guestCurrentPlayer.board.setPrisonYard(2,2, GuardTile())
+
+        rootServiceHost.playerActionService.moveEmployee(2, 2, 2,3)
+        rootServiceHost.waitForState(ConnectionState.WAITING_FOR_TURN)
+        rootServiceGuest.waitForState(ConnectionState.PLAYING_MY_TURN)
+
+        assertTrue { hostCurrentPlayer.board.guardPosition[0].first == 2 }
+        assertTrue { hostCurrentPlayer.board.guardPosition[0].second == 3 }
+        assertTrue { guestCurrentPlayer.board.guardPosition[0].first == 2 }
+        assertTrue { guestCurrentPlayer.board.guardPosition[0].second == 3 }
     }
 
 
