@@ -94,7 +94,7 @@ class EvaluateAddTileToPrisonBusService(private val smartAI: SmartAI) {
             best = Integer.MIN_VALUE
 
             for (i in prisonBusesLeftToPlace) {
-                val nextPlayer = smartAI.getNextAndOldPlayer(game)
+                val nextPlayer = smartAI.getNextAndOldPlayer(game, false)
                 game.currentPlayer = nextPlayer.second
                 val action = smartAI.minMax(game, depth, maximize, amountActions)
                 game.currentPlayer = nextPlayer.first
@@ -108,7 +108,7 @@ class EvaluateAddTileToPrisonBusService(private val smartAI: SmartAI) {
             best = Integer.MAX_VALUE
 
             for (i in prisonBusesLeftToPlace) {
-                val nextPlayer = smartAI.getNextAndOldPlayer(game)
+                val nextPlayer = smartAI.getNextAndOldPlayer(game, false)
                 game.currentPlayer = nextPlayer.second
                 val action = smartAI.minMax(game, depth, maximize, amountActions)
                 game.currentPlayer = nextPlayer.first
@@ -165,7 +165,7 @@ class EvaluateAddTileToPrisonBusService(private val smartAI: SmartAI) {
             best = Integer.MIN_VALUE
 
             for (i in prisonBusesLeftToPlace) {
-                val nextPlayer = smartAI.getNextAndOldPlayer(game)
+                val nextPlayer = smartAI.getNextAndOldPlayer(game, false)
                 game.currentPlayer = nextPlayer.second
                 val action = smartAI.minMax(game, depth, maximize, amountActions)
                 game.currentPlayer = nextPlayer.first
@@ -179,7 +179,7 @@ class EvaluateAddTileToPrisonBusService(private val smartAI: SmartAI) {
             best = Integer.MAX_VALUE
 
             for (i in prisonBusesLeftToPlace) {
-                val nextPlayer = smartAI.getNextAndOldPlayer(game)
+                val nextPlayer = smartAI.getNextAndOldPlayer(game , false)
                 game.currentPlayer = nextPlayer.second
                 val action = smartAI.minMax(game, depth, maximize, amountActions)
                 game.currentPlayer = nextPlayer.first
