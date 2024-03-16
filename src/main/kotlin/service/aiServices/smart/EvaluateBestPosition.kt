@@ -14,7 +14,8 @@ class EvaluateBestPosition(private val smartAI: SmartAI) {
     private val nextTo = mutableListOf(Pair(0,1),Pair(1,0),Pair(0,-1),Pair(-1,0))
     private val specialPos = mutableListOf(Pair(-102,-102),Pair(-103,-103),Pair(-104,-104))
 
-    fun getBestPositions(tileToPlace: PrisonerTile, player: Player): PlaceCard? {
+    /*boolean is if players earns a bonus coin*/
+    fun getBestPositions(tileToPlace: PrisonerTile, player: Player): Pair<PlaceCard, Boolean>? {
 
         val tileType = tileToPlace.prisonerType
 
@@ -22,15 +23,17 @@ class EvaluateBestPosition(private val smartAI: SmartAI) {
         var locationFirstEmployee: Pair<Int,Int>? = null
         var locationBaby: Pair<Int,Int>? = null
         var locationSecondEmployee: Pair<Int,Int>? = null
+        var coin = false
 
         /*simulate placement of tile at the location*/
         player.board.setPrisonYard(bestLocation.first, bestLocation.second, tileToPlace)
 
-        val getEmployeeOne = checkShouldGetEmployee(player, tileType)
-        if (getEmployeeOne) {
+        val getEmployeeOne = checkShouldGetBonus(player, tileType)
+        if (getEmployeeOne.second) {
             locationFirstEmployee = getBestLocationEmployee(player)
             player.board.setPrisonYard(locationFirstEmployee.first, locationFirstEmployee.second, GuardTile())
         }
+        if (getEmployeeOne.first) coin = true
 
         val shouldGetBaby = this.checkBabyNotRemove(player)
         if (shouldGetBaby != null) {
@@ -39,10 +42,11 @@ class EvaluateBestPosition(private val smartAI: SmartAI) {
             if (bestBabyLocation != null) {
 
                 player.board.setPrisonYard(bestBabyLocation.first, bestBabyLocation.second, babyToPlace)
-                val getEmployeeTwo = checkShouldGetEmployee(player, tileType)
-                if (getEmployeeTwo) {
+                val getEmployeeTwo = checkShouldGetBonus(player, tileType)
+                if (getEmployeeTwo.second) {
                     locationSecondEmployee = getBestLocationEmployee(player)
                 }
+                if (getEmployeeOne.first) coin = true
                 player.board.setPrisonYard(bestBabyLocation.first, bestBabyLocation.second, null)
 
             } else {
@@ -57,7 +61,7 @@ class EvaluateBestPosition(private val smartAI: SmartAI) {
             player.board.setPrisonYard(locationFirstEmployee.first, locationFirstEmployee.second, null)
         }
 
-        return PlaceCard(bestLocation, locationBaby, locationFirstEmployee, locationSecondEmployee)
+        return Pair(PlaceCard(bestLocation, locationBaby, locationFirstEmployee, locationSecondEmployee), coin)
     }
 
     fun getBestLocationEmployee(player: Player): Pair<Int,Int> {
@@ -259,13 +263,15 @@ class EvaluateBestPosition(private val smartAI: SmartAI) {
         return null
     }
 
-    private fun checkShouldGetEmployee(player: Player, type: PrisonerType): Boolean {
+    private fun checkShouldGetBonus(player: Player, type: PrisonerType): Pair<Boolean,Boolean> {
         val map = smartAI.rootService.evaluationService.getPrisonerTypeCount(player)
         val tCount = (map[type] ?: 0)
-        return if (tCount % 5 == 0 && tCount != 0) {
-            true /*first boolean is get coin second is get employee*/
+        return if (tCount % 3 == 0 && tCount != 0) {
+            Pair(true,false) /*first boolean is get coin second is get employee*/
+        } else if (tCount % 5 == 0 && tCount != 0) {
+            Pair(false,true) /*first boolean is get coin second is get employee*/
         } else {
-            false /*first boolean is get coin second is get employee*/
+            Pair(false,false)
         }
     }
 

@@ -8,7 +8,10 @@ import entity.tileTypes.CoinTile
 import entity.tileTypes.PrisonerTile
 import service.RootService
 import service.aiServices.smart.evaluateActions.*
+import java.util.concurrent.TimeUnit
+import java.util.concurrent.locks.ReentrantLock
 import kotlin.concurrent.thread
+import kotlin.concurrent.withLock
 
 class SmartAI(val rootService: RootService, val player: Player) {
 
@@ -149,7 +152,7 @@ class SmartAI(val rootService: RootService, val player: Player) {
 
         /*runs the 7 actions parallel*/
         /*
-        if (depth == checkLayers - 1) {
+        if (depth == checkLayers - 0 || depth == checkLayers - 0) {
             return minMaxNewThread(game, depth, maximize, actionsChecked)
         }
         */
@@ -159,6 +162,8 @@ class SmartAI(val rootService: RootService, val player: Player) {
         /*funktion gibt den score des standes nach der aktion zurück und was gemacht werden muss damit man zu diesem
         * score kommt, damit dies nicht ernuet berechnet werden muss*/
         /*erstelle objekte sollten sich (hoffentlich) in grenzen halten*/
+
+        /*do not edit maximize!!!*/
         val scoreAddTileToPrisonBus = evaluateAddTileToBus.getScoreAddTileToPrisonBus(game, depth - 1, maximize, actionsChecked)
         val scoreMoveOwnPrisoner = evaluateMoveOwnPrisoner.getScoreMoveOwnPrisoner(game, depth - 1, maximize, actionsChecked)
         val scoreMoveEmployee = evaluateMoveEmployee.getScoreMoveEmployee(game, depth - 1, maximize, actionsChecked)
@@ -193,33 +198,59 @@ class SmartAI(val rootService: RootService, val player: Player) {
         var scoreFreePrisoner: AIAction? = null
         var scoreExpandPrison: AIAction? = null
         var scoreTakeBus: AIAction? = null
+
+        val thr = Thread.currentThread()
+        val lock = ReentrantLock()
+        val condition = lock.newCondition()
+
+
         threads.add(thread {
-            scoreAddTileToPrisonBus = evaluateAddTileToBus.getScoreAddTileToPrisonBus(game, depth, maximize, actionsChecked)
+            scoreAddTileToPrisonBus = evaluateAddTileToBus.getScoreAddTileToPrisonBus(game.clone(), depth - 1, maximize, actionsChecked)
+            lock.withLock { condition.signal() }
         })
         threads.add(thread {
-            scoreMoveOwnPrisoner = evaluateMoveOwnPrisoner.getScoreMoveOwnPrisoner(game, depth, maximize, actionsChecked)
+            scoreMoveOwnPrisoner = evaluateMoveOwnPrisoner.getScoreMoveOwnPrisoner(game.clone(), depth - 1, maximize, actionsChecked)
+            lock.withLock { condition.signal() }
         })
         threads.add(thread {
-            scoreMoveEmployee = evaluateMoveEmployee.getScoreMoveEmployee(game, depth, maximize, actionsChecked)
+            scoreMoveEmployee = evaluateMoveEmployee.getScoreMoveEmployee(game.clone(), depth - 1, maximize, actionsChecked)
+            lock.withLock { condition.signal() }
         })
         threads.add(thread {
-            scoreBuyPrisoner = evaluateBuyPrisoner.getScoreBuyPrisoner(game, depth, maximize, actionsChecked)
+            scoreBuyPrisoner = evaluateBuyPrisoner.getScoreBuyPrisoner(game.clone(), depth - 1, maximize, actionsChecked)
+            lock.withLock { condition.signal() }
         })
         threads.add(thread {
-            scoreFreePrisoner = evaluateActionFreePrisoner.freePrisoner(game, depth, maximize, actionsChecked)
+            scoreFreePrisoner = evaluateActionFreePrisoner.freePrisoner(game.clone(), depth - 1, maximize, actionsChecked)
+            lock.withLock { condition.signal() }
         })
         threads.add(thread {
-            scoreExpandPrison = evaluateExpandPrison.getScoreExpandPrisonGrid(game, depth, maximize, actionsChecked)
+            scoreExpandPrison = evaluateExpandPrison.getScoreExpandPrisonGrid(game.clone(), depth - 1, maximize, actionsChecked)
+            lock.withLock { condition.signal() }
         })
         threads.add(thread {
-            scoreTakeBus = evaluateActionTakeBus.takeBus(game, depth, maximize, actionsChecked)
+            scoreTakeBus = evaluateActionTakeBus.takeBus(game.clone(), depth - 1, maximize, actionsChecked)
+            lock.withLock { condition.signal() }
         })
 
-        Thread.sleep(8000)
+        lock.withLock {
+            condition.await(8000, TimeUnit.MILLISECONDS)
+            if (depth == checkLayers) condition.await(1000, TimeUnit.MILLISECONDS)
+        }
+
+        /*
         for (t in threads) {
             t.interrupt()
         }
-        Thread.sleep(1000)
+        */
+
+        /*
+        try {
+            Thread.sleep(1000)
+        } catch (e: InterruptedException) {
+            /*do nothing*/
+        }
+        */
 
         val scoreListNulls = mutableListOf(scoreAddTileToPrisonBus, scoreMoveOwnPrisoner, scoreMoveEmployee,
             scoreBuyPrisoner, scoreFreePrisoner, scoreExpandPrison, scoreTakeBus)
@@ -240,6 +271,7 @@ class SmartAI(val rootService: RootService, val player: Player) {
      * @return the action this AI/player should/would perform
      */
     fun getBestAction(maximize: Int, actionList: List<AIAction> , game: AquaGhetto): AIAction {
+        /*only first used, because every player wants to maximize his score*/
         return if ((maximize % game.players.size) == 0) {
             var bestScore = Integer.MIN_VALUE
             var bestAction: AIAction? = null
@@ -326,7 +358,15 @@ class SmartAI(val rootService: RootService, val player: Player) {
         }
     }
 
+    fun getNextAndOldPlayer(game: AquaGhetto): Pair<Int,Int> {
+        val oldPlayer = game.currentPlayer
 
+        //TODO do stuff determine next player
+
+        val nextPlayer = 0
+
+        return Pair(oldPlayer, nextPlayer)
+    }
 
 
 
