@@ -171,7 +171,7 @@ class SmartAI(val rootService: RootService, val player: Player) {
         val scoreMoveOwnPrisoner = evaluateMoveOwnPrisoner.getScoreMoveOwnPrisoner(game, depth - 1, maximize, actionsChecked)
         val scoreMoveEmployee = evaluateMoveEmployee.getScoreMoveEmployee(game, depth - 1, maximize, actionsChecked)
         val scoreBuyPrisoner = evaluateBuyPrisoner.getScoreBuyPrisoner(game, depth - 1, maximize, actionsChecked)
-        val scoreFreePrisoner = evaluateActionFreePrisoner.freePrisoner(game, depth - 1, maximize, actionsChecked)
+        val scoreFreePrisoner = evaluateActionFreePrisoner.freePrisoner(game, depth, maximize, actionsChecked)
         val scoreExpandPrison = evaluateExpandPrison.getScoreExpandPrisonGrid(game, depth - 1, maximize, actionsChecked)
         val scoreTakeBus = evaluateActionTakeBus.takeBus(game, depth - 1, maximize, actionsChecked)
 
