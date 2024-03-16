@@ -72,7 +72,7 @@ class NetworkServiceTest {
 
     /**
      * Test disconnecting after starting the game. State expected to be [ConnectionState.DISCONNECTED]
-     * afterwards and the [NetworkService.client]s must be null.
+     * afterward and the [NetworkService.client]s must be null.
      */
     @Test
     fun testDisconnect() {
@@ -484,6 +484,81 @@ class NetworkServiceTest {
         assertTrue { hostCurrentPlayer.board.guardPosition[0].second == 3 }
         assertTrue { guestCurrentPlayer.board.guardPosition[0].first == 2 }
         assertTrue { guestCurrentPlayer.board.guardPosition[0].second == 3 }
+    }
+
+    /**
+     * Tests if moving tile works properly on the network.
+     */
+    @Test
+    fun testMoveTile() {
+        initConnections()
+
+        val hostGame = rootServiceHost.currentGame
+        val guestGame = rootServiceGuest.currentGame
+
+        assertNotNull(hostGame)
+        assertNotNull(guestGame)
+
+        val isolationTile = PrisonerTile(11, PrisonerTrait.MALE, PrisonerType.GREEN)
+        val parentFemale = PrisonerTile(12, PrisonerTrait.FEMALE, PrisonerType.GREEN)
+        val tileRed = PrisonerTile(13, PrisonerTrait.MALE, PrisonerType.RED)
+        val anotherTileRed = PrisonerTile(14, PrisonerTrait.MALE, PrisonerType.RED)
+
+        hostGame.players[0].coins = 20
+        guestGame.players[0].coins = 20
+
+        hostGame.players[1].coins = 20
+        guestGame.players[1].coins = 20
+        hostGame.players[1].isolation.add(parentFemale)
+        guestGame.players[1].isolation.add(parentFemale)
+        hostGame.players[1].isolation.add(isolationTile)
+        guestGame.players[1].isolation.add(isolationTile)
+
+        val successFirst = rootServiceHost.playerActionService.buyPrisonerFromOtherIsolation(
+            hostGame.players[1], 1,1)
+
+        if (successFirst.first) {
+            rootServiceHost.networkService.sendMoveTile(hostGame.players[1].name, 1,1)
+        }
+        rootServiceHost.waitForState(ConnectionState.WAITING_FOR_TURN)
+        rootServiceGuest.waitForState(ConnectionState.PLAYING_MY_TURN)
+
+        assertTrue { hostGame.players[0].board.getPrisonYard(1,1)?.id == isolationTile.id }
+        assertTrue { guestGame.players[0].board.getPrisonYard(1,1)?.id == isolationTile.id }
+        /*change current player*/
+        hostGame.currentPlayer = 1
+        guestGame.currentPlayer = 1
+        /*prepare yard of player two*/
+        hostGame.players[1].board.setPrisonYard(1,1,isolationTile)
+        guestGame.players[1].board.setPrisonYard(1,1,isolationTile)
+        hostGame.players[1].board.setPrisonYard(3,2,tileRed)
+        guestGame.players[1].board.setPrisonYard(3,2,tileRed)
+        hostGame.players[1].board.setPrisonYard(3,3,anotherTileRed)
+        guestGame.players[1].board.setPrisonYard(3,3,anotherTileRed)
+
+        val successSecond = rootServiceGuest.playerActionService.movePrisonerToPrisonYard(
+             2,1)
+        val childToPlace: PrisonerTile? = successSecond.second
+        if (successSecond.first && childToPlace!= null) {
+            rootServiceGuest.playerActionService.placePrisoner(childToPlace, 1,2)
+            /*must be done by the gui*/
+            rootServiceGuest.networkService.increaseChildren(Triple(1,2,childToPlace))
+            rootServiceGuest.playerActionService.moveEmployee(-101,-101, 2,2)
+            /*must be done by the gui*/
+            rootServiceGuest.networkService.increaseWorkers(Triple(2,2, GuardTile()))
+            /*send message to player one*/
+            /*must be sent by the gui*/
+            rootServiceGuest.networkService.sendMoveTile(hostGame.players[1].name, 2,1)
+        }
+
+        rootServiceHost.waitForState(ConnectionState.PLAYING_MY_TURN)
+        rootServiceGuest.waitForState(ConnectionState.WAITING_FOR_TURN)
+
+        assertTrue { hostGame.players[1].board.getPrisonYard(1,1)?.id == isolationTile.id }
+        assertTrue { hostGame.players[1].board.getPrisonYard(2,1)?.id == parentFemale.id }
+        assertTrue { hostGame.players[1].board.getPrisonYard(3,2)?.id == tileRed.id }
+        assertTrue { hostGame.players[1].board.getPrisonYard(3,3)?.id == anotherTileRed.id }
+        assertTrue { hostGame.players[1].board.getPrisonYard(1,2)?.id == childToPlace?.id }
     }
 
 

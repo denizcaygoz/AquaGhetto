@@ -41,7 +41,7 @@ class NetworkService(private val rootService: RootService): AbstractRefreshingSe
      * lists to hold elements that need to be sent when taking a bus
      **/
     val prisoners: MutableList<Triple<Int, Int, Int>> = mutableListOf()
-    val children: MutableList<Triple<Int, Int, Tile>> = mutableListOf()
+    val children: MutableList<Triple<Int, Int, PrisonerTile>> = mutableListOf()
     val workers: MutableList<Triple<Int, Int, GuardTile>> = mutableListOf()
 
     /**
@@ -579,7 +579,11 @@ class NetworkService(private val rootService: RootService): AbstractRefreshingSe
         /**create TakeTruckMessage **/
         val message = MoveCoworkerMessage(start, dest)
         /**send message **/
+        // Nur weil determineNextPlayer nicht implementiert wurde
+        rootService.networkService.updateConnectionState(ConnectionState.WAITING_FOR_TURN)
+
         client?.sendGameActionMessage(message)
+
     }
 
     /**
@@ -653,6 +657,9 @@ class NetworkService(private val rootService: RootService): AbstractRefreshingSe
         )
         /**send message **/
         client?.sendGameActionMessage(message)
+
+        // Nur weil determineNextPlayer nicht implementiert wurde
+        updateConnectionState(ConnectionState.WAITING_FOR_TURN)
     }
 
     /**
@@ -761,7 +768,7 @@ class NetworkService(private val rootService: RootService): AbstractRefreshingSe
     /**
      * [increaseChildren] adds a new child element to the prisoners list.
      **/
-    fun increaseChildren(child: Triple<Int, Int, Tile>) { children.add(child) }
+    fun increaseChildren(child: Triple<Int, Int, PrisonerTile>) { children.add(child) }
 
     /**
      * [increaseWorkers] adds a new worker element to the prisoners list.
@@ -820,6 +827,7 @@ class NetworkService(private val rootService: RootService): AbstractRefreshingSe
                     else -> { workerList.add(WorkerTriple(worker.first, worker.second, JobEnum.TRAINER )) }
                 }
             }
+            else { workerList.add(WorkerTriple(worker.first, worker.second, JobEnum.TRAINER )) }
         }
 
         return Triple(animalList, childrenList, workerList)
