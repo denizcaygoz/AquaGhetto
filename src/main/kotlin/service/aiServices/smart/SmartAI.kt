@@ -371,6 +371,14 @@ class SmartAI(val rootService: RootService, val player: Player) {
         return Pair(oldPlayer, nextPlayer)
     }
 
+    fun simulateSetUpNewRound(game: AquaGhetto) {
+        //TODO
+    }
+
+    fun simulateUndoNewRound(game: AquaGhetto) {
+        //TODO
+    }
+
     fun simulatePlacement(placeCard: PlaceCard, tile: PrisonerTile, coin: Boolean, player: Player): Pair<PrisonerTile, PrisonerTile>?{
         val board = player.board
         var returnValue: Pair<PrisonerTile, PrisonerTile>? = null

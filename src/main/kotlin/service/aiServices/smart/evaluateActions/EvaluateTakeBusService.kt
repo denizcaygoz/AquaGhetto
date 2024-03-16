@@ -17,6 +17,7 @@ class EvaluateTakeBusService(private val smartAI: SmartAI) {
             bestActions.add(simulateTakeBus(game, depth, maximize, amountActions, game.players[game.currentPlayer], busIndex))
         }
 
+        println(bestActions.size)
         return bestActions.maxBy { it.score }
     }
 
