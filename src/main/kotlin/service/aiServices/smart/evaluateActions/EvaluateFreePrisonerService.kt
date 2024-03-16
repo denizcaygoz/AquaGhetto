@@ -18,7 +18,7 @@ class EvaluateFreePrisonerService(val smartAI: SmartAI) {
         val removedTile = player.isolation.pop()
         player.coins -= 2
 
-        val nextPlayer = smartAI.getNextAndOldPlayer(game)
+        val nextPlayer = smartAI.getNextAndOldPlayer(game,false)
 
         val actionFree: AIAction
 

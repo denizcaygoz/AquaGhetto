@@ -361,14 +361,71 @@ class SmartAI(val rootService: RootService, val player: Player) {
         }
     }
 
-    fun getNextAndOldPlayer(game: AquaGhetto): Pair<Int,Int> {
+    fun getNextAndOldPlayer(game: AquaGhetto,busWasTakenInThisRound: Boolean): Pair<Int,Int> {
         val oldPlayer = game.currentPlayer
 
-        //TODO do stuff determine next player
+        val isTwoPlayerGame = game.players.size == 2
 
-        val nextPlayer = 0
+        val numberOfBussesLeft = if (isTwoPlayerGame) {
+            game.players.count { it.takenBus == null }
+        } else {
+            game.prisonBuses.size
+        }
+
+        when (numberOfBussesLeft) {
+            1 ->  {
+                // Without that, it would still be the second-to-last player's turn
+                if (busWasTakenInThisRound)
+                    game.currentPlayer = (game.currentPlayer + 1) % game.players.size
+
+                this.checkAITurn(game.players[game.currentPlayer], 1000)
+            }
+            0 -> { /*all players have taken a buss*/
+                if (game.finalStack.size != 15) { /*reserve stack was taken*/
+                    rootService.evaluationService.evaluateGame()
+                } else {
+                    /*reserve stack was not taken*/
+                    /*next player is the current player*/
+                    startNewRound(game)
+                }
+            }
+            else -> {
+                /*
+                sets the current player to the next player
+                provided that they didn't take a bus
+                */
+
+                do {
+                    game.currentPlayer = (game.currentPlayer + 1) % game.players.size
+                } while (game.players[game.currentPlayer].takenBus != null)
+
+                this.checkAITurn(game.players[game.currentPlayer], 1000)
+            }
+        }
+
+        val nextPlayer = game.currentPlayer
 
         return Pair(oldPlayer, nextPlayer)
+    }
+    private fun startNewRound(game: AquaGhetto) {
+        for (player in game.players) {
+            val bus = player.takenBus
+            checkNotNull(bus) {"Not all players have taken a bus"}
+            game.prisonBuses.add(bus)
+            /*onAllRefreshables {
+                refreshPrisonBus(bus)
+            }*/
+            player.takenBus = null
+        }
+        /*onAllRefreshables {
+            refreshAfterNextTurn(game.players[game.currentPlayer])
+        }*/
+        this.checkAITurn(game.players[game.currentPlayer], 1500)
+    }
+    private fun checkAITurn(player: Player, delay: Int) {
+        if (player.type == PlayerType.AI || player.type == PlayerType.RANDOM_AI) {
+            rootService.aiService.makeTurn(player , delay)
+        }
     }
 
     fun simulatePlacement(placeCard: PlaceCard, tile: PrisonerTile, coin: Boolean, player: Player): Pair<PrisonerTile, PrisonerTile>?{
