@@ -14,17 +14,16 @@ class EvaluateBuyPrisonerService(val smartAI: SmartAI) {
         val actions = mutableListOf<ActionBuyPrisoner>()
         for (p in game.players) {
             if (p == player) continue
-            val action = forOneSpecifiedPlayer(player, p)
+            val action = forOneSpecifiedPlayer(game, depth, maximize, amountActions, player, p)
             if (action.validAction) actions.add(action)
         }
 
-        /*evaluating all actions would be to expensive I think*/
         if (actions.isEmpty()) return ActionBuyPrisoner(false, 0 , player, PlaceCard(Pair(0,0)))
 
         return actions.maxBy { it.score }
     }
 
-    private fun forOneSpecifiedPlayer(player: Player, buyFrom: Player): ActionBuyPrisoner {
+    private fun forOneSpecifiedPlayer(game: AquaGhetto, depth: Int, maximize: Int, amountActions: Int, player: Player, buyFrom: Player): ActionBuyPrisoner {
         if (player.coins < 2 || buyFrom.isolation.isEmpty()) {
             return ActionBuyPrisoner(false, 0 , player, PlaceCard(Pair(0,0)))
         }
@@ -38,13 +37,27 @@ class EvaluateBuyPrisonerService(val smartAI: SmartAI) {
 
         val undoData = smartAI.simulatePlacement(pos.first, removedTile, pos.second, player)
 
-        val score = smartAI.evaluateGamePosition.evaluateCurrentPosition()
+        val bestAction = smartAI.minMax(game, depth, maximize, amountActions)
 
-        val result = ActionBuyPrisoner(true, score, buyFrom, pos.first)
+        val result = ActionBuyPrisoner(true, bestAction.score, buyFrom, pos.first)
 
+        player.coins += 2
+        buyFrom.coins -= 1
+        buyFrom.isolation.add(removedTile)
         smartAI.undoSimulatePlacement(pos.first, pos.second, player, undoData)
 
-        return result
+        /*buying a prisoner is only useful if the player gets a baby or the player gets a new employee (only useful in late game)*/
+        val baby = pos.first.placeBonusPrisoner
+        val first = pos.first.firstTileBonusEmployee
+        val second = pos.first.secondTileBonusEmployee
+        if (baby != null) {
+            return result
+        } else if ((first != null || second != null) && (game.drawStack.size + game.finalStack.size) < 20) {
+            return result
+        } else {
+            return ActionBuyPrisoner(false, 0 , player, PlaceCard(Pair(0,0)))
+        }
+
     }
 
 }
