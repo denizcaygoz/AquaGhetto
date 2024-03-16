@@ -32,7 +32,7 @@ import java.util.Stack
  * @property currentScore the current score of a player
  */
 
-class Player(val name: String, val type: PlayerType): Serializable {
+data class Player(val name: String, val type: PlayerType): Serializable {
     companion object {
         private const val serialVersionUID: Long = 2382752881182402781L
     }
