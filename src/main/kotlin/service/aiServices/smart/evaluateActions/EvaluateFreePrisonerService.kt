@@ -13,6 +13,7 @@ class EvaluateFreePrisonerService(val smartAI: SmartAI) {
         }
 
         val removedTile = player.isolation.pop()
+        player.coins -= 2
 
         val nextPlayer = smartAI.getNextAndOldPlayer(game)
         game.currentPlayer = nextPlayer.second
@@ -21,6 +22,7 @@ class EvaluateFreePrisonerService(val smartAI: SmartAI) {
 
         game.currentPlayer = nextPlayer.first
         player.isolation.add(removedTile)
+        player.coins += 2
 
         return ActionFreePrisoner(actionFree.validAction, actionFree.score)
     }

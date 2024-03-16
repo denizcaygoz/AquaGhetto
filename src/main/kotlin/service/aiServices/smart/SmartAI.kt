@@ -4,7 +4,9 @@ import entity.AquaGhetto
 import entity.Player
 import entity.aIActions.*
 import entity.enums.PlayerType
+import entity.enums.PrisonerTrait
 import entity.tileTypes.CoinTile
+import entity.tileTypes.GuardTile
 import entity.tileTypes.PrisonerTile
 import service.RootService
 import service.aiServices.smart.evaluateActions.*
@@ -22,7 +24,8 @@ class SmartAI(val rootService: RootService, val player: Player) {
     private val evaluateExpandPrison = EvaluateExpandPrisonGridService(this)
     private val evaluateMoveEmployee = EvaluateMoveEmployeeService(this)
     private val evaluateMoveOwnPrisoner = EvaluateMoveOwnPrisonerService(this)
-    private val evaluateGamePosition = EvaluateGamePositionService(this)
+    val evaluateGamePosition = EvaluateGamePositionService(this)
+    val evaluateBestPosition = EvaluateBestPosition(this)
 
     private val checkLayers = 4
 
@@ -368,7 +371,126 @@ class SmartAI(val rootService: RootService, val player: Player) {
         return Pair(oldPlayer, nextPlayer)
     }
 
+    fun simulatePlacement(placeCard: PlaceCard, tile: PrisonerTile, coin: Boolean, player: Player): Pair<PrisonerTile, PrisonerTile>?{
+        val board = player.board
+        var returnValue: Pair<PrisonerTile, PrisonerTile>? = null
 
+        val prisoner = placeCard.placePrisoner
+        board.setPrisonYard(prisoner.first, prisoner.second, tile)
+
+        val bonusFirstEmployee = placeCard.firstTileBonusEmployee
+        if (bonusFirstEmployee != null) {
+            val x = bonusFirstEmployee.first
+            val y = bonusFirstEmployee.second
+
+            when (x) {
+                -102 -> {
+                    player.hasJanitor = true
+                }
+                -103 -> {
+                    player.secretaryCount++
+                }
+                -104 -> {
+                    player.lawyerCount++
+                } else -> {
+                    board.setPrisonYard(x, y, GuardTile())
+                }
+            }
+        }
+
+        if (placeCard.placeBonusPrisoner != null) {
+            val baby = evaluateBestPosition.checkBabyNotRemove(player)
+            if (baby != null) {
+                val babyTile = PrisonerTile(-1, PrisonerTrait.BABY, baby.first.prisonerType)
+                board.setPrisonYard(prisoner.first, prisoner.second, babyTile)
+                baby.first.breedable = false
+                baby.second.breedable = false
+            } else {
+                println("This should not happen. Baby pos but no baby?")
+            }
+
+        }
+
+        val bonusSecondEmployee = placeCard.firstTileBonusEmployee
+        if (bonusSecondEmployee != null) {
+            val x = bonusSecondEmployee.first
+            val y = bonusSecondEmployee.second
+
+            when (x) {
+                -102 -> {
+                    player.hasJanitor = true
+                }
+                -103 -> {
+                    player.secretaryCount++
+                }
+                -104 -> {
+                    player.lawyerCount++
+                } else -> {
+                board.setPrisonYard(x, y, GuardTile())
+                }
+            }
+        }
+
+        if (coin) player.coins++
+
+        /*return parent tiles to allow undo*/
+        return returnValue
+    }
+
+    fun undoSimulatePlacement(placeCard: PlaceCard, coin: Boolean, player: Player, parentTiles: Pair<PrisonerTile, PrisonerTile>?) {
+        val board = player.board
+
+        val prisoner = placeCard.placePrisoner
+        board.setPrisonYard(prisoner.first, prisoner.second, null)
+
+        val bonusFirstEmployee = placeCard.firstTileBonusEmployee
+        if (bonusFirstEmployee != null) {
+            val x = bonusFirstEmployee.first
+            val y = bonusFirstEmployee.second
+
+            when (x) {
+                -102 -> {
+                    player.hasJanitor = false
+                }
+                -103 -> {
+                    player.secretaryCount--
+                }
+                -104 -> {
+                    player.lawyerCount--
+                } else -> {
+                board.setPrisonYard(x, y, null)
+            }
+            }
+        }
+
+        if (placeCard.placeBonusPrisoner != null && parentTiles != null) {
+            board.setPrisonYard(prisoner.first, prisoner.second, null)
+            parentTiles.first.breedable = true
+            parentTiles.second.breedable = true
+        }
+
+        val bonusSecondEmployee = placeCard.firstTileBonusEmployee
+        if (bonusSecondEmployee != null) {
+            val x = bonusSecondEmployee.first
+            val y = bonusSecondEmployee.second
+
+            when (x) {
+                -102 -> {
+                    player.hasJanitor = false
+                }
+                -103 -> {
+                    player.secretaryCount--
+                }
+                -104 -> {
+                    player.lawyerCount--
+                } else -> {
+                board.setPrisonYard(x, y, null)
+                }
+            }
+        }
+
+        if (coin) player.coins++
+    }
 
 
 }

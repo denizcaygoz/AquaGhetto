@@ -233,7 +233,7 @@ class EvaluateBestPosition(private val smartAI: SmartAI) {
         return count
     }
 
-    private fun checkBabyNotRemove(player: Player): Pair<PrisonerTile, PrisonerTile>?{
+    fun checkBabyNotRemove(player: Player): Pair<PrisonerTile, PrisonerTile>?{
         /*get breedable prisoners*/
         val foundBreedableMale = mutableMapOf<PrisonerType, PrisonerTile>()
         val foundBreedableFemale = mutableMapOf<PrisonerType, PrisonerTile>()
