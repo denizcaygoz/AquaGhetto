@@ -13,6 +13,10 @@ import entity.tileTypes.CoinTile
 import entity.tileTypes.GuardTile
 import java.util.*
 
+/**
+ * Service layer class that realizes the necessary logic for sending and receiving messages
+ * in multiplayer network games. Bridges between the [AqueghettoNetworkClient] and the other services.
+ */
 class NetworkService(private val rootService: RootService): AbstractRefreshingService() {
 
     companion object {
@@ -113,7 +117,12 @@ class NetworkService(private val rootService: RootService): AbstractRefreshingSe
 
         /**Add guestPlayers to players and to messagePlayerList **/
         guestPlayers.forEach { playerName ->
-            players.add(Pair(playerName, PlayerType.PLAYER))
+            if (playerName == hostPlayerName) {
+                players.add(Pair(playerName, PlayerType.NETWORK))
+            } else {
+                players.add(Pair(playerName, PlayerType.PLAYER))
+            }
+
             messagePlayerList.add(playerName)
         }
 
@@ -173,7 +182,12 @@ class NetworkService(private val rootService: RootService): AbstractRefreshingSe
         rootService.currentGame = game
 
         players.forEach { playerName ->
-            val player = Player(playerName, PlayerType.PLAYER)
+            val player = if(playerName == sender) {
+                Player(playerName, PlayerType.PLAYER)
+            } else {
+                Player(playerName, PlayerType.NETWORK)
+            }
+
             playerList.add(player)
             for (x in 1..4) {
                 for (y in 1..4) {
@@ -271,7 +285,7 @@ class NetworkService(private val rootService: RootService): AbstractRefreshingSe
     fun sendAddTileToTruck(prisonBus: PrisonBus) {
         require(connectionState == ConnectionState.PLAYING_MY_TURN) { "not my turn" }
 
-        var selectedPrisonBus: Int = 0
+        var selectedPrisonBus = 0
         val game = rootService.currentGame
 
         checkNotNull(game) { "somehow the current game doesnt exist." }
@@ -307,7 +321,9 @@ class NetworkService(private val rootService: RootService): AbstractRefreshingSe
         val tileToAdd: Tile = rootService.playerActionService.drawCard()
         val prisonBus: PrisonBus = game.prisonBuses[busId]
 
-        rootService.playerActionService.addTileToPrisonBus(tileToAdd, prisonBus)
+        rootService.playerActionService.addTileToPrisonBus(tileToAdd, prisonBus, PlayerType.NETWORK)
+        // Nur weil determineNextPlayer nicht implementiert wurde
+        updateConnectionState(ConnectionState.PLAYING_MY_TURN)
     }
 
     /**
@@ -323,60 +339,34 @@ class NetworkService(private val rootService: RootService): AbstractRefreshingSe
 
         var selectedPrisonBus: Int = 0
         val game = rootService.currentGame
-        val animalList: MutableList<AnimalTriple> = mutableListOf()
-        val childrenList: MutableList<OffspringTriple> = mutableListOf()
-        val workerList: MutableList<WorkerTriple> = mutableListOf()
 
         checkNotNull(game) { "somehow the current game doesnt exist." }
         /** get the id from given bus **/
         game.prisonBuses.forEachIndexed { index, bus ->
             if (bus == prisonBus) { selectedPrisonBus = index }
         }
-        /** get all tiles and positions of tiles being placed **/
-        prisoners.forEach { prisoner ->
-            if (prisoner.first == prisoner.second && prisoner.first == -100) { //place on depot
-                animalList.add(AnimalTriple(0, 0, prisoner.third))
-            } else { //place on field
-                animalList.add(AnimalTriple(prisoner.first, prisoner.second, prisoner.third))
-            }
-        }
-        /** get all children and positions of tiles being placed **/
-        children.forEach { child ->
-            if (child.first == child.second && child.first == -100) { //place on depot
-                childrenList.add(OffspringTriple(0, 0, child.third.id))
-            } else {
-                childrenList.add(OffspringTriple(child.first, child.second, child.third.id))
-            }
-        }
-        /** get all workers and positions of workers being placed **/
-        workers.forEach { child ->
-            if (child.first == child.second) {
-                when(child.first) {
-                    -102 -> { workerList.add(WorkerTriple(0, 0, JobEnum.MANAGER )) }
-                    // where do they place them?
-                    -103 -> { workerList.add(WorkerTriple(999, 999, JobEnum.CASHIER )) }
-                    // where do they place them?
-                    -104 -> { workerList.add(WorkerTriple(0, 0, JobEnum.KEEPER )) }
-                    else -> { workerList.add(WorkerTriple(child.first, child.second, JobEnum.TRAINER )) }
-                }
-            }
-        }
+
+        val listsToSend = prepareLists()
         /**create TakeTruckMessage **/
         val message = TakeTruckMessage(
             selectedPrisonBus,
-            animalList.toList(),
-            childrenList.toList(),
-            workerList.toList()
+            listsToSend.first.toList(),
+            listsToSend.second.toList(),
+            listsToSend.third.toList()
         )
         /**send message **/
         client?.sendGameActionMessage(message)
     }
 
     /**
-     * wo werden in der Message Coins gespeichert die auf dem Truck liegen?
-     * truck is dabei die position auf dem Truck
-     * tile id fangen bei 1 an daher tileId-1
-     * wenn tileId ist der index dann allTiles[tileID ] ansonsten allTiles[tileID -1]
+     * play the opponent's turn by handling the [TakeTruckMessage] sent through the server.
+     * placing all prisoners, children and workers on the given coordinates.
+     *
+     * @param message the message to handle
+     *
+     * @throws IllegalStateException if not currently expecting an opponent's turn
+     * @throws IllegalStateException if there is no game running
+     * @throws IllegalStateException if bus id is out of range
      **/
     fun receiveTakeTruck(message: TakeTruckMessage) {
         check(connectionState == ConnectionState.WAITING_FOR_TURN) {
@@ -416,61 +406,338 @@ class NetworkService(private val rootService: RootService): AbstractRefreshingSe
             if (tile is CoinTile) { currentPlayer.coins += 1 }
         }
 
-        /** handle children and place them **/
-        message.offspringList.forEach { offsprings ->
-            val childToPlace: Tile = game.allTiles[offsprings.tileId-1]
-            require(childToPlace is PrisonerTile) { "the given tile is not a Prisoner" }
-
-            if (offsprings.x == 0 && offsprings.y == 0) {
-                rootService.playerActionService.placePrisoner(childToPlace, -100, -100)
-            } else {
-                rootService.playerActionService.placePrisoner(childToPlace, offsprings.x, offsprings.y)
-            }
-        }
-
-        /** handle workers and place them **/
-        message.workerList.forEach { workers ->
-            when(workers.jobEnum){
-                JobEnum.MANAGER -> { rootService.playerActionService.moveEmployee(
-                        -102, -102, -102, -102 )
-                }
-                JobEnum.CASHIER -> { rootService.playerActionService.moveEmployee(
-                        -103, -103, -103, -103 )
-                }
-                JobEnum.KEEPER -> { rootService.playerActionService.moveEmployee(
-                        -104, -104, -104, -104 )
-                }
-                JobEnum.TRAINER -> { rootService.playerActionService.moveEmployee(
-                        -101, -101, workers.x, workers.y )
-                }
-            }
-        }
+        placeChildren(message.offspringList)
+        placeWorker(message.workerList)
     }
 
-    fun sendBuyExpansion(isBigExpansion: Boolean, x: Int, y: Int, rotation: Int) {}
+    /**
+     * send a [BuyExpansionMessage] to the opponent.
+     * when rotation is 0 it is the top left corner that is being sent.
+     *
+     * @param isBigExpansion is true when big expansion else false
+     * @param x is the x coordinate of expansion
+     * @param y is the y coordinate of expansion
+     * @param rotation is degree of the rotation
+     *
+     * @throws IllegalArgumentException if it's not currently my turn
+     * @throws IllegalStateException if there is no game running
+     */
+    fun sendBuyExpansion(isBigExpansion: Boolean, x: Int, y: Int, rotation: Int) {
+        require(connectionState == ConnectionState.PLAYING_MY_TURN) { "not my turn" }
 
+        val game = rootService.currentGame
+
+        checkNotNull(game) { "somehow the current game doesnt exist." }
+
+        val placementCoordinates: MutableList<PositionPair> = mutableListOf()
+        placementCoordinates.add(PositionPair(x,y))
+
+        if (isBigExpansion) {
+            placementCoordinates.add(PositionPair(x+1,y))
+            placementCoordinates.add(PositionPair(x,y-1))
+            placementCoordinates.add(PositionPair(x+1,y-1))
+        } else {
+            when(rotation) {
+                0 -> {
+                    placementCoordinates.add(PositionPair(x,y-1))
+                    placementCoordinates.add(PositionPair(x+1,y-1))
+                }
+                90 -> {
+                    placementCoordinates.add(PositionPair(x-1,y))
+                    placementCoordinates.add(PositionPair(x-1,y-1))
+                }
+                180 -> {
+                    placementCoordinates.add(PositionPair(x,y+1))
+                    placementCoordinates.add(PositionPair(x-1,y+1))
+                }
+                270 -> {
+                    placementCoordinates.add(PositionPair(x+1,y+1))
+                    placementCoordinates.add(PositionPair(x+1,y))
+                }
+            }
+
+        }
+
+        /**create TakeTruckMessage **/
+        val message = BuyExpansionMessage(
+            placementCoordinates.toList()
+        )
+        /**send message **/
+        client?.sendGameActionMessage(message)
+    }
+
+    /**
+     * play the opponent's turn by handling the [BuyExpansionMessage] sent through the server.
+     * placing the expansion on given coordinates.
+     *
+     * @param message the message to handle
+     *
+     * @throws IllegalStateException if not currently expecting an opponent's turn
+     * @throws IllegalStateException if there is no game running
+     * @throws IllegalArgumentException if the list has the wrong size
+     **/
     fun receiveBuyExpansion(message: BuyExpansionMessage) {
+        check(connectionState == ConnectionState.WAITING_FOR_TURN) {
+            "currently not expecting an opponent's turn."
+        }
 
+        val game = rootService.currentGame
+
+        checkNotNull(game) { "somehow the current game doesnt exist." }
+
+        val positions: MutableList<PositionPair> = message.positionList.toMutableList()
+
+        require(positions.size in  1 .. 4) { "there is a wrong amount in this list" }
+
+        val highest: Int = positions.maxOf { it.x + it.y }
+        val lowest: Int = positions.minOf { it.x + it.y }
+        val highestCandidates: List<PositionPair> = positions.filter { it.x + it.y == highest }
+        val lowestCandidates: List<PositionPair> = positions.filter { it.x + it.y == lowest }
+
+        if(message.positionList.size == 4) {
+            val point = highestCandidates[0]
+            rootService.playerActionService.expandPrisonGrid(
+                true, point.x-1, point.y, 0, PlayerType.NETWORK
+            )
+        } else {
+            when{
+                (highestCandidates.size == 2 && lowestCandidates.size == 1) -> {
+                    println("One")
+                    val point = lowestCandidates[0]
+                    rootService.playerActionService.expandPrisonGrid(
+                        false, point.x, point.y+1, 0, PlayerType.NETWORK
+                    )
+                }
+                (highest-lowest == 2) -> {
+                    positions.remove(lowestCandidates[0])
+                    positions.remove(highestCandidates[0])
+                    val point: PositionPair
+                    val rotation: Int
+                    if (positions[0].x < highestCandidates[0].x) {
+                        println("Two")
+                        point = highestCandidates[0]
+                        rotation = 90
+
+                    } else {
+                        println("Three")
+                        point = lowestCandidates[0]
+                        rotation = 270
+                    }
+
+                    rootService.playerActionService.expandPrisonGrid(
+                        false, point.x, point.y, rotation, PlayerType.NETWORK
+                    )
+                }
+                (highestCandidates.size == 1 && lowestCandidates.size == 2) -> {
+                    println("Four")
+                    val point = highestCandidates[0]
+                    rootService.playerActionService.expandPrisonGrid(
+                        false, point.x, point.y-1, 180, PlayerType.NETWORK
+                    )
+                }
+            }
+        }
+        // Nur weil determineNextPlayer nicht implementiert wurde
+        updateConnectionState(ConnectionState.PLAYING_MY_TURN)
     }
 
-    fun sendPlaceWorker(srcX: Int, srcY: Int, destX: Int, destY: Int ) {
+    /**
+     * send a [MoveCoworkerMessage] to the opponent
+     *
+     * @param srcX is the x position from which the worker is being moved
+     * @param srcY is the y position from which the worker is being moved
+     * @param destX is the x position to which the worker is being moved
+     * @param destY is the y position to which the worker is being moved
+     *
+     * @throws IllegalArgumentException if it's not currently my turn
+     * @throws IllegalStateException if there is no game running
+     */
+    fun sendPlaceWorker(srcX: Int, srcY: Int, destX: Int, destY: Int) {
+        require(connectionState == ConnectionState.PLAYING_MY_TURN) { "not my turn" }
 
+        val game = rootService.currentGame
+
+        checkNotNull(game) { "somehow the current game doesnt exist." }
+        /** determing jobEnum for soruce position **/
+        val start: WorkerTriple = when {
+            srcX == srcY && srcX == -102 -> { WorkerTriple(0, 0, JobEnum.MANAGER ) }
+            // where do they place them?
+            srcX == srcY && srcX == -103 -> { WorkerTriple(999, 999, JobEnum.CASHIER ) }
+            // where do they place them?
+            srcX == srcY && srcX == -104 -> { WorkerTriple(999, 999, JobEnum.KEEPER ) }
+            else -> { WorkerTriple(srcX, srcY, JobEnum.TRAINER ) }
+        }
+        /** determing jobEnum for destination position **/
+        val dest: WorkerTriple = when {
+            destX == destY && destX == -102 -> { WorkerTriple(0, 0, JobEnum.MANAGER ) }
+            // where do they place them?
+            destX == destY && destX == -103 -> { WorkerTriple(999, 999, JobEnum.CASHIER ) }
+            // where do they place them?
+            destX == destY && destX == -104 -> { WorkerTriple(999, 999, JobEnum.KEEPER ) }
+            else -> { WorkerTriple(destX, destY, JobEnum.TRAINER ) }
+        }
+        /**create TakeTruckMessage **/
+        val message = MoveCoworkerMessage(start, dest)
+        /**send message **/
+        client?.sendGameActionMessage(message)
     }
 
+    /**
+     * play the opponent's turn by handling the [MoveCoworkerMessage] sent through the server.
+     * transferring the workers to their given position.
+     *
+     * @param message the message to handle
+     *
+     * @throws IllegalStateException if not currently expecting an opponent's turn
+     * @throws IllegalStateException if there is no game running
+     **/
     fun receivePlaceWorker(message: MoveCoworkerMessage) {
+        check(connectionState == ConnectionState.WAITING_FOR_TURN) {
+            "currently not expecting an opponent's turn."
+        }
 
+        checkNotNull(rootService.currentGame) { "somehow the current game doesnt exist." }
+
+        val srcWorker: WorkerTriple = message.start
+        val destWorker: WorkerTriple = message.destination
+
+        var source: Pair<Int, Int> = Pair(0, 0)
+        var dest: Pair<Int, Int> = Pair(0, 0)
+        /** map src jobEnum to our magic numbers **/
+        source = when(srcWorker.jobEnum) {
+            JobEnum.MANAGER -> { Pair(-102, -102) }
+            JobEnum.CASHIER -> { Pair(-103, -103) }
+            JobEnum.KEEPER -> { Pair(-104, -104) }
+            JobEnum.TRAINER -> { Pair(srcWorker.x, srcWorker.y) }
+        }
+        /** map dest jobEnum to our magic numbers **/
+        dest = when(destWorker.jobEnum) {
+            JobEnum.MANAGER -> { Pair(-102, -102) }
+            JobEnum.CASHIER -> { Pair(-103, -103) }
+            JobEnum.KEEPER -> {Pair(-104, -104) }
+            JobEnum.TRAINER -> {Pair(destWorker.x, destWorker.y) }
+        }
+
+        rootService.playerActionService.moveEmployee(
+            source.first, source.second, dest.first, dest.second, PlayerType.NETWORK)
+
+        // Nur weil determineNextPlayer nicht implementiert wurde
+        updateConnectionState(ConnectionState.PLAYING_MY_TURN)
     }
 
-    fun sendMoveTile(playerName: String, tile: PrisonerTile, x: Int, y: Int){
+    /**
+     * send a [MoveTileMessage] to the opponent
+     *
+     * @param playerName is the name of the player from which a prisoner is being taken
+     * @param x is the x position to which the prisoner is being moved
+     * @param y is the y position to which the prisoner is being moved
+     *
+     * @throws IllegalArgumentException if it's not currently my turn
+     * @throws IllegalStateException if there is no game running
+     */
+    fun sendMoveTile(playerName: String, x: Int, y: Int){
+        require(connectionState == ConnectionState.PLAYING_MY_TURN) { "not my turn" }
 
+        val game = rootService.currentGame
+
+        checkNotNull(game) { "somehow the current game doesnt exist." }
+
+        val listsToSend = prepareLists()
+
+        /**create TakeTruckMessage **/
+        val message = MoveTileMessage(
+            playerName,
+            PositionPair(x,y),
+            listsToSend.second.toList(),
+            listsToSend.third.toList()
+        )
+        /**send message **/
+        client?.sendGameActionMessage(message)
     }
 
+    /**
+     * play the opponent's turn by handling the [MoveTileMessage] sent through the server.
+     * transferring the workers to their given position.
+     *
+     * @param message the message to handle
+     *
+     * @throws IllegalStateException if not currently expecting an opponent's turn
+     * @throws IllegalStateException if there is no game running
+     **/
     fun receiveMoveTile(message: MoveTileMessage){
+        check(connectionState == ConnectionState.WAITING_FOR_TURN) {
+            "currently not expecting an opponent's turn."
+        }
 
+        val game = rootService.currentGame
+        checkNotNull(game) { "somehow the current game doesnt exist." }
+
+        val currentPlayer: Player = game.players[game.currentPlayer]
+        val fromPlayer: Player = game.players.filter { it.name == message.playerName }[0]
+        val posX: Int = message.position.x
+        val posY: Int = message.position.y
+        val dest: Pair<Int, Int> = if (posX == posY && posY == 0) Pair(-100,-100) else Pair(posX, posY)
+
+        if (message.playerName == currentPlayer.name) {
+            rootService.playerActionService.movePrisonerToPrisonYard(
+                posX,
+                posY
+            )
+        } else {
+            rootService.playerActionService.buyPrisonerFromOtherIsolation(
+                fromPlayer,
+                dest.first,
+                dest.second
+            )
+        }
+
+        placeChildren(message.offspringList)
+        placeWorker(message.workerList)
+
+        // Nur weil determineNextPlayer nicht implementiert wurde
+        updateConnectionState(ConnectionState.PLAYING_MY_TURN)
     }
 
-    fun sendDiscard(id: Int){}
-    fun receiveDiscard(message: DiscardMessage){
+    /**
+     * send a [DiscardMessage] to the opponent
+     *
+     * @throws IllegalArgumentException if it's not currently my turn
+     * @throws IllegalStateException if there is no game running
+     */
+    fun sendDiscard(){
+        require(connectionState == ConnectionState.PLAYING_MY_TURN) { "not my turn" }
+
+        val game = rootService.currentGame
+
+        checkNotNull(game) { "somehow the current game doesnt exist." }
+
+        /**create TakeTruckMessage **/
+        val message = DiscardMessage()
+        /**send message **/
+        client?.sendGameActionMessage(message)
+    }
+
+    /**
+     * play the opponent's turn by handling the [DiscardMessage] sent through the server.
+     * discarding the top card from isolation.
+     *
+     * @param message the message to handle
+     *
+     * @throws IllegalStateException if not currently expecting an opponent's turn
+     * @throws IllegalStateException if there is no game running
+     **/
+    fun receiveDiscard(){
+        check(connectionState == ConnectionState.WAITING_FOR_TURN) {
+            "currently not expecting an opponent's turn."
+        }
+
+        val game = rootService.currentGame
+        checkNotNull(game) { "somehow the current game doesnt exist." }
+
+        rootService.playerActionService.freePrisoner(PlayerType.NETWORK)
+
+        // Nur weil determineNextPlayer nicht implementiert wurde
+        updateConnectionState(ConnectionState.PLAYING_MY_TURN)
 
     }
 
@@ -500,5 +767,112 @@ class NetworkService(private val rootService: RootService): AbstractRefreshingSe
      * [increaseWorkers] adds a new worker element to the prisoners list.
      **/
     fun increaseWorkers(worker: Triple<Int, Int, GuardTile>) { workers.add(worker) }
+
+    /**
+     * [resetLists] resets all network list.
+     **/
+    private fun resetLists() {
+        prisoners.clear()
+        children.clear()
+        workers.clear()
+    }
+
+    /**
+     * [prepareLists] transforms all elements from network mutable lists to list
+     * that can bei send to another network player.
+     *
+     * @return a triple that holds lists of animals (first),
+     * list of offsprings (second), list of workers (third)
+     **/
+    private fun prepareLists():
+            Triple<MutableList<AnimalTriple>,
+            MutableList<OffspringTriple>,
+            MutableList<WorkerTriple>>
+    {
+        val animalList: MutableList<AnimalTriple> = mutableListOf()
+        val childrenList: MutableList<OffspringTriple> = mutableListOf()
+        val workerList: MutableList<WorkerTriple> = mutableListOf()
+        /** get all tiles and positions of tiles being placed **/
+        prisoners.forEach { prisoner ->
+            if (prisoner.first == prisoner.second && prisoner.first == -100) { //place on depot
+                animalList.add(AnimalTriple(0, 0, prisoner.third))
+            } else { //place on field
+                animalList.add(AnimalTriple(prisoner.first, prisoner.second, prisoner.third))
+            }
+        }
+        /** get all children and positions of tiles being placed **/
+        children.forEach { child ->
+            if (child.first == child.second && child.first == -100) { //place on depot
+                childrenList.add(OffspringTriple(0, 0, child.third.id))
+            } else {
+                childrenList.add(OffspringTriple(child.first, child.second, child.third.id))
+            }
+        }
+        /** get all workers and positions of workers being placed **/
+        workers.forEach { worker ->
+            if (worker.first == worker.second) {
+                when(worker.first) {
+                    -102 -> { workerList.add(WorkerTriple(0, 0, JobEnum.MANAGER )) }
+                    // where do they place them?
+                    -103 -> { workerList.add(WorkerTriple(999, 999, JobEnum.CASHIER )) }
+                    // where do they place them?
+                    -104 -> { workerList.add(WorkerTriple(999, 999, JobEnum.KEEPER )) }
+                    else -> { workerList.add(WorkerTriple(worker.first, worker.second, JobEnum.TRAINER )) }
+                }
+            }
+        }
+
+        return Triple(animalList, childrenList, workerList)
+    }
+
+    /**
+     * [placeChildren] places the children given in the offspringList.
+     *
+     * @param offspringList is a list that holds coordinates for all children to be placed
+     *
+     * @throws IllegalStateException when no game is running
+     **/
+    private fun placeChildren(offspringList: List<OffspringTriple>) {
+        val game = rootService.currentGame
+        checkNotNull(game) { "somehow the current game doesnt exist." }
+        /** handle children and place them **/
+        offspringList.forEach { offsprings ->
+            val childToPlace: Tile = game.allTiles[offsprings.tileId-1]
+            require(childToPlace is PrisonerTile) { "the given tile is not a Prisoner" }
+
+            if (offsprings.x == 0 && offsprings.y == 0) {
+                rootService.playerActionService.placePrisoner(childToPlace, -100, -100)
+            } else {
+                rootService.playerActionService.placePrisoner(childToPlace, offsprings.x, offsprings.y)
+            }
+        }
+    }
+
+    /**
+     * [placeWorker] places the workers given in the workerList.
+     *
+     * @param workerList is a list that holds coordinates for all workers to be placed
+     *
+     * @throws IllegalStateException when no game is running
+     **/
+    private fun placeWorker(workerList: List<WorkerTriple>) {
+        /** handle workers and place them **/
+        workerList.forEach { workers ->
+            when(workers.jobEnum){
+                JobEnum.MANAGER -> { rootService.playerActionService.moveEmployee(
+                    -102, -102, -102, -102 )
+                }
+                JobEnum.CASHIER -> { rootService.playerActionService.moveEmployee(
+                    -103, -103, -103, -103 )
+                }
+                JobEnum.KEEPER -> { rootService.playerActionService.moveEmployee(
+                    -104, -104, -104, -104 )
+                }
+                JobEnum.TRAINER -> { rootService.playerActionService.moveEmployee(
+                    -101, -101, workers.x, workers.y )
+                }
+            }
+        }
+    }
 
 }

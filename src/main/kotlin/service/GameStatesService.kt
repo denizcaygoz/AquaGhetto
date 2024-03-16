@@ -92,6 +92,7 @@ class GameStatesService(private val rootService: RootService): AbstractRefreshin
         val gzipOut = GZIPOutputStream(fileOut)
         val objOut = ObjectOutputStream(gzipOut)
         objOut.writeObject(aquaGhetto)
+        objOut.close()
     }
 
     /**
@@ -100,7 +101,6 @@ class GameStatesService(private val rootService: RootService): AbstractRefreshin
      * set the current game to the loaded one and does not call a refresh.
      *
      * @return an instance of AquaGhetto saved in the file "saveFile"
-     * @param aquaGhetto the instance to save
      * @throws IOException see [FileInputStream], [GZIPInputStream], [ObjectInputStream]
      * @throws SecurityException see [FileInputStream], [ObjectInputStream]
      * @throws NullPointerException see [ObjectInputStream], [File]

@@ -94,7 +94,10 @@ class EvaluateAddTileToPrisonBusService(private val smartAI: SmartAI) {
             best = Integer.MIN_VALUE
 
             for (i in prisonBusesLeftToPlace) {
+                val nextPlayer = smartAI.getNextAndOldPlayer(game)
+                game.currentPlayer = nextPlayer.second
                 val action = smartAI.minMax(game, depth, maximize, amountActions)
+                game.currentPlayer = nextPlayer.first
                 if ((action.score > best)) {
                     best = action.score
                     bestBus = i
@@ -105,7 +108,10 @@ class EvaluateAddTileToPrisonBusService(private val smartAI: SmartAI) {
             best = Integer.MAX_VALUE
 
             for (i in prisonBusesLeftToPlace) {
+                val nextPlayer = smartAI.getNextAndOldPlayer(game)
+                game.currentPlayer = nextPlayer.second
                 val action = smartAI.minMax(game, depth, maximize, amountActions)
+                game.currentPlayer = nextPlayer.first
                 if ((action.score < best)) {
                     best = action.score
                     bestBus = i
@@ -159,7 +165,10 @@ class EvaluateAddTileToPrisonBusService(private val smartAI: SmartAI) {
             best = Integer.MIN_VALUE
 
             for (i in prisonBusesLeftToPlace) {
+                val nextPlayer = smartAI.getNextAndOldPlayer(game)
+                game.currentPlayer = nextPlayer.second
                 val action = smartAI.minMax(game, depth, maximize, amountActions)
+                game.currentPlayer = nextPlayer.first
                 if ((action.score > best)) {
                     best = action.score
                     bestBus = i
@@ -170,7 +179,10 @@ class EvaluateAddTileToPrisonBusService(private val smartAI: SmartAI) {
             best = Integer.MAX_VALUE
 
             for (i in prisonBusesLeftToPlace) {
+                val nextPlayer = smartAI.getNextAndOldPlayer(game)
+                game.currentPlayer = nextPlayer.second
                 val action = smartAI.minMax(game, depth, maximize, amountActions)
+                game.currentPlayer = nextPlayer.first
                 if ((action.score < best)) {
                     best = action.score
                     bestBus = i

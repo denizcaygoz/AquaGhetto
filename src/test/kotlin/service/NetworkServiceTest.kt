@@ -1,5 +1,16 @@
 package tools.aqua.bgw.examples.war.service
 
+import edu.udo.cs.sopra.ntf.AddTileToTruckMessage
+import edu.udo.cs.sopra.ntf.BuyExpansionMessage
+import edu.udo.cs.sopra.ntf.DiscardMessage
+import edu.udo.cs.sopra.ntf.PositionPair
+import entity.PrisonBus
+import entity.enums.PrisonerTrait
+import entity.enums.PrisonerType
+import entity.tileTypes.GuardTile
+import entity.tileTypes.PrisonerTile
+import entity.tileTypes.Tile
+import org.junit.jupiter.api.assertThrows
 import service.RootService
 import service.networkService.ConnectionState
 import kotlin.test.*
@@ -87,6 +98,392 @@ class NetworkServiceTest {
         assertFailsWith<IllegalStateException> {
             rootServiceHost.networkService.hostGame("thiswillneverbethesecret", "Test", null)
         }
+    }
+
+    /**
+     * Tests if the adding tile to a truck works properly on the network.
+     */
+    @Test
+    fun testAddTileToTruck() {
+        initConnections()
+
+        assertEquals(rootServiceHost.networkService.connectionState, ConnectionState.PLAYING_MY_TURN)
+        assertEquals(rootServiceGuest.networkService.connectionState, ConnectionState.WAITING_FOR_TURN)
+
+        val hostGame = rootServiceHost.currentGame
+        val guestGame = rootServiceGuest.currentGame
+
+        assertNotNull(hostGame)
+        assertNotNull(guestGame)
+
+        val hostTileToPlace: Tile = rootServiceHost.playerActionService.drawCard()
+        val hostBusToPlaceOn: PrisonBus = hostGame.prisonBuses[0]
+
+        assertThrows<IllegalArgumentException> {
+            rootServiceGuest.playerActionService.addTileToPrisonBus(hostTileToPlace, hostBusToPlaceOn) }
+
+        val wrongMessage = AddTileToTruckMessage(4)
+        assertThrows<IllegalStateException> { rootServiceGuest.networkService.receiveAddTileToTruck(wrongMessage) }
+
+        rootServiceHost.playerActionService.addTileToPrisonBus(hostTileToPlace, hostBusToPlaceOn)
+        rootServiceHost.waitForState(ConnectionState.WAITING_FOR_TURN)
+        rootServiceGuest.waitForState(ConnectionState.PLAYING_MY_TURN)
+
+        val guestBusToPlaceOn: PrisonBus = guestGame.prisonBuses[0]
+
+        assertTrue { hostTileToPlace.id == guestBusToPlaceOn.tiles[0]?.id }
+
+        rootServiceHost.currentGame = null
+        rootServiceGuest.currentGame = null
+
+        assertThrows<IllegalStateException> {
+            rootServiceHost.playerActionService.addTileToPrisonBus(hostTileToPlace, hostBusToPlaceOn) }
+    }
+
+    /**
+     * Tests if the discarding cards works properly on the network.
+     */
+    @Test
+    fun testDiscard() {
+        initConnections()
+
+        assertEquals(rootServiceHost.networkService.connectionState, ConnectionState.PLAYING_MY_TURN)
+        assertEquals(rootServiceGuest.networkService.connectionState, ConnectionState.WAITING_FOR_TURN)
+
+        val hostGame = rootServiceHost.currentGame
+        val guestGame = rootServiceGuest.currentGame
+
+        assertNotNull(hostGame)
+        assertNotNull(guestGame)
+
+        val hostCurrentPlayer = hostGame.players[hostGame.currentPlayer]
+        val guestCurrentPlayer = guestGame.players[guestGame.currentPlayer]
+
+        assertThrows<IllegalArgumentException> { rootServiceGuest.playerActionService.freePrisoner() }
+
+        assertTrue { hostCurrentPlayer.name == guestCurrentPlayer.name }
+
+        hostCurrentPlayer.isolation.add(PrisonerTile(4, PrisonerTrait.MALE, PrisonerType.RED))
+        hostCurrentPlayer.isolation.add(PrisonerTile(5, PrisonerTrait.OLD, PrisonerType.BROWN))
+        hostCurrentPlayer.coins = 6
+
+        guestCurrentPlayer.isolation.add(PrisonerTile(4, PrisonerTrait.MALE, PrisonerType.RED))
+        guestCurrentPlayer.isolation.add(PrisonerTile(5, PrisonerTrait.OLD, PrisonerType.BROWN))
+        guestCurrentPlayer.coins = 6
+
+        assertTrue { hostCurrentPlayer.isolation.peek().id == guestCurrentPlayer.isolation.peek().id}
+
+        rootServiceHost.playerActionService.freePrisoner()
+        rootServiceHost.waitForState(ConnectionState.WAITING_FOR_TURN)
+        rootServiceGuest.waitForState(ConnectionState.PLAYING_MY_TURN)
+
+        assertTrue { hostCurrentPlayer.isolation.peek().id == 4 }
+        assertTrue { guestCurrentPlayer.isolation.peek().id == hostCurrentPlayer.isolation.peek().id }
+
+        rootServiceHost.currentGame = null
+        rootServiceGuest.currentGame = null
+
+        assertThrows<IllegalStateException> { rootServiceGuest.playerActionService.freePrisoner() }
+    }
+
+    /**
+     * Tests if buying a wrong expansion works properly on the network.
+     */
+    @Test
+    fun testWrongBuyExpansion() {
+        initConnections()
+
+        assertEquals(rootServiceHost.networkService.connectionState, ConnectionState.PLAYING_MY_TURN)
+        assertEquals(rootServiceGuest.networkService.connectionState, ConnectionState.WAITING_FOR_TURN)
+
+        val hostGame = rootServiceHost.currentGame
+        val guestGame = rootServiceGuest.currentGame
+
+        assertNotNull(hostGame)
+        assertNotNull(guestGame)
+
+        val wrongMessage = BuyExpansionMessage(listOf(
+            PositionPair(2,7),
+            PositionPair(3,7),
+            PositionPair(2,6),
+            PositionPair(3,6),
+            PositionPair(4,7)))
+        assertThrows<IllegalArgumentException> { rootServiceGuest.networkService.receiveBuyExpansion(wrongMessage) }
+    }
+
+    /**
+     * Tests if buying a big expansion works properly on the network.
+     */
+    @Test
+    fun testBuyBigExpansion() {
+        initConnections()
+
+        assertEquals(rootServiceHost.networkService.connectionState, ConnectionState.PLAYING_MY_TURN)
+        assertEquals(rootServiceGuest.networkService.connectionState, ConnectionState.WAITING_FOR_TURN)
+
+        val hostGame = rootServiceHost.currentGame
+        val guestGame = rootServiceGuest.currentGame
+
+        assertNotNull(hostGame)
+        assertNotNull(guestGame)
+
+        val hostCurrentPlayer = hostGame.players[hostGame.currentPlayer]
+        val guestCurrentPlayer = guestGame.players[guestGame.currentPlayer]
+
+        hostCurrentPlayer.coins = 6
+        guestCurrentPlayer.coins = 6
+
+        rootServiceHost.playerActionService.expandPrisonGrid(true, 1,6, 0)
+        rootServiceHost.waitForState(ConnectionState.WAITING_FOR_TURN)
+        rootServiceGuest.waitForState(ConnectionState.PLAYING_MY_TURN)
+
+        assertTrue { guestCurrentPlayer.board.getPrisonGrid(1,6) }
+        assertTrue { guestCurrentPlayer.board.getPrisonGrid(2,6) }
+        assertTrue { guestCurrentPlayer.board.getPrisonGrid(1,5) }
+        assertTrue { guestCurrentPlayer.board.getPrisonGrid(2,5) }
+    }
+
+    /**
+     * Tests if buying a small expansion with 0 rotation works properly on the network.
+     */
+    @Test
+    fun testBuySmallExpansionOne() {
+        initConnections()
+
+        assertEquals(rootServiceHost.networkService.connectionState, ConnectionState.PLAYING_MY_TURN)
+        assertEquals(rootServiceGuest.networkService.connectionState, ConnectionState.WAITING_FOR_TURN)
+
+        val hostGame = rootServiceHost.currentGame
+        val guestGame = rootServiceGuest.currentGame
+
+        assertNotNull(hostGame)
+        assertNotNull(guestGame)
+
+        val hostCurrentPlayer = hostGame.players[hostGame.currentPlayer]
+        val guestCurrentPlayer = guestGame.players[guestGame.currentPlayer]
+
+        hostCurrentPlayer.coins = 20
+        guestCurrentPlayer.coins = 20
+
+        rootServiceHost.playerActionService.expandPrisonGrid(false, 1,6, 0)
+        rootServiceHost.waitForState(ConnectionState.WAITING_FOR_TURN)
+        rootServiceGuest.waitForState(ConnectionState.PLAYING_MY_TURN)
+
+        assertTrue { guestCurrentPlayer.board.getPrisonGrid(1,6) }
+        assertTrue { guestCurrentPlayer.board.getPrisonGrid(1,5) }
+        assertTrue { guestCurrentPlayer.board.getPrisonGrid(2,5) }
+    }
+
+    /**
+     * Tests if buying a small expansion with 90 rotation works properly on the network.
+     */
+    @Test
+    fun testBuySmallExpansionTwo() {
+        initConnections()
+
+        assertEquals(rootServiceHost.networkService.connectionState, ConnectionState.PLAYING_MY_TURN)
+        assertEquals(rootServiceGuest.networkService.connectionState, ConnectionState.WAITING_FOR_TURN)
+
+        val hostGame = rootServiceHost.currentGame
+        val guestGame = rootServiceGuest.currentGame
+
+        assertNotNull(hostGame)
+        assertNotNull(guestGame)
+
+        val hostCurrentPlayer = hostGame.players[hostGame.currentPlayer]
+        val guestCurrentPlayer = guestGame.players[guestGame.currentPlayer]
+
+        hostCurrentPlayer.coins = 20
+        guestCurrentPlayer.coins = 20
+
+        rootServiceHost.playerActionService.expandPrisonGrid(false, 2,6, 90)
+        rootServiceHost.waitForState(ConnectionState.WAITING_FOR_TURN)
+        rootServiceGuest.waitForState(ConnectionState.PLAYING_MY_TURN)
+
+        assertTrue { guestCurrentPlayer.board.getPrisonGrid(1,6) }
+        assertTrue { guestCurrentPlayer.board.getPrisonGrid(2,6) }
+        assertTrue { guestCurrentPlayer.board.getPrisonGrid(1,5) }
+    }
+
+    /**
+     * Tests if buying a small expansion with 180 rotation works properly on the network.
+     */
+    @Test
+    fun testBuySmallExpansionThree() {
+        initConnections()
+
+        assertEquals(rootServiceHost.networkService.connectionState, ConnectionState.PLAYING_MY_TURN)
+        assertEquals(rootServiceGuest.networkService.connectionState, ConnectionState.WAITING_FOR_TURN)
+
+        val hostGame = rootServiceHost.currentGame
+        val guestGame = rootServiceGuest.currentGame
+
+        assertNotNull(hostGame)
+        assertNotNull(guestGame)
+
+        val hostCurrentPlayer = hostGame.players[hostGame.currentPlayer]
+        val guestCurrentPlayer = guestGame.players[guestGame.currentPlayer]
+
+        hostCurrentPlayer.coins = 20
+        guestCurrentPlayer.coins = 20
+
+        rootServiceHost.playerActionService.expandPrisonGrid(false, 2,5, 180)
+
+        rootServiceHost.waitForState(ConnectionState.WAITING_FOR_TURN)
+        rootServiceGuest.waitForState(ConnectionState.PLAYING_MY_TURN)
+
+        assertTrue { guestCurrentPlayer.board.getPrisonGrid(1,6) }
+        assertTrue { guestCurrentPlayer.board.getPrisonGrid(2,5) }
+        assertTrue { guestCurrentPlayer.board.getPrisonGrid(2,6) }
+    }
+
+    /**
+     * Tests if buying a small expansion with 270 rotation works properly on the network.
+     */
+    @Test
+    fun testBuySmallExpansionFour() {
+        initConnections()
+
+        assertEquals(rootServiceHost.networkService.connectionState, ConnectionState.PLAYING_MY_TURN)
+        assertEquals(rootServiceGuest.networkService.connectionState, ConnectionState.WAITING_FOR_TURN)
+
+        val hostGame = rootServiceHost.currentGame
+        val guestGame = rootServiceGuest.currentGame
+
+        assertNotNull(hostGame)
+        assertNotNull(guestGame)
+
+        val hostCurrentPlayer = hostGame.players[hostGame.currentPlayer]
+        val guestCurrentPlayer = guestGame.players[guestGame.currentPlayer]
+
+        hostCurrentPlayer.coins = 20
+        guestCurrentPlayer.coins = 20
+
+        rootServiceHost.playerActionService.expandPrisonGrid(false, 1,5, 270)
+        rootServiceHost.waitForState(ConnectionState.WAITING_FOR_TURN)
+        rootServiceGuest.waitForState(ConnectionState.PLAYING_MY_TURN)
+
+        assertTrue { guestCurrentPlayer.board.getPrisonGrid(1,5) }
+        assertTrue { guestCurrentPlayer.board.getPrisonGrid(2,6) }
+        assertTrue { guestCurrentPlayer.board.getPrisonGrid(2,5) }
+    }
+
+    /**
+     * Tests if moving a Janitor to Secretary works properly on the network.
+     */
+    @Test
+    fun testPlaceJanitorToSecretary() {
+        initConnections()
+
+        val hostGame = rootServiceHost.currentGame
+        val guestGame = rootServiceGuest.currentGame
+
+        assertNotNull(hostGame)
+        assertNotNull(guestGame)
+
+        val hostCurrentPlayer = hostGame.players[hostGame.currentPlayer]
+        val guestCurrentPlayer = guestGame.players[guestGame.currentPlayer]
+
+        hostCurrentPlayer.coins = 20
+        hostCurrentPlayer.hasJanitor = true
+        guestCurrentPlayer.coins = 20
+        guestCurrentPlayer.hasJanitor = true
+
+        rootServiceHost.playerActionService.moveEmployee(-102, -102, -103,-103)
+        rootServiceHost.waitForState(ConnectionState.WAITING_FOR_TURN)
+        rootServiceGuest.waitForState(ConnectionState.PLAYING_MY_TURN)
+
+        assertTrue { hostCurrentPlayer.secretaryCount == 1 && !hostCurrentPlayer.hasJanitor }
+        assertTrue { guestCurrentPlayer.secretaryCount == 1 && !guestCurrentPlayer.hasJanitor }
+    }
+
+    /**
+     * Tests if moving a Secretary to Lawyer works properly on the network.
+     */
+    @Test
+    fun testPlaceSecretaryToLawyer() {
+        initConnections()
+
+        val hostGame = rootServiceHost.currentGame
+        val guestGame = rootServiceGuest.currentGame
+
+        assertNotNull(hostGame)
+        assertNotNull(guestGame)
+
+        val hostCurrentPlayer = hostGame.players[hostGame.currentPlayer]
+        val guestCurrentPlayer = guestGame.players[guestGame.currentPlayer]
+
+        hostCurrentPlayer.coins = 20
+        hostCurrentPlayer.secretaryCount = 1
+        guestCurrentPlayer.coins = 20
+        guestCurrentPlayer.secretaryCount = 1
+
+        rootServiceHost.playerActionService.moveEmployee(-103, -103, -104,-104)
+        rootServiceHost.waitForState(ConnectionState.WAITING_FOR_TURN)
+        rootServiceGuest.waitForState(ConnectionState.PLAYING_MY_TURN)
+
+        assertTrue { hostCurrentPlayer.secretaryCount == 0 && hostCurrentPlayer.lawyerCount == 1 }
+        assertTrue { guestCurrentPlayer.secretaryCount == 0 && hostCurrentPlayer.lawyerCount == 1 }
+    }
+
+    /**
+     * Tests if moving a Lawyer to Janitor works properly on the network.
+     */
+    @Test
+    fun testPlaceLawyerToJanitor() {
+        initConnections()
+
+        val hostGame = rootServiceHost.currentGame
+        val guestGame = rootServiceGuest.currentGame
+
+        assertNotNull(hostGame)
+        assertNotNull(guestGame)
+
+        val hostCurrentPlayer = hostGame.players[hostGame.currentPlayer]
+        val guestCurrentPlayer = guestGame.players[guestGame.currentPlayer]
+
+        hostCurrentPlayer.coins = 20
+        hostCurrentPlayer.lawyerCount = 1
+        guestCurrentPlayer.coins = 20
+        guestCurrentPlayer.lawyerCount = 1
+
+        rootServiceHost.playerActionService.moveEmployee(-104, -104, -102,-102)
+        rootServiceHost.waitForState(ConnectionState.WAITING_FOR_TURN)
+        rootServiceGuest.waitForState(ConnectionState.PLAYING_MY_TURN)
+
+        assertTrue { hostCurrentPlayer.lawyerCount == 0 && hostCurrentPlayer.hasJanitor }
+        assertTrue { guestCurrentPlayer.lawyerCount == 0 && hostCurrentPlayer.hasJanitor }
+    }
+
+    /**
+     * Tests if moving a Guard works properly on the network.
+     */
+    @Test
+    fun testPlaceGuard() {
+        initConnections()
+
+        val hostGame = rootServiceHost.currentGame
+        val guestGame = rootServiceGuest.currentGame
+
+        assertNotNull(hostGame)
+        assertNotNull(guestGame)
+
+        val hostCurrentPlayer = hostGame.players[hostGame.currentPlayer]
+        val guestCurrentPlayer = guestGame.players[guestGame.currentPlayer]
+
+        hostCurrentPlayer.coins = 20
+        hostCurrentPlayer.board.setPrisonYard(2,2, GuardTile())
+        guestCurrentPlayer.coins = 20
+        guestCurrentPlayer.board.setPrisonYard(2,2, GuardTile())
+
+        rootServiceHost.playerActionService.moveEmployee(2, 2, 2,3)
+        rootServiceHost.waitForState(ConnectionState.WAITING_FOR_TURN)
+        rootServiceGuest.waitForState(ConnectionState.PLAYING_MY_TURN)
+
+        assertTrue { hostCurrentPlayer.board.guardPosition[0].first == 2 }
+        assertTrue { hostCurrentPlayer.board.guardPosition[0].second == 3 }
+        assertTrue { guestCurrentPlayer.board.guardPosition[0].first == 2 }
+        assertTrue { guestCurrentPlayer.board.guardPosition[0].second == 3 }
     }
 
 

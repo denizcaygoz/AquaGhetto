@@ -8,6 +8,11 @@ import tools.aqua.bgw.net.common.annotations.GameActionReceiver
 import tools.aqua.bgw.net.common.notification.PlayerJoinedNotification
 import tools.aqua.bgw.net.common.response.*
 
+/**
+ * [BoardGameClient] implementation for network communication.
+ *
+ * @param networkService the [NetworkService] to potentially forward received messages to.
+ */
 class AqueghettoNetworkClient(
     playerName: String,
     host: String,
@@ -186,7 +191,7 @@ class AqueghettoNetworkClient(
     @GameActionReceiver
     fun onDiscard(message: DiscardMessage, sender: String) {
         BoardGameApplication.runOnGUIThread {
-            networkService.receiveDiscard(message)
+            networkService.receiveDiscard()
         }
     }
 

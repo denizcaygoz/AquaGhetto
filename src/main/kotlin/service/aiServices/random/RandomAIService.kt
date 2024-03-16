@@ -45,7 +45,7 @@ class RandomAIService(rootService: RootService) {
 
         when (option) {
             0 -> { /*place tile on prison bus*/
-                randomAIActionService.addTileToPrisonBus(canTakeBuses.toList(), game)
+                randomAIActionService.addTileToPrisonBus(canTakeBuses.toList())
             }
             1 -> { /*move own prisoner from isolation*/
                 randomAIActionService.moveOwnPrisonerFromIsolation(player)

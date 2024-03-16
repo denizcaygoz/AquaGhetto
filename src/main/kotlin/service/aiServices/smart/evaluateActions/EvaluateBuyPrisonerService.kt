@@ -1,55 +1,50 @@
 package service.aiServices.smart.evaluateActions
 
 import entity.AquaGhetto
-import entity.aIActions.*
-import service.aiServices.smart.EvaluateBestPosition
+import entity.Player
+import entity.aIActions.ActionBuyPrisoner
+import entity.aIActions.PlaceCard
 import service.aiServices.smart.SmartAI
 
-/**
- * Klass to simulate buy prisoner from other isolation action.
- * @property evaluateBestPosition is assigned to use getBestPositions function
- */
 class EvaluateBuyPrisonerService(val smartAI: SmartAI) {
-    private val evaluateBestPosition = EvaluateBestPosition(smartAI)
 
-    /**
-     * function to simulate the action.
-     */
     fun getScoreBuyPrisoner(game: AquaGhetto, depth: Int, maximize: Int, amountActions: Int): ActionBuyPrisoner {
         val player = game.players[game.currentPlayer]
 
-        /*finding the other player to access its isolation
-        * This works for 2 players but not for games with more than 2 players.*/
-        val otherPlayers = game.players.filter { it != player }
-
-        var tile = otherPlayers[0].isolation.peek()
-        /*For the cases where there is no place*/
-        val placeCard = evaluateBestPosition.getBestPositions(tile,player)
-
-
-
-        if (player.coins < 2 || otherPlayers[0].isolation.isEmpty() || placeCard == null) {
-            return ActionBuyPrisoner(false,0,otherPlayers[0],
-                PlaceCard(Pair(0,0) ,null,null,null))
+        val actions = mutableListOf<ActionBuyPrisoner>()
+        for (p in game.players) {
+            if (p == player) continue
+            val action = forOneSpecifiedPlayer(player, p)
+            if (action.validAction) actions.add(action)
         }
 
-        otherPlayers[0].coins++
-        player.coins -= 2
+        /*evaluating all actions would be to expensive I think*/
+        if (actions.isEmpty()) return ActionBuyPrisoner(false, 0 , player, PlaceCard(Pair(0,0)))
 
-        tile = otherPlayers[0].isolation.pop()
-
-
-        val actionFree = smartAI.minMax(game, depth, maximize, amountActions)
-        otherPlayers[0].coins--
-        player.coins += 2
-        otherPlayers[0].isolation.push(tile)
-        player.board.setPrisonYard(placeCard.placePrisoner.first,placeCard.placePrisoner.second,null)
-
-
-        return ActionBuyPrisoner(actionFree.validAction, actionFree.score, player,placeCard)
-
+        return actions.maxBy { it.score }
     }
 
+    private fun forOneSpecifiedPlayer(player: Player, buyFrom: Player): ActionBuyPrisoner {
+        if (player.coins < 2 || buyFrom.isolation.isEmpty()) {
+            return ActionBuyPrisoner(false, 0 , player, PlaceCard(Pair(0,0)))
+        }
 
+        val removedTile = buyFrom.isolation.pop()
+        player.coins -= 2
+        buyFrom.coins += 1
+
+        val pos = smartAI.evaluateBestPosition.getBestPositions(removedTile, player)
+            ?: return ActionBuyPrisoner(false, 0 , player, PlaceCard(Pair(0,0))) /*don't buy if no valid place*/
+
+        val undoData = smartAI.simulatePlacement(pos.first, removedTile, pos.second, player)
+
+        val score = smartAI.evaluateGamePosition.evaluateCurrentPosition()
+
+        val result = ActionBuyPrisoner(true, score, buyFrom, pos.first)
+
+        smartAI.undoSimulatePlacement(pos.first, pos.second, player, undoData)
+
+        return result
+    }
 
 }

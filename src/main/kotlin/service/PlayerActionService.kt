@@ -4,6 +4,7 @@ import entity.AquaGhetto
 import entity.Board
 import entity.Player
 import entity.PrisonBus
+import entity.enums.PlayerType
 import entity.enums.PrisonerTrait
 import entity.enums.PrisonerType
 import entity.tileTypes.CoinTile
@@ -20,7 +21,7 @@ import service.networkService.ConnectionState
  */
 class PlayerActionService(private val rootService: RootService): AbstractRefreshingService() {
 
-    fun addTileToPrisonBus(tile: Tile, prisonBus: PrisonBus) {
+    fun addTileToPrisonBus(tile: Tile, prisonBus: PrisonBus, sender: PlayerType = PlayerType.PLAYER) {
         val isNetworkGame = rootService.networkService.connectionState != ConnectionState.DISCONNECTED
         val game = rootService.currentGame
         checkNotNull(game) { "No game started yet." }
@@ -50,13 +51,17 @@ class PlayerActionService(private val rootService: RootService): AbstractRefresh
         // Add the tile to the prison bus
         prisonBus.tiles[emptyAndUnblockedIndex] = tile
 
-        if (isNetworkGame) {
+        if (isNetworkGame && sender == PlayerType.PLAYER) {
             rootService.networkService.sendAddTileToTruck(prisonBus)
+            // Nur weil determineNextPlayer nicht implementiert wurde
             rootService.networkService.updateConnectionState(ConnectionState.WAITING_FOR_TURN)
         }
 
+        rootService.gameService.determineNextPlayer(false)
+
         onAllRefreshables {
             refreshPrisonBus(prisonBus)
+            refreshAfterNextTurn(game.players[game.currentPlayer])
         }
     }
 
@@ -94,6 +99,12 @@ class PlayerActionService(private val rootService: RootService): AbstractRefresh
                 }
                 refreshPrisonBus(prisonBus)
             }
+        }
+
+        rootService.gameService.determineNextPlayer(true)
+
+        onAllRefreshables {
+            refreshAfterNextTurn(game.players[game.currentPlayer])
         }
     }
 
@@ -147,15 +158,24 @@ class PlayerActionService(private val rootService: RootService): AbstractRefresh
                 refreshScoreStats()
                 refreshPrison(tile, x, y)
             }
+
+            if (result.second != null) { // No baby tile, turn is over
+                rootService.gameService.determineNextPlayer(false)
+                onAllRefreshables { refreshAfterNextTurn(game.players[game.currentPlayer]) }
+            }
+
             return result
 
         } else if (x == y && x == -100) { // To put prisoners into a player's isolation
             player.isolation.push(tile)
             result = Pair(true, null)
 
+            rootService.gameService.determineNextPlayer(false)
+
             onAllRefreshables {
                 refreshIsolation(player)
                 refreshScoreStats()
+                refreshAfterNextTurn(game.players[game.currentPlayer])
             }
 
             return result
@@ -193,19 +213,16 @@ class PlayerActionService(private val rootService: RootService): AbstractRefresh
         // Pop a prisoner tile from the player's isolation area
         val tile = player.isolation.pop()
 
-        // Place the prisoner on the game board's prison yard
-        val bonus = placePrisoner(tile, x, y)
-
         // Deduct one coin from the player
         player.coins--
 
         // Refresh isolation area and prison layout for all observers
         onAllRefreshables {
             refreshIsolation(player)
-            refreshPrison(tile, x, y)
         }
 
-        return bonus
+        // Place the prisoner on the game board's prison yard
+        return placePrisoner(tile, x, y)
     }
 
 
@@ -232,7 +249,14 @@ class PlayerActionService(private val rootService: RootService): AbstractRefresh
      * @throws IllegalStateException Guards are moved from/to invalid locations
      * or the player already has the maximum number of employees from a type.
      */
-    fun moveEmployee(sourceX: Int, sourceY: Int , destinationX: Int, destinationY: Int) {
+    fun moveEmployee(
+        sourceX: Int,
+        sourceY: Int,
+        destinationX: Int,
+        destinationY: Int,
+        sender: PlayerType = PlayerType.PLAYER
+    ) {
+        val isNetworkGame = rootService.networkService.connectionState != ConnectionState.DISCONNECTED
         val game = rootService.currentGame
 
         checkNotNull(game) { "No game is running right now."}
@@ -293,12 +317,26 @@ class PlayerActionService(private val rootService: RootService): AbstractRefresh
             currentPlayer.board.guardPosition.add(Pair(destinationX, destinationY))
         }
 
+        rootService.gameService.determineNextPlayer(false)
+
+        if (isNetworkGame && sender == PlayerType.PLAYER) {
+            rootService.networkService.sendPlaceWorker(
+                sourceX,
+                sourceY,
+                destinationX,
+                destinationY
+            )
+            // Nur weil determineNextPlayer nicht implementiert wurde
+            rootService.networkService.updateConnectionState(ConnectionState.WAITING_FOR_TURN)
+        }
+
         onAllRefreshables {
             refreshEmployee(currentPlayer) // aktualisiert refreshEmployee auch die GuardTiles?
             if (hasSetJanitorHere) {
                 refreshIsolation(currentPlayer)
             }
             refreshScoreStats()
+            refreshAfterNextTurn(game.players[game.currentPlayer])
         }
     }
 
@@ -327,15 +365,13 @@ class PlayerActionService(private val rootService: RootService): AbstractRefresh
 
         // Fetching the Prisoner from the selected player
         val prisonerFromSelectedPlayersIsolation = player.isolation.pop()
-        val bonusTile = placePrisoner(prisonerFromSelectedPlayersIsolation, x, y)
 
         onAllRefreshables {
             refreshScoreStats()
             refreshIsolation(player)
-            refreshPrison(prisonerFromSelectedPlayersIsolation, x, y)
         }
 
-        return bonusTile
+        return placePrisoner(prisonerFromSelectedPlayersIsolation, x, y)
     }
 
     /**
@@ -346,13 +382,14 @@ class PlayerActionService(private val rootService: RootService): AbstractRefresh
      * @throws IllegalArgumentException when there is no prisoner on his isolation stack
      *
      **/
-    fun freePrisoner() {
+    fun freePrisoner(sender: PlayerType = PlayerType.PLAYER) {
+        val isNetworkGame = rootService.networkService.connectionState != ConnectionState.DISCONNECTED
         val game: AquaGhetto? = rootService.currentGame
 
         checkNotNull(game) { "There is no game running" }
 
         val currentPlayer: Player = game.players[game.currentPlayer]
-        require(currentPlayer.coins >= 2) { "The current player has not enough money" }
+        require(currentPlayer.coins >= 2) { "The current player: ${currentPlayer.name} has not enough money" }
         require(!currentPlayer.isolation.empty()) { "There is not prisoner to be freed" }
 
         currentPlayer.isolation.pop()
@@ -360,11 +397,18 @@ class PlayerActionService(private val rootService: RootService): AbstractRefresh
 
         rootService.evaluationService.evaluatePlayer(currentPlayer)
 
-        //rootService.gameService.determineNextPlayer()
+        rootService.gameService.determineNextPlayer(false)
 
-        /**
-         * onAllRefreshables { refreshIsolation() }
-         * */
+        if (isNetworkGame && sender == PlayerType.PLAYER) {
+            rootService.networkService.sendDiscard()
+            // Nur weil determineNextPlayer nicht implementiert wurde
+            rootService.networkService.updateConnectionState(ConnectionState.WAITING_FOR_TURN)
+        }
+
+        onAllRefreshables {
+            refreshIsolation(currentPlayer)
+            refreshAfterNextTurn(game.players[game.currentPlayer])
+        }
     }
 
     /**
@@ -375,7 +419,14 @@ class PlayerActionService(private val rootService: RootService): AbstractRefresh
      * @throws IllegalArgumentException when the placement of the extension is not valid
      *
      **/
-    fun expandPrisonGrid(isBigExtension: Boolean, x: Int, y: Int , rotation: Int) {
+    fun expandPrisonGrid(
+        isBigExtension: Boolean,
+        x: Int,
+        y: Int ,
+        rotation: Int,
+        sender: PlayerType = PlayerType.PLAYER
+    ) {
+        val isNetworkGame = rootService.networkService.connectionState != ConnectionState.DISCONNECTED
         val game: AquaGhetto? = rootService.currentGame
 
         checkNotNull(game) { "There is no game running" }
@@ -430,11 +481,18 @@ class PlayerActionService(private val rootService: RootService): AbstractRefresh
             currentPlayer.remainingSmallExtensions -= 1
         }
 
-        //rootService.gameService.determineNextPlayer()
+        if (isNetworkGame && sender == PlayerType.PLAYER) {
+            rootService.networkService.sendBuyExpansion(isBigExtension, x, y, rotation)
+            // Nur weil determineNextPlayer nicht implementiert wurde
+            rootService.networkService.updateConnectionState(ConnectionState.WAITING_FOR_TURN)
+        }
 
-        /**
-         * onAllRefreshables { refreshPrison() }
-         **/
+        rootService.gameService.determineNextPlayer(false)
+
+        onAllRefreshables {
+            refreshPrison(null, -1, -1)
+            refreshAfterNextTurn(game.players[game.currentPlayer])
+        }
     }
 
     /**

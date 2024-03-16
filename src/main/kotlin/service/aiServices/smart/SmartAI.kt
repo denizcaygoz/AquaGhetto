@@ -4,11 +4,16 @@ import entity.AquaGhetto
 import entity.Player
 import entity.aIActions.*
 import entity.enums.PlayerType
+import entity.enums.PrisonerTrait
 import entity.tileTypes.CoinTile
+import entity.tileTypes.GuardTile
 import entity.tileTypes.PrisonerTile
 import service.RootService
 import service.aiServices.smart.evaluateActions.*
+import java.util.concurrent.TimeUnit
+import java.util.concurrent.locks.ReentrantLock
 import kotlin.concurrent.thread
+import kotlin.concurrent.withLock
 
 class SmartAI(val rootService: RootService, val player: Player) {
 
@@ -19,7 +24,8 @@ class SmartAI(val rootService: RootService, val player: Player) {
     private val evaluateExpandPrison = EvaluateExpandPrisonGridService(this)
     private val evaluateMoveEmployee = EvaluateMoveEmployeeService(this)
     private val evaluateMoveOwnPrisoner = EvaluateMoveOwnPrisonerService(this)
-    private val evaluateGamePosition = EvaluateGamePositionService(this)
+    val evaluateGamePosition = EvaluateGamePositionService(this)
+    val evaluateBestPosition = EvaluateBestPosition(this)
 
     private val checkLayers = 4
 
@@ -149,7 +155,7 @@ class SmartAI(val rootService: RootService, val player: Player) {
 
         /*runs the 7 actions parallel*/
         /*
-        if (depth == checkLayers - 1) {
+        if (depth == checkLayers - 0 || depth == checkLayers - 0) {
             return minMaxNewThread(game, depth, maximize, actionsChecked)
         }
         */
@@ -159,6 +165,8 @@ class SmartAI(val rootService: RootService, val player: Player) {
         /*funktion gibt den score des standes nach der aktion zurück und was gemacht werden muss damit man zu diesem
         * score kommt, damit dies nicht ernuet berechnet werden muss*/
         /*erstelle objekte sollten sich (hoffentlich) in grenzen halten*/
+
+        /*do not edit maximize!!!*/
         val scoreAddTileToPrisonBus = evaluateAddTileToBus.getScoreAddTileToPrisonBus(game, depth - 1, maximize, actionsChecked)
         val scoreMoveOwnPrisoner = evaluateMoveOwnPrisoner.getScoreMoveOwnPrisoner(game, depth - 1, maximize, actionsChecked)
         val scoreMoveEmployee = evaluateMoveEmployee.getScoreMoveEmployee(game, depth - 1, maximize, actionsChecked)
@@ -193,33 +201,59 @@ class SmartAI(val rootService: RootService, val player: Player) {
         var scoreFreePrisoner: AIAction? = null
         var scoreExpandPrison: AIAction? = null
         var scoreTakeBus: AIAction? = null
+
+        val thr = Thread.currentThread()
+        val lock = ReentrantLock()
+        val condition = lock.newCondition()
+
+
         threads.add(thread {
-            scoreAddTileToPrisonBus = evaluateAddTileToBus.getScoreAddTileToPrisonBus(game, depth, maximize, actionsChecked)
+            scoreAddTileToPrisonBus = evaluateAddTileToBus.getScoreAddTileToPrisonBus(game.clone(), depth - 1, maximize, actionsChecked)
+            lock.withLock { condition.signal() }
         })
         threads.add(thread {
-            scoreMoveOwnPrisoner = evaluateMoveOwnPrisoner.getScoreMoveOwnPrisoner(game, depth, maximize, actionsChecked)
+            scoreMoveOwnPrisoner = evaluateMoveOwnPrisoner.getScoreMoveOwnPrisoner(game.clone(), depth - 1, maximize, actionsChecked)
+            lock.withLock { condition.signal() }
         })
         threads.add(thread {
-            scoreMoveEmployee = evaluateMoveEmployee.getScoreMoveEmployee(game, depth, maximize, actionsChecked)
+            scoreMoveEmployee = evaluateMoveEmployee.getScoreMoveEmployee(game.clone(), depth - 1, maximize, actionsChecked)
+            lock.withLock { condition.signal() }
         })
         threads.add(thread {
-            scoreBuyPrisoner = evaluateBuyPrisoner.getScoreBuyPrisoner(game, depth, maximize, actionsChecked)
+            scoreBuyPrisoner = evaluateBuyPrisoner.getScoreBuyPrisoner(game.clone(), depth - 1, maximize, actionsChecked)
+            lock.withLock { condition.signal() }
         })
         threads.add(thread {
-            scoreFreePrisoner = evaluateActionFreePrisoner.freePrisoner(game, depth, maximize, actionsChecked)
+            scoreFreePrisoner = evaluateActionFreePrisoner.freePrisoner(game.clone(), depth - 1, maximize, actionsChecked)
+            lock.withLock { condition.signal() }
         })
         threads.add(thread {
-            scoreExpandPrison = evaluateExpandPrison.getScoreExpandPrisonGrid(game, depth, maximize, actionsChecked)
+            scoreExpandPrison = evaluateExpandPrison.getScoreExpandPrisonGrid(game.clone(), depth - 1, maximize, actionsChecked)
+            lock.withLock { condition.signal() }
         })
         threads.add(thread {
-            scoreTakeBus = evaluateActionTakeBus.takeBus(game, depth, maximize, actionsChecked)
+            scoreTakeBus = evaluateActionTakeBus.takeBus(game.clone(), depth - 1, maximize, actionsChecked)
+            lock.withLock { condition.signal() }
         })
 
-        Thread.sleep(8000)
+        lock.withLock {
+            condition.await(8000, TimeUnit.MILLISECONDS)
+            if (depth == checkLayers) condition.await(1000, TimeUnit.MILLISECONDS)
+        }
+
+        /*
         for (t in threads) {
             t.interrupt()
         }
-        Thread.sleep(1000)
+        */
+
+        /*
+        try {
+            Thread.sleep(1000)
+        } catch (e: InterruptedException) {
+            /*do nothing*/
+        }
+        */
 
         val scoreListNulls = mutableListOf(scoreAddTileToPrisonBus, scoreMoveOwnPrisoner, scoreMoveEmployee,
             scoreBuyPrisoner, scoreFreePrisoner, scoreExpandPrison, scoreTakeBus)
@@ -240,6 +274,7 @@ class SmartAI(val rootService: RootService, val player: Player) {
      * @return the action this AI/player should/would perform
      */
     fun getBestAction(maximize: Int, actionList: List<AIAction> , game: AquaGhetto): AIAction {
+        /*only first used, because every player wants to maximize his score*/
         return if ((maximize % game.players.size) == 0) {
             var bestScore = Integer.MIN_VALUE
             var bestAction: AIAction? = null
@@ -326,9 +361,136 @@ class SmartAI(val rootService: RootService, val player: Player) {
         }
     }
 
+    fun getNextAndOldPlayer(game: AquaGhetto): Pair<Int,Int> {
+        val oldPlayer = game.currentPlayer
 
+        //TODO do stuff determine next player
 
+        val nextPlayer = 0
 
+        return Pair(oldPlayer, nextPlayer)
+    }
+
+    fun simulatePlacement(placeCard: PlaceCard, tile: PrisonerTile, coin: Boolean, player: Player): Pair<PrisonerTile, PrisonerTile>?{
+        val board = player.board
+        var returnValue: Pair<PrisonerTile, PrisonerTile>? = null
+
+        val prisoner = placeCard.placePrisoner
+        board.setPrisonYard(prisoner.first, prisoner.second, tile)
+
+        val bonusFirstEmployee = placeCard.firstTileBonusEmployee
+        if (bonusFirstEmployee != null) {
+            val x = bonusFirstEmployee.first
+            val y = bonusFirstEmployee.second
+
+            when (x) {
+                -102 -> {
+                    player.hasJanitor = true
+                }
+                -103 -> {
+                    player.secretaryCount++
+                }
+                -104 -> {
+                    player.lawyerCount++
+                } else -> {
+                    board.setPrisonYard(x, y, GuardTile())
+                }
+            }
+        }
+
+        if (placeCard.placeBonusPrisoner != null) {
+            val baby = evaluateBestPosition.checkBabyNotRemove(player)
+            if (baby != null) {
+                val babyTile = PrisonerTile(-1, PrisonerTrait.BABY, baby.first.prisonerType)
+                board.setPrisonYard(prisoner.first, prisoner.second, babyTile)
+                baby.first.breedable = false
+                baby.second.breedable = false
+            } else {
+                println("This should not happen. Baby pos but no baby?")
+            }
+
+        }
+
+        val bonusSecondEmployee = placeCard.firstTileBonusEmployee
+        if (bonusSecondEmployee != null) {
+            val x = bonusSecondEmployee.first
+            val y = bonusSecondEmployee.second
+
+            when (x) {
+                -102 -> {
+                    player.hasJanitor = true
+                }
+                -103 -> {
+                    player.secretaryCount++
+                }
+                -104 -> {
+                    player.lawyerCount++
+                } else -> {
+                board.setPrisonYard(x, y, GuardTile())
+                }
+            }
+        }
+
+        if (coin) player.coins++
+
+        /*return parent tiles to allow undo*/
+        return returnValue
+    }
+
+    fun undoSimulatePlacement(placeCard: PlaceCard, coin: Boolean, player: Player, parentTiles: Pair<PrisonerTile, PrisonerTile>?) {
+        val board = player.board
+
+        val prisoner = placeCard.placePrisoner
+        board.setPrisonYard(prisoner.first, prisoner.second, null)
+
+        val bonusFirstEmployee = placeCard.firstTileBonusEmployee
+        if (bonusFirstEmployee != null) {
+            val x = bonusFirstEmployee.first
+            val y = bonusFirstEmployee.second
+
+            when (x) {
+                -102 -> {
+                    player.hasJanitor = false
+                }
+                -103 -> {
+                    player.secretaryCount--
+                }
+                -104 -> {
+                    player.lawyerCount--
+                } else -> {
+                board.setPrisonYard(x, y, null)
+            }
+            }
+        }
+
+        if (placeCard.placeBonusPrisoner != null && parentTiles != null) {
+            board.setPrisonYard(prisoner.first, prisoner.second, null)
+            parentTiles.first.breedable = true
+            parentTiles.second.breedable = true
+        }
+
+        val bonusSecondEmployee = placeCard.firstTileBonusEmployee
+        if (bonusSecondEmployee != null) {
+            val x = bonusSecondEmployee.first
+            val y = bonusSecondEmployee.second
+
+            when (x) {
+                -102 -> {
+                    player.hasJanitor = false
+                }
+                -103 -> {
+                    player.secretaryCount--
+                }
+                -104 -> {
+                    player.lawyerCount--
+                } else -> {
+                board.setPrisonYard(x, y, null)
+                }
+            }
+        }
+
+        if (coin) player.coins++
+    }
 
 
 }
