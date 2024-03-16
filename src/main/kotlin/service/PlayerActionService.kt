@@ -320,14 +320,14 @@ class PlayerActionService(private val rootService: RootService): AbstractRefresh
         rootService.gameService.determineNextPlayer(false)
 
         if (isNetworkGame && sender == PlayerType.PLAYER) {
-            rootService.networkService.sendPlaceWorker(
-                sourceX,
-                sourceY,
-                destinationX,
-                destinationY
-            )
-            // Nur weil determineNextPlayer nicht implementiert wurde
-            rootService.networkService.updateConnectionState(ConnectionState.WAITING_FOR_TURN)
+            if (sourceX == sourceY && sourceX != -101) {
+                rootService.networkService.sendPlaceWorker(
+                    sourceX,
+                    sourceY,
+                    destinationX,
+                    destinationY
+                )
+            }
         }
 
         onAllRefreshables {
@@ -356,7 +356,7 @@ class PlayerActionService(private val rootService: RootService): AbstractRefresh
         val currentPlayer = game.players[game.currentPlayer]
 
         check(currentPlayer.coins >= 2) { "Insufficient player funds."}
-        check(player.isolation.isNotEmpty()) { "Player has no Prisoner in their isolation." }
+        check(player.isolation.isNotEmpty()) { "Player ${player.name} has no Prisoner in their isolation." }
         check(player != currentPlayer) { "Player can't buy from their own isolation."}
 
         // Transferring money
