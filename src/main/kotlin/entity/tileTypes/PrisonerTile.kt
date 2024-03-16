@@ -14,7 +14,7 @@ import java.io.Serializable
  * @property breedable indicates if a prisoner is breedable, is true if prisoner has the
  * trait male or female and has not yet been paired.
  */
-data class PrisonerTile(override val id: Int,
+class PrisonerTile(override val id: Int,
                    val prisonerTrait: PrisonerTrait ,
                    val prisonerType: PrisonerType): Tile(), Serializable {
     companion object {
