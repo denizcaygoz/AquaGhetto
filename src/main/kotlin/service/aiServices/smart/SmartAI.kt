@@ -378,7 +378,7 @@ class SmartAI(val rootService: RootService, val player: Player) {
                 if (busWasTakenInThisRound)
                     game.currentPlayer = (game.currentPlayer + 1) % game.players.size
 
-                this.checkAITurn(game.players[game.currentPlayer], 1000)
+
             }
             0 -> { /*all players have taken a buss*/
                 if (game.finalStack.size != 15) { /*reserve stack was taken*/
@@ -399,7 +399,7 @@ class SmartAI(val rootService: RootService, val player: Player) {
                     game.currentPlayer = (game.currentPlayer + 1) % game.players.size
                 } while (game.players[game.currentPlayer].takenBus != null)
 
-                this.checkAITurn(game.players[game.currentPlayer], 1000)
+
             }
         }
 
@@ -420,13 +420,9 @@ class SmartAI(val rootService: RootService, val player: Player) {
         /*onAllRefreshables {
             refreshAfterNextTurn(game.players[game.currentPlayer])
         }*/
-        this.checkAITurn(game.players[game.currentPlayer], 1500)
+
     }
-    private fun checkAITurn(player: Player, delay: Int) {
-        if (player.type == PlayerType.AI || player.type == PlayerType.RANDOM_AI) {
-            rootService.aiService.makeTurn(player , delay)
-        }
-    }
+
 
     fun simulateSetUpNewRound(game: AquaGhetto) {
         //TODO
