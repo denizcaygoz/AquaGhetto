@@ -119,7 +119,7 @@ class SmartAI(val rootService: RootService, val player: Player) {
     private fun takeBus(aiAction: ActionTakeBus, game: AquaGhetto) {
         val takenBus = game.prisonBuses[aiAction.bus]
         rootService.playerActionService.takePrisonBus(takenBus) /*remove coins from bus*/
-        val tiles = takenBus.tiles.filterNotNull()
+        val tiles = takenBus.tiles.filterNotNull().toMutableList()
         if (aiAction.placeCards.size != tiles.size) {
             //TODO add emergency action?
             println("Error AI action did not matched bus tiles")
@@ -128,6 +128,10 @@ class SmartAI(val rootService: RootService, val player: Player) {
         for (i in tiles.indices) {
             val tile = tiles[i]
             if (tile !is PrisonerTile) {
+                /*This tile suppose to be a coin tile*/
+                /*Remove the tile from the list and give 1 coin to player.*/
+                game.players[game.currentPlayer].coins++
+                tiles.removeAt(i)
                 println("Found non prisoner tile in bus, this should not happen")
                 continue
             }
