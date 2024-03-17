@@ -5,7 +5,6 @@ import entity.enums.PrisonerTrait
 import entity.enums.PrisonerType
 import entity.tileTypes.GuardTile
 import entity.tileTypes.PrisonerTile
-import java.lang.IndexOutOfBoundsException
 import java.util.*
 import kotlin.test.*
 
@@ -466,7 +465,7 @@ class PlayerActionServiceTest {
         //setting up the situation where player already taken a bus.
         val tile = game.drawStack.pop()
         rootService.playerActionService.addTileToPrisonBus(tile,game.prisonBuses[0], changePlayer = false)
-        rootService.playerActionService.takePrisonBus(game.prisonBuses[0], changePlayer = false)
+        rootService.playerActionService.takePrisonBus(game.prisonBuses[0])
 
 
         val tile1 = game.drawStack.pop()

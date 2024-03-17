@@ -70,7 +70,7 @@ class PlayerActionService(private val rootService: RootService): AbstractRefresh
         }
     }
 
-    fun takePrisonBus(prisonBus: PrisonBus, changePlayer: Boolean = true) {
+    fun takePrisonBus(prisonBus: PrisonBus) {
         val game = rootService.currentGame ?: throw IllegalStateException("No game started yet.")
 
         val currentPlayer = game.players.getOrNull(game.currentPlayer)
@@ -106,13 +106,7 @@ class PlayerActionService(private val rootService: RootService): AbstractRefresh
             }
         }
 
-        // Der Spieler muss noch seine Karten platzieren vom bus
-        if (changePlayer)
-            rootService.gameService.determineNextPlayer(true)
-
-        onAllRefreshables {
-            refreshAfterNextTurn(game.players[game.currentPlayer])
-        }
+        // GUI muss nach dieser Methode seperat placePrisoner und determineNextPlayer aufrufen
     }
 
     /**
