@@ -164,9 +164,6 @@ class SmartAI(val rootService: RootService, val player: Player) {
         }
 
         val undoData = this.simulateSetUpNewRound(game)
-        if (undoData != null) {
-            println(undoData)
-        }
 
         /*runs the 7 actions parallel*/
         /*
@@ -393,7 +390,7 @@ class SmartAI(val rootService: RootService, val player: Player) {
                 }
             }
             0 -> { /*all players have taken a buss*/
-                println("This should not happen, new round is handled in minMax")
+                //println("This should not happen, new round is handled in minMax")
                 /*
                 if (game.finalStack.size != 15) { /*reserve stack was taken*/
                     rootService.evaluationService.evaluateGame()
