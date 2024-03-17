@@ -334,28 +334,27 @@ class NetworkService(private val rootService: RootService): AbstractRefreshingSe
      * @throws IllegalArgumentException if it's not currently my turn
      * @throws IllegalStateException if there is no game running
      */
-    fun sendTakeTruck(prisonBus: PrisonBus) {
+    fun sendTakeTruck(prisonBus: Int) {
         require(connectionState == ConnectionState.PLAYING_MY_TURN) { "not my turn" }
 
-        var selectedPrisonBus: Int = 0
         val game = rootService.currentGame
 
         checkNotNull(game) { "somehow the current game doesnt exist." }
         /** get the id from given bus **/
-        game.prisonBuses.forEachIndexed { index, bus ->
-            if (bus == prisonBus) { selectedPrisonBus = index }
-        }
 
         val listsToSend = prepareLists()
         /**create TakeTruckMessage **/
         val message = TakeTruckMessage(
-            selectedPrisonBus,
+            prisonBus,
             listsToSend.first.toList(),
             listsToSend.second.toList(),
             listsToSend.third.toList()
         )
         /**send message **/
         client?.sendGameActionMessage(message)
+        resetLists()
+        // Nur weil determineNextPlayer nicht implementiert wurde
+        updateConnectionState(ConnectionState.WAITING_FOR_TURN)
     }
 
     /**
@@ -381,9 +380,14 @@ class NetworkService(private val rootService: RootService): AbstractRefreshingSe
 
         val currentPlayer: Player = game.players[game.currentPlayer]
         val prisonBus: PrisonBus = game.prisonBuses[busId]
-        val takenBus: PrisonBus? = currentPlayer.takenBus
+        val possibleChildren: MutableList<Pair<Boolean, PrisonerTile?>> = mutableListOf()
 
         rootService.playerActionService.takePrisonBus(prisonBus)
+
+        //Weil DetermineNextPlayer nicht richtig funktioniert
+        game.currentPlayer = 0
+
+        val takenBus: PrisonBus? = currentPlayer.takenBus
 
         requireNotNull(takenBus) { "the player has a wrong bus" }
         require(currentPlayer.takenBus == prisonBus) { "the player has a wrong bus" }
@@ -395,19 +399,25 @@ class NetworkService(private val rootService: RootService): AbstractRefreshingSe
             require(!takenBus.blockedSlots[animals.truck]) { "this slot is blocked" }
             requireNotNull(tileToPlace) { "tile does not exist" }
 
-            val tile =  game.allTiles[tileToPlace-1]
+            val tile = game.allTiles.filter { it.id == tileToPlace }[0]
+            val child: Pair<Boolean, PrisonerTile?>
             if (tile is PrisonerTile){
                 if (animals.x == 0 && animals.y == 0) {
-                    rootService.playerActionService.placePrisoner(tile, -100, -100)
+                    child = rootService.playerActionService.placePrisoner(tile, -100, -100)
+                    possibleChildren.add(child)
                 } else {
-                    rootService.playerActionService.placePrisoner(tile, animals.x, animals.y)
+                    child = rootService.playerActionService.placePrisoner(tile, animals.x, animals.y)
+                    possibleChildren.add(child)
                 }
             }
-            if (tile is CoinTile) { currentPlayer.coins += 1 }
+            //Weil DetermineNextPlayer nicht richtig funktioniert
+            game.currentPlayer = 0
         }
 
-        placeChildren(message.offspringList)
+        placeChildren(message.offspringList, possibleChildren)
         placeWorker(message.workerList)
+        // Nur weil determineNextPlayer nicht implementiert wurde
+        updateConnectionState(ConnectionState.PLAYING_MY_TURN)
     }
 
     /**
@@ -660,6 +670,7 @@ class NetworkService(private val rootService: RootService): AbstractRefreshingSe
 
         // Nur weil determineNextPlayer nicht implementiert wurde
         updateConnectionState(ConnectionState.WAITING_FOR_TURN)
+        resetLists()
     }
 
     /**
@@ -684,21 +695,25 @@ class NetworkService(private val rootService: RootService): AbstractRefreshingSe
         val posX: Int = message.position.x
         val posY: Int = message.position.y
         val dest: Pair<Int, Int> = if (posX == posY && posY == 0) Pair(-100,-100) else Pair(posX, posY)
+        val child: Pair<Boolean, PrisonerTile?>
+        val possibleChildren: MutableList<Pair<Boolean, PrisonerTile?>> = mutableListOf()
 
         if (message.playerName == currentPlayer.name) {
-            rootService.playerActionService.movePrisonerToPrisonYard(
+            child = rootService.playerActionService.movePrisonerToPrisonYard(
                 posX,
                 posY
             )
+            possibleChildren.add(child)
         } else {
-            rootService.playerActionService.buyPrisonerFromOtherIsolation(
+            child = rootService.playerActionService.buyPrisonerFromOtherIsolation(
                 fromPlayer,
                 dest.first,
                 dest.second
             )
+            possibleChildren.add(child)
         }
 
-        placeChildren(message.offspringList)
+        placeChildren(message.offspringList, possibleChildren)
         placeWorker(message.workerList)
 
         // Nur weil determineNextPlayer nicht implementiert wurde
@@ -762,16 +777,25 @@ class NetworkService(private val rootService: RootService): AbstractRefreshingSe
 
     /**
      * [increasePrisoners] adds a new prisoner element to the prisoners list.
+     * - first -> x coordinate
+     * - second -> y coordinate
+     * - third -> index of bus place
      **/
     fun increasePrisoners(prisoner: Triple<Int, Int, Int>) { prisoners.add(prisoner) }
 
     /**
      * [increaseChildren] adds a new child element to the prisoners list.
+     * - first -> x coordinate
+     * - second -> y coordinate
+     * - third -> prisoner tile
      **/
     fun increaseChildren(child: Triple<Int, Int, PrisonerTile>) { children.add(child) }
 
     /**
      * [increaseWorkers] adds a new worker element to the prisoners list.
+     * - first -> x coordinate
+     * - second -> y coordinate
+     * - third -> guard tile
      **/
     fun increaseWorkers(worker: Triple<Int, Int, GuardTile>) { workers.add(worker) }
 
@@ -840,19 +864,39 @@ class NetworkService(private val rootService: RootService): AbstractRefreshingSe
      *
      * @throws IllegalStateException when no game is running
      **/
-    private fun placeChildren(offspringList: List<OffspringTriple>) {
+    private fun placeChildren(
+        offspringList: List<OffspringTriple>,
+        possibleChildren: MutableList<Pair<Boolean, PrisonerTile?>>
+    ) {
         val game = rootService.currentGame
+        val childrenToPlace: MutableList<Triple<PrisonerTile?, Int, Int>> = mutableListOf()
+
         checkNotNull(game) { "somehow the current game doesnt exist." }
         /** handle children and place them **/
-        offspringList.forEach { offsprings ->
-            val childToPlace: Tile = game.allTiles[offsprings.tileId-1]
-            require(childToPlace is PrisonerTile) { "the given tile is not a Prisoner" }
 
-            if (offsprings.x == 0 && offsprings.y == 0) {
-                rootService.playerActionService.placePrisoner(childToPlace, -100, -100)
-            } else {
-                rootService.playerActionService.placePrisoner(childToPlace, offsprings.x, offsprings.y)
+        possibleChildren.forEach { child ->
+            val childTile = child.second
+            val childId: Int
+
+            if (childTile == null) { return@forEach } else { childId = childTile.id }
+            offspringList.forEach { offspring ->
+                if (childId == offspring.tileId){
+                    childrenToPlace.add(Triple(childTile, offspring.x, offspring.y))
+                }
             }
+        }
+
+        childrenToPlace.forEach { offsprings ->
+            val offspringTile = offsprings.first
+            check(offspringTile is PrisonerTile) { "the given tile is not a Prisoner" }
+
+            if (offsprings.second == 0 && offsprings.third == 0) {
+                rootService.playerActionService.placePrisoner(offspringTile, -100, -100)
+            } else {
+                rootService.playerActionService.placePrisoner(offspringTile, offsprings.second, offsprings.third)
+            }
+            //Weil DetermineNextPlayer nicht richtig funktioniert
+            game.currentPlayer = 0
         }
     }
 
@@ -864,22 +908,27 @@ class NetworkService(private val rootService: RootService): AbstractRefreshingSe
      * @throws IllegalStateException when no game is running
      **/
     private fun placeWorker(workerList: List<WorkerTriple>) {
+        val game = rootService.currentGame
+
+        checkNotNull(game)
         /** handle workers and place them **/
         workerList.forEach { workers ->
             when(workers.jobEnum){
                 JobEnum.MANAGER -> { rootService.playerActionService.moveEmployee(
-                    -102, -102, -102, -102 )
+                    -102, -102, -102, -102, PlayerType.NETWORK )
                 }
                 JobEnum.CASHIER -> { rootService.playerActionService.moveEmployee(
-                    -103, -103, -103, -103 )
+                    -103, -103, -103, -103, PlayerType.NETWORK )
                 }
                 JobEnum.KEEPER -> { rootService.playerActionService.moveEmployee(
-                    -104, -104, -104, -104 )
+                    -104, -104, -104, -104, PlayerType.NETWORK )
                 }
                 JobEnum.TRAINER -> { rootService.playerActionService.moveEmployee(
-                    -101, -101, workers.x, workers.y )
+                    -101, -101, workers.x, workers.y, PlayerType.NETWORK)
                 }
             }
+            //Weil DetermineNextPlayer nicht richtig funktioniert
+            game.currentPlayer = 0
         }
     }
 
