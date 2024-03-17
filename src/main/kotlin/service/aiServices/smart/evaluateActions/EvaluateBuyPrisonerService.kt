@@ -37,7 +37,12 @@ class EvaluateBuyPrisonerService(val smartAI: SmartAI) {
 
         val undoData = smartAI.simulatePlacement(pos.first, removedTile, pos.second, player)
 
+        val nextPlayer = smartAI.getNextAndOldPlayer(game, false)
+        game.currentPlayer = nextPlayer.second
+
         val bestAction = smartAI.minMax(game, depth, maximize, amountActions)
+
+        game.currentPlayer = nextPlayer.first
 
         val result = ActionBuyPrisoner(true, bestAction.score, buyFrom, pos.first)
 

@@ -20,7 +20,6 @@ class EvaluateTakeBusService(private val smartAI: SmartAI) {
             bestActions.add(action)
         }
 
-        //println(bestActions.size)
         if (bestActions.isEmpty()) return ActionTakeBus(false, 0 , 0, mutableListOf())
 
         return bestActions.maxBy { it.score }
@@ -61,10 +60,8 @@ class EvaluateTakeBusService(private val smartAI: SmartAI) {
             undoes.add(smartAI.simulatePlacement(pos.second.first, pos.first, pos.second.second, player))
         }
 
-        val nextPlayer = smartAI.getNextAndOldPlayer(game,false)
+        val nextPlayer = smartAI.getNextAndOldPlayer(game,true)
         game.currentPlayer = nextPlayer.second
-
-        abc(game)
 
         //sim future
         val bestAction = smartAI.minMax(game, depth, maximize, amountActions)
@@ -85,17 +82,6 @@ class EvaluateTakeBusService(private val smartAI: SmartAI) {
         }
 
         return ActionTakeBus(true, bestAction.score, busIndex , cardPos)
-    }
-
-    fun abc(game: AquaGhetto) {
-        /*moving the buses back in the middle is handled in EvaluateTakeBusService*/
-        var takenBuses = 0
-        for (p in game.players) {
-            if (p.takenBus != null) takenBuses++
-        }
-        if (takenBuses >= 2) {
-            println("$takenBuses   ${game.players.size}")
-        }
     }
 
 }

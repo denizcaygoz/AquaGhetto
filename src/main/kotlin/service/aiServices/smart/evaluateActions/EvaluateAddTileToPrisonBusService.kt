@@ -16,25 +16,6 @@ class EvaluateAddTileToPrisonBusService(private val smartAI: SmartAI) {
         /*by simulation all possible tiles being drawn (trait is ignored) the AI
         has no advantage compared to a normal player*/
 
-        var foundTile = false
-        for (bus in game.prisonBuses) {
-            for (a in bus.tiles) {
-                if (a != null) {
-                    foundTile = true
-                    break
-                }
-            }
-        }
-
-        /*
-        if (foundTile) {
-            for (bus in game.prisonBuses) {
-                println("abc1: ${bus.tiles.contentToString()} ${bus.blockedSlots.contentToString()}   $bus")
-            }
-        }
-        */
-
-
         val tilesLeftInGame = smartAI.rootService.boardService.getCardsStillInGame()
         val allCardsAmount = game.drawStack.size + game.finalStack.size
 
@@ -78,17 +59,9 @@ class EvaluateAddTileToPrisonBusService(private val smartAI: SmartAI) {
             }
         }
 
-
-        /*
-        if (foundTile) {
-            for (bus in game.prisonBuses) {
-                println("abc2: ${bus.tiles.contentToString()} ${bus.blockedSlots.contentToString()}   $bus")
-            }
-        }
-        */
+        //TODO decrease the amount of options
 
         return ActionAddTileToBus(validOption, totalScore.toInt(), chooseBusCoin, optionMapPrisoner)
-        //return ActionAddTileToBus(false, 0, 0, mutableMapOf())
     }
 
 
@@ -238,11 +211,7 @@ class EvaluateAddTileToPrisonBusService(private val smartAI: SmartAI) {
     private fun removeTileFromBus(bus: PrisonBus, tile: Tile) {
         for (i in bus.tiles.indices) {
             val busTile = bus.tiles[i]
-            if (busTile != null) {
-                //println("id tile: ${busTile.id}")
-            }
             if (busTile != null && busTile.id == tile.id) {
-                //if (busTile.id != -10123) println("Removed Tile!!!!!!!!!!!!!!!!!!")
                 bus.tiles[i] = null
             }
         }
