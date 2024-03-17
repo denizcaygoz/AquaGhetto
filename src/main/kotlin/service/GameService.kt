@@ -88,8 +88,9 @@ class GameService(private val rootService: RootService): AbstractRefreshingServi
      * @param busWasTakenInThisRound Whether a [PrisonBus] was taken in this Round.
      */
     fun determineNextPlayer(busWasTakenInThisRound: Boolean) {
-        val game = rootService.currentGame
-        checkNotNull(game) { "No running game." }
+        // Copy current game and use it as a new starting point
+        val game = rootService.gameStatesService.copyAquaGhetto()
+        rootService.currentGame = game
 
         val isTwoPlayerGame = game.players.size == 2
 
@@ -102,8 +103,11 @@ class GameService(private val rootService: RootService): AbstractRefreshingServi
         when (numberOfBussesLeft) {
             1 ->  {
                 // Without that, it would still be the second-to-last player's turn
-                if (busWasTakenInThisRound)
-                    game.currentPlayer = (game.currentPlayer + 1) % game.players.size
+                if (busWasTakenInThisRound) {
+                    do {
+                        game.currentPlayer = (game.currentPlayer + 1) % game.players.size
+                    } while (game.players[game.currentPlayer].takenBus != null)
+                }
 
                 onAllRefreshables {
                     refreshAfterNextTurn(game.players[game.currentPlayer])

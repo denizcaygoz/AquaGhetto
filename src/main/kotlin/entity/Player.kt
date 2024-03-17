@@ -3,7 +3,7 @@ package entity
 import entity.enums.PlayerType
 import entity.tileTypes.PrisonerTile
 import java.io.Serializable
-import java.util.Stack
+import java.util.*
 
 /**
  * Data class to represent a player in the game Aquaghetto.
@@ -32,7 +32,7 @@ import java.util.Stack
  * @property currentScore the current score of a player
  */
 
-data class Player(val name: String, val type: PlayerType): Serializable {
+class Player(val name: String, val type: PlayerType): Serializable, Cloneable {
     companion object {
         private const val serialVersionUID: Long = 2382752881182402781L
     }
@@ -48,5 +48,22 @@ data class Player(val name: String, val type: PlayerType): Serializable {
     var remainingSmallExtensions: Int = 2
     var maxPrisonerTypes = 3
     var currentScore = 0
+
+    @Suppress("UNCHECKED_CAST")
+    public override fun clone(): Player {
+        return Player(name, type).apply {
+            board = this@Player.board.clone()
+            isolation = this@Player.isolation.clone() as Stack<PrisonerTile>
+            takenBus = this@Player.takenBus?.clone()
+            coins = this@Player.coins
+            hasJanitor = this@Player.hasJanitor
+            secretaryCount = this@Player.secretaryCount
+            lawyerCount = this@Player.lawyerCount
+            remainingSmallExtensions = this@Player.remainingBigExtensions
+            remainingBigExtensions = this@Player.remainingBigExtensions
+            maxPrisonerTypes = this@Player.maxPrisonerTypes
+            currentScore = this@Player.currentScore
+        }
+    }
 
 }
