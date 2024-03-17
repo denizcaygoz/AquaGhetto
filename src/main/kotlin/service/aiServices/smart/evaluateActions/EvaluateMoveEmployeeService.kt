@@ -19,7 +19,7 @@ class EvaluateMoveEmployeeService(val smartAI: SmartAI) {
         val validPos = mutableListOf(Pair(-102,-102), Pair(-103,-103), Pair(-103,-103))
         validPos.addAll(player.board.guardPosition)
         for (pos in validPos) {
-            val result = this.checkEmployee(pos, player) ?: continue
+            val result = this.checkEmployee(game, depth, maximize, amountActions, pos, player) ?: continue
             moves.add(result)
         }
 
@@ -29,7 +29,8 @@ class EvaluateMoveEmployeeService(val smartAI: SmartAI) {
         return ActionMoveEmployee(true, best.first, best.second, best.third)
     }
 
-    private fun checkEmployee(pos: Pair<Int,Int>, player: Player): Triple<Int,Pair<Int,Int>,Pair<Int,Int>>? {
+    private fun checkEmployee(game: AquaGhetto, depth: Int, maximize: Int, amountActions: Int,
+                              pos: Pair<Int,Int>, player: Player): Triple<Int,Pair<Int,Int>,Pair<Int,Int>>? {
         val oldScore = smartAI.evaluateGamePosition.evaluateCurrentPosition()
         player.coins -= 1
         removeEmployee(pos.first, pos.second, player)
@@ -43,16 +44,22 @@ class EvaluateMoveEmployeeService(val smartAI: SmartAI) {
 
         addEmployee(betterPos.first, betterPos.second, player)
 
-        //TODO maybe get future score?
-        val newScore = smartAI.evaluateGamePosition.evaluateCurrentPosition()
+        val nextPlayer = smartAI.getNextAndOldPlayer(game, false)
+        game.currentPlayer = nextPlayer.second
+
+        //val newScore = smartAI.evaluateGamePosition.evaluateCurrentPosition()
+        val bestAction = smartAI.minMax(game, depth, maximize, amountActions)
+
+        game.currentPlayer = nextPlayer.first
 
         player.coins += 1
         removeEmployee(betterPos.first, betterPos.second, player)
         addEmployee(pos.first, pos.second, player)
 
 
-        return if (newScore-1 > oldScore) {
-            Triple(newScore, pos, betterPos)
+        /*should not randomly move employees*/
+        return if ((bestAction.score - 5) > oldScore) {
+            Triple(bestAction.score, pos, betterPos)
         } else {
             null
         }
