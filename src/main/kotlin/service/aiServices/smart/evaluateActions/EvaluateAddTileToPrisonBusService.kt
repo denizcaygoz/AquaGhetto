@@ -89,33 +89,15 @@ class EvaluateAddTileToPrisonBusService(private val smartAI: SmartAI) {
 
         /*simulates future actions*/
         var bestBus = -1
-        var best: Int
-        if (maximize % game.players.size == 0) {
-            best = Integer.MIN_VALUE
-
-            for (i in prisonBusesLeftToPlace) {
-                val nextPlayer = smartAI.getNextAndOldPlayer(game, false)
-                game.currentPlayer = nextPlayer.second
-                val action = smartAI.minMax(game, depth, maximize, amountActions)
-                game.currentPlayer = nextPlayer.first
-                if ((action.score > best)) {
-                    best = action.score
-                    bestBus = i
-                }
-            }
-
-        } else {
-            best = Integer.MAX_VALUE
-
-            for (i in prisonBusesLeftToPlace) {
-                val nextPlayer = smartAI.getNextAndOldPlayer(game, false)
-                game.currentPlayer = nextPlayer.second
-                val action = smartAI.minMax(game, depth, maximize, amountActions)
-                game.currentPlayer = nextPlayer.first
-                if ((action.score < best)) {
-                    best = action.score
-                    bestBus = i
-                }
+        var best = Integer.MIN_VALUE
+        for (i in prisonBusesLeftToPlace) {
+            val nextPlayer = smartAI.getNextAndOldPlayer(game, false)
+            game.currentPlayer = nextPlayer.second
+            val action = smartAI.minMax(game, depth, maximize, amountActions)
+            game.currentPlayer = nextPlayer.first
+            if ((action.score > best)) {
+                best = action.score
+                bestBus = i
             }
         }
 
@@ -160,33 +142,16 @@ class EvaluateAddTileToPrisonBusService(private val smartAI: SmartAI) {
 
         /*simulates future actions*/
         var bestBus = -1
-        var best: Int
-        if (maximize % game.players.size == 0) {
-            best = Integer.MIN_VALUE
+        var best = Integer.MIN_VALUE
 
-            for (i in prisonBusesLeftToPlace) {
-                val nextPlayer = smartAI.getNextAndOldPlayer(game, false)
-                game.currentPlayer = nextPlayer.second
-                val action = smartAI.minMax(game, depth, maximize, amountActions)
-                game.currentPlayer = nextPlayer.first
-                if ((action.score > best)) {
-                    best = action.score
-                    bestBus = i
-                }
-            }
-
-        } else {
-            best = Integer.MAX_VALUE
-
-            for (i in prisonBusesLeftToPlace) {
-                val nextPlayer = smartAI.getNextAndOldPlayer(game , false)
-                game.currentPlayer = nextPlayer.second
-                val action = smartAI.minMax(game, depth, maximize, amountActions)
-                game.currentPlayer = nextPlayer.first
-                if ((action.score < best)) {
-                    best = action.score
-                    bestBus = i
-                }
+        for (i in prisonBusesLeftToPlace) {
+            val nextPlayer = smartAI.getNextAndOldPlayer(game, false)
+            game.currentPlayer = nextPlayer.second
+            val action = smartAI.minMax(game, depth, maximize, amountActions)
+            game.currentPlayer = nextPlayer.first
+            if ((action.score > best)) {
+                best = action.score
+                bestBus = i
             }
         }
 
