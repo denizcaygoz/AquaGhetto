@@ -16,11 +16,14 @@ import java.io.Serializable
  */
 class PrisonerTile(override val id: Int,
                    val prisonerTrait: PrisonerTrait ,
-                   val prisonerType: PrisonerType): Tile(), Serializable {
+                   val prisonerType: PrisonerType): Tile(), Serializable, Cloneable {
     companion object {
         private const val serialVersionUID: Long = -8184519218972531765L
     }
 
     var breedable: Boolean = (prisonerTrait == PrisonerTrait.MALE) || (prisonerTrait == PrisonerTrait.FEMALE)
 
+    public override fun clone(): PrisonerTile {
+        return PrisonerTile(id, prisonerTrait, prisonerType).apply { breedable = this@PrisonerTile.breedable }
+    }
 }
