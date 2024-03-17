@@ -2,8 +2,8 @@ package entity
 
 import entity.tileTypes.PrisonerTile
 import entity.tileTypes.Tile
-import java.util.Stack
 import java.io.Serializable
+import java.util.*
 
 
 /**
@@ -54,8 +54,7 @@ class AquaGhetto: Serializable, Cloneable {
                 if (it is PrisonerTile) PrisonerTile(it.id, it.prisonerTrait, it.prisonerType) else it
             }.toMutableList()
 
-            previousState = this@AquaGhetto
-            this@AquaGhetto.nextState = this
+
         }
     }
 }

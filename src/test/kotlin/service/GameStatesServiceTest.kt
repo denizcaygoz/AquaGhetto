@@ -1,9 +1,13 @@
+
 import entity.enums.PlayerType
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
 import service.RootService
 import java.io.File
-import kotlin.test.*
+import kotlin.test.assertEquals
+import kotlin.test.assertNotNull
+import kotlin.test.assertNotSame
+import kotlin.test.assertSame
 
 class GameStatesServiceTest {
     val rootService = RootService()
@@ -110,6 +114,7 @@ class GameStatesServiceTest {
 
         for (i in actualGame.players.indices) {
             assertNotSame(actualGame.players[i], copy.players[i])
+            assertNotSame(actualGame.players[i].board, copy.players[i].board)
         }
 
         for (i in actualGame.prisonBuses.indices) {
@@ -120,7 +125,4 @@ class GameStatesServiceTest {
         assertSame(copy, actualGame.nextState)
         assertSame(actualGame, copy.previousState)
     }
-
-
-
 }
