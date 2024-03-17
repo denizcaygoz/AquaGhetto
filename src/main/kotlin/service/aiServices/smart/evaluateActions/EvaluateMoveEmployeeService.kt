@@ -23,7 +23,7 @@ class EvaluateMoveEmployeeService(val smartAI: SmartAI) {
             moves.add(result)
         }
 
-        if (validPos.isEmpty()) return ActionMoveEmployee(false, 0, Pair(0,0), Pair(0,0))
+        if (moves.isEmpty()) return ActionMoveEmployee(false, 0, Pair(0,0), Pair(0,0))
 
         val best = moves.maxBy { it.first }
         return ActionMoveEmployee(true, best.first, best.second, best.third)

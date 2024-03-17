@@ -103,7 +103,9 @@ class GameService(private val rootService: RootService): AbstractRefreshingServi
             1 ->  {
                 // Without that, it would still be the second-to-last player's turn
                 if (busWasTakenInThisRound)
-                    game.currentPlayer = (game.currentPlayer + 1) % game.players.size
+                    do {
+                        game.currentPlayer = (game.currentPlayer + 1) % game.players.size
+                    } while (game.players[game.currentPlayer].takenBus != null)
 
                 onAllRefreshables {
                     refreshAfterNextTurn(game.players[game.currentPlayer])

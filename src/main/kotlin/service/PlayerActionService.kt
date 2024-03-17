@@ -12,6 +12,7 @@ import entity.tileTypes.GuardTile
 import entity.tileTypes.PrisonerTile
 import entity.tileTypes.Tile
 import service.networkService.ConnectionState
+import java.util.*
 
 
 /**
@@ -28,6 +29,10 @@ class PlayerActionService(private val rootService: RootService): AbstractRefresh
 
         val currentPlayer = game.players.getOrNull(game.currentPlayer)
         checkNotNull(currentPlayer) { "Invalid current player." }
+
+        for (a in prisonBus.tiles) {
+            if (a != null) println(a.id)
+        }
 
         // To check if the game has at least one prison bus available
         require(game.prisonBuses.isNotEmpty()) {"No prison buses available."}
@@ -57,12 +62,12 @@ class PlayerActionService(private val rootService: RootService): AbstractRefresh
             rootService.networkService.updateConnectionState(ConnectionState.WAITING_FOR_TURN)
         }
 
-        rootService.gameService.determineNextPlayer(false)
-
         onAllRefreshables {
             refreshPrisonBus(prisonBus)
             refreshAfterNextTurn(game.players[game.currentPlayer])
         }
+
+        rootService.gameService.determineNextPlayer(false)
     }
 
     fun takePrisonBus(prisonBus: PrisonBus) {
