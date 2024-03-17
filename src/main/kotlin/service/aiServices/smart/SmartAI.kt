@@ -29,7 +29,7 @@ class SmartAI(val rootService: RootService, val player: Player) {
     val evaluateGamePosition = EvaluateGamePositionService(this)
     val evaluateBestPosition = EvaluateBestPosition(this)
 
-    private val checkLayers = 4
+    private val checkLayers = 6
 
     init {
         require(player.type == PlayerType.AI) {"Player is not an AI"}
