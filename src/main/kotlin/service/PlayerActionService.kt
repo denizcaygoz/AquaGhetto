@@ -21,7 +21,12 @@ import service.networkService.ConnectionState
  */
 class PlayerActionService(private val rootService: RootService): AbstractRefreshingService() {
 
-    fun addTileToPrisonBus(tile: Tile, prisonBus: PrisonBus, sender: PlayerType = PlayerType.PLAYER) {
+    fun addTileToPrisonBus(
+        tile: Tile,
+        prisonBus: PrisonBus,
+        sender: PlayerType = PlayerType.PLAYER,
+        changePlayer: Boolean = true
+    ) {
         val isNetworkGame = rootService.networkService.connectionState != ConnectionState.DISCONNECTED
         val game = rootService.currentGame
         checkNotNull(game) { "No game started yet." }
@@ -57,7 +62,8 @@ class PlayerActionService(private val rootService: RootService): AbstractRefresh
             rootService.networkService.updateConnectionState(ConnectionState.WAITING_FOR_TURN)
         }
 
-        rootService.gameService.determineNextPlayer(false)
+        if (changePlayer)
+            rootService.gameService.determineNextPlayer(false)
 
         onAllRefreshables {
             refreshPrisonBus(prisonBus)
@@ -65,7 +71,7 @@ class PlayerActionService(private val rootService: RootService): AbstractRefresh
         }
     }
 
-    fun takePrisonBus(prisonBus: PrisonBus) {
+    fun takePrisonBus(prisonBus: PrisonBus, changePlayer: Boolean = true) {
         val game = rootService.currentGame ?: throw IllegalStateException("No game started yet.")
 
         val currentPlayer = game.players.getOrNull(game.currentPlayer)
@@ -102,7 +108,8 @@ class PlayerActionService(private val rootService: RootService): AbstractRefresh
         }
 
         // Der Spieler muss noch seine Karten platzieren vom bus
-        rootService.gameService.determineNextPlayer(true)
+        if (changePlayer)
+            rootService.gameService.determineNextPlayer(true)
 
         onAllRefreshables {
             refreshAfterNextTurn(game.players[game.currentPlayer])
@@ -116,6 +123,7 @@ class PlayerActionService(private val rootService: RootService): AbstractRefresh
      * @param tile The [PrisonerTile] to be placed.
      * @param x The x-coordinate on the game board.
      * @param y The y-coordinate on the game board.
+     * @param changePlayer Whether the game should switch to the next player's turn. Only intendet for debugging
      * @return A Pair indicating the success of the placement and a [PrisonerTile] with a [PrisonerTrait.BABY], if applicable.
      *   - First value (Boolean): True if the placement is successful, false otherwise.
      *   - Second value (PrisonerTile?): A [PrisonerTile] with [PrisonerTrait.BABY] if a baby can be conceived,
@@ -123,7 +131,7 @@ class PlayerActionService(private val rootService: RootService): AbstractRefresh
      *
      * @throws IllegalStateException if the game has not been started yet.
      */
-    fun placePrisoner(tile: PrisonerTile, x: Int, y: Int): Pair<Boolean, PrisonerTile?> {
+    fun placePrisoner(tile: PrisonerTile, x: Int, y: Int, changePlayer: Boolean = true): Pair<Boolean, PrisonerTile?> {
         val game = rootService.currentGame
         checkNotNull(game) { "No game started yet." }
         val player = game.players[game.currentPlayer]
@@ -160,7 +168,7 @@ class PlayerActionService(private val rootService: RootService): AbstractRefresh
                 refreshPrison(tile, x, y)
             }
 
-            if (result.second == null) { // No baby tile, turn is over
+            if (result.second == null && changePlayer) { // No baby tile, turn is over
                 rootService.gameService.determineNextPlayer(false)
                 onAllRefreshables { refreshAfterNextTurn(game.players[game.currentPlayer]) }
             }
@@ -171,7 +179,8 @@ class PlayerActionService(private val rootService: RootService): AbstractRefresh
             player.isolation.push(tile)
             result = Pair(true, null)
 
-            rootService.gameService.determineNextPlayer(false)
+            if (changePlayer)
+                rootService.gameService.determineNextPlayer(false)
 
             onAllRefreshables {
                 refreshIsolation(player)
@@ -415,6 +424,11 @@ class PlayerActionService(private val rootService: RootService): AbstractRefresh
     /**
      * [expandPrisonGrid] places a prison extension on a valid (x,y) on the board.
      *
+     * @param isBigExtension Whether to add a big or small extention.
+     * @param x X-Coordinate.
+     * @param y Y-Coordinate.
+     * @param rotation Rotation of the grid in 90° increments.
+     * @param changePlayer Whether to change the currentPlayer or not. Only intended for debugging.
      * @throws IllegalStateException when there is no game running
      * @throws IllegalArgumentException when the player has not enough money
      * @throws IllegalArgumentException when the placement of the extension is not valid
@@ -425,7 +439,8 @@ class PlayerActionService(private val rootService: RootService): AbstractRefresh
         x: Int,
         y: Int ,
         rotation: Int,
-        sender: PlayerType = PlayerType.PLAYER
+        sender: PlayerType = PlayerType.PLAYER,
+        changePlayer: Boolean = true
     ) {
         val isNetworkGame = rootService.networkService.connectionState != ConnectionState.DISCONNECTED
         val game: AquaGhetto? = rootService.currentGame
@@ -488,7 +503,8 @@ class PlayerActionService(private val rootService: RootService): AbstractRefresh
             rootService.networkService.updateConnectionState(ConnectionState.WAITING_FOR_TURN)
         }
 
-        rootService.gameService.determineNextPlayer(false)
+        if (changePlayer)
+            rootService.gameService.determineNextPlayer(false)
 
         onAllRefreshables {
             refreshPrison(null, -1, -1)

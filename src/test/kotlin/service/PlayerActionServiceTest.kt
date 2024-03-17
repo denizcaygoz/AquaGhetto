@@ -62,8 +62,8 @@ class PlayerActionServiceTest {
         val malePrisoner = PrisonerTile(13, PrisonerTrait.MALE, PrisonerType.RED)
         val femalePrisoner = PrisonerTile(11, PrisonerTrait.FEMALE, PrisonerType.RED)
 
-        val maleResult = rootService.playerActionService.placePrisoner(malePrisoner, 2, 2)
-        val femaleResult = rootService.playerActionService.placePrisoner(femalePrisoner, 3, 2)
+        val maleResult = rootService.playerActionService.placePrisoner(malePrisoner, 2, 2, changePlayer = false)
+        val femaleResult = rootService.playerActionService.placePrisoner(femalePrisoner, 3, 2, changePlayer = false)
 
         // First placement should result in no child
         assert(maleResult.first)
@@ -81,7 +81,7 @@ class PlayerActionServiceTest {
         // Placing the baby should also yield a coin bonus
         val oldCoins = currentPlayer.coins
         val babyResult = rootService.playerActionService.placePrisoner(
-            femaleResult.second!!, 2, 3
+            femaleResult.second!!, 2, 3, changePlayer = false
         )
         assert(babyResult.first)
         assertNull(babyResult.second)
@@ -90,8 +90,8 @@ class PlayerActionServiceTest {
         // Placing two more tiles for the employee bonus:
         val firstTile = PrisonerTile(15, PrisonerTrait.NONE, PrisonerType.RED)
         val secondTile = PrisonerTile(16, PrisonerTrait.NONE, PrisonerType.RED)
-        rootService.playerActionService.placePrisoner(firstTile, 4, 2)
-        rootService.playerActionService.placePrisoner(secondTile, 4, 3)
+        rootService.playerActionService.placePrisoner(firstTile, 4, 2, changePlayer = false)
+        rootService.playerActionService.placePrisoner(secondTile, 4, 3, changePlayer = false)
         assert(currentPlayer.board.getPrisonYard(-101, -101) is GuardTile)
     }
 
@@ -134,7 +134,11 @@ class PlayerActionServiceTest {
         // These placements should fail, dead center of the board:
         rotations.forEach {
             assert(!rootService.validationService.validateExpandPrisonGrid(false, smallExpX, smallExpY, it))
-            assertFails { rootService.playerActionService.expandPrisonGrid(false, smallExpX, smallExpY, it) }
+            assertFails {
+                rootService.playerActionService.expandPrisonGrid(
+                    false, smallExpX, smallExpY, it, changePlayer = false
+                )
+            }
         }
         assertSame(1, currentPlayer.coins)
         assertSame(2, currentPlayer.remainingSmallExtensions)
@@ -157,7 +161,9 @@ class PlayerActionServiceTest {
             assert(rootService.validationService.validateExpandPrisonGrid(false, xPos, yPos, rotation)) {
                 "($xPos, $yPos) is not a valid location for $rotation°"
             }
-            rootService.playerActionService.expandPrisonGrid(false, xPos, yPos, rotation)
+            rootService.playerActionService.expandPrisonGrid(
+                false, xPos, yPos, rotation, changePlayer = false
+            )
         }
         assertSame(1,currentPlayer.coins)
         assertSame(2, currentPlayer.remainingSmallExtensions)
@@ -459,13 +465,13 @@ class PlayerActionServiceTest {
 
         //setting up the situation where player already taken a bus.
         val tile = game.drawStack.pop()
-        rootService.playerActionService.addTileToPrisonBus(tile,game.prisonBuses[0])
-        rootService.playerActionService.takePrisonBus(game.prisonBuses[0])
+        rootService.playerActionService.addTileToPrisonBus(tile,game.prisonBuses[0], changePlayer = false)
+        rootService.playerActionService.takePrisonBus(game.prisonBuses[0], changePlayer = false)
 
 
         val tile1 = game.drawStack.pop()
         assertFailsWith<IllegalArgumentException> {
-            rootService.playerActionService.addTileToPrisonBus(tile1,game.prisonBuses[1])
+            rootService.playerActionService.addTileToPrisonBus(tile1,game.prisonBuses[1], changePlayer = false)
         }
 
     }
