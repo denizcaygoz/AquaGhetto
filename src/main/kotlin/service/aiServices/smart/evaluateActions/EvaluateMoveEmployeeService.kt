@@ -16,7 +16,7 @@ class EvaluateMoveEmployeeService(val smartAI: SmartAI) {
         /*score advantage, source, destination*/
         val moves = mutableListOf<Triple<Int,Pair<Int,Int>,Pair<Int,Int>>>()
 
-        val validPos = mutableListOf(Pair(-102,-102), Pair(-103,-103), Pair(-103,-103))
+        val validPos = mutableListOf(Pair(-102,-102), Pair(-103,-103), Pair(-104,-104))
         validPos.addAll(player.board.guardPosition)
         for (pos in validPos) {
             val result = this.checkEmployee(game, depth, maximize, amountActions, pos, player) ?: continue
