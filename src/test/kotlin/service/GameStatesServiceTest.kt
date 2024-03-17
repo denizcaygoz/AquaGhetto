@@ -1,9 +1,9 @@
-import org.junit.jupiter.api.Test
-import kotlin.test.*
 import entity.enums.PlayerType
+import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
-import service.*
+import service.RootService
 import java.io.File
+import kotlin.test.*
 
 class GameStatesServiceTest {
     val rootService = RootService()
@@ -91,6 +91,34 @@ class GameStatesServiceTest {
             rootService.currentGame!!.players[rootService.currentGame!!.currentPlayer]
         )
 
+    }
+
+    @Test
+    fun `test copyAquaghetto`() {
+        mutableListOf(
+            Pair("A", PlayerType.PLAYER),
+            Pair("B", PlayerType.PLAYER),
+        ).let {
+            rootService.gameService.startNewGame(it)
+        }
+        val actualGame = rootService.currentGame!!
+        val copy = rootService.gameStatesService.copyAquaGhetto()
+
+        // Checking if not only references were copied
+        assertNotSame(actualGame.drawStack, copy.drawStack)
+        assertNotSame(actualGame.finalStack, copy.drawStack)
+
+        for (i in actualGame.players.indices) {
+            assertNotSame(actualGame.players[i], copy.players[i])
+        }
+
+        for (i in actualGame.prisonBuses.indices) {
+            assertNotSame(actualGame.prisonBuses[i], copy.prisonBuses[i])
+        }
+
+        assertNotSame(actualGame.allTiles, copy.allTiles)
+        assertSame(copy, actualGame.nextState)
+        assertSame(actualGame, copy.previousState)
     }
 
 

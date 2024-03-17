@@ -67,7 +67,6 @@ class PlayerActionService(private val rootService: RootService): AbstractRefresh
 
         onAllRefreshables {
             refreshPrisonBus(prisonBus)
-            refreshAfterNextTurn(game.players[game.currentPlayer])
         }
     }
 
@@ -170,7 +169,6 @@ class PlayerActionService(private val rootService: RootService): AbstractRefresh
 
             if (result.second == null && changePlayer) { // No baby tile, turn is over
                 rootService.gameService.determineNextPlayer(false)
-                onAllRefreshables { refreshAfterNextTurn(game.players[game.currentPlayer]) }
             }
 
             return result
@@ -185,7 +183,6 @@ class PlayerActionService(private val rootService: RootService): AbstractRefresh
             onAllRefreshables {
                 refreshIsolation(player)
                 refreshScoreStats()
-                refreshAfterNextTurn(game.players[game.currentPlayer])
             }
 
             return result
@@ -346,7 +343,6 @@ class PlayerActionService(private val rootService: RootService): AbstractRefresh
                 refreshIsolation(currentPlayer)
             }
             refreshScoreStats()
-            refreshAfterNextTurn(game.players[game.currentPlayer])
         }
     }
 
@@ -417,7 +413,6 @@ class PlayerActionService(private val rootService: RootService): AbstractRefresh
 
         onAllRefreshables {
             refreshIsolation(currentPlayer)
-            refreshAfterNextTurn(game.players[game.currentPlayer])
         }
     }
 
@@ -508,7 +503,6 @@ class PlayerActionService(private val rootService: RootService): AbstractRefresh
 
         onAllRefreshables {
             refreshPrison(null, -1, -1)
-            refreshAfterNextTurn(game.players[game.currentPlayer])
         }
     }
 

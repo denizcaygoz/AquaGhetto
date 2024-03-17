@@ -11,12 +11,18 @@ import java.io.Serializable
  * @property tiles an array with 3 positions of [Tile] in the prison bus, elements can be null if there is no card
  * @property blockedSlots an BooleanArray with 3 positions, defines if a slot in a prison bus is blocked
  */
-class PrisonBus: Serializable {
+class PrisonBus: Serializable, Cloneable {
     companion object {
         private const val serialVersionUID: Long = -3274357975281180850L
     }
 
-    val tiles: Array<Tile?> = Array(3) {null}
-    val blockedSlots: BooleanArray = BooleanArray(3) {false}
+    var tiles: Array<Tile?> = Array(3) {null}
+    var blockedSlots: BooleanArray = BooleanArray(3) {false}
 
+    public override fun clone(): PrisonBus {
+        return PrisonBus().apply {
+            tiles = this@PrisonBus.tiles.clone()
+            blockedSlots = this@PrisonBus.blockedSlots.clone()
+        }
+    }
 }
