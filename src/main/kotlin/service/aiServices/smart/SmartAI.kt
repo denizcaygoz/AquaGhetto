@@ -8,6 +8,7 @@ import entity.enums.PrisonerTrait
 import entity.tileTypes.CoinTile
 import entity.tileTypes.GuardTile
 import entity.tileTypes.PrisonerTile
+import entity.tileTypes.Tile
 import service.RootService
 import service.aiServices.smart.evaluateActions.*
 import java.util.concurrent.TimeUnit
@@ -162,6 +163,8 @@ class SmartAI(val rootService: RootService, val player: Player) {
             return AIAction(false, evaluateGamePosition.evaluateCurrentPosition())
         }
 
+        val undoData = this.simulateSetUpNewRound(game)
+
         /*runs the 7 actions parallel*/
         /*
         if (depth == checkLayers - 0 || depth == checkLayers - 0) {
@@ -194,6 +197,7 @@ class SmartAI(val rootService: RootService, val player: Player) {
         }
         */
 
+        simulateUndoNewRound(game, undoData)
 
         return this.getBestAction(maximize, scoreList, game)
     }
@@ -202,6 +206,8 @@ class SmartAI(val rootService: RootService, val player: Player) {
     //TODO clone game
     private fun minMaxNewThread(game: AquaGhetto, depth: Int, maximize: Int, actionsChecked: Int): AIAction {
         val threads = mutableListOf<Thread>()
+
+        val undoData = this.simulateSetUpNewRound(game)
 
         var scoreAddTileToPrisonBus: AIAction? = null
         var scoreMoveOwnPrisoner: AIAction? = null
@@ -266,6 +272,8 @@ class SmartAI(val rootService: RootService, val player: Player) {
 
         val scoreListNulls = mutableListOf(scoreAddTileToPrisonBus, scoreMoveOwnPrisoner, scoreMoveEmployee,
             scoreBuyPrisoner, scoreFreePrisoner, scoreExpandPrison, scoreTakeBus)
+
+        simulateUndoNewRound(game, undoData)
 
         return this.getBestAction(maximize, scoreListNulls.filterNotNull(), game)
     }
@@ -435,12 +443,40 @@ class SmartAI(val rootService: RootService, val player: Player) {
     }
 
 
-    fun simulateSetUpNewRound(game: AquaGhetto) {
-        //TODO
+    fun simulateSetUpNewRound(game: AquaGhetto): MutableList<MutableList<Pair<Tile?,Boolean>>>?  {
+        /*moving the buses back in the middle is handled in EvaluateTakeBusService*/
+        var takenBuses = 0
+        for (p in game.players) {
+            if (p.takenBus != null) takenBuses++
+        }
+        if (takenBuses != game.players.size) {
+            return null /*round has not ended*/
+        }
+
+        val busData = mutableListOf<MutableList<Pair<Tile?,Boolean>>>()
+
+        for (bus in game.prisonBuses) {
+            val busList = mutableListOf<Pair<Tile?,Boolean>>()
+            for (i in bus.tiles.indices) {
+                busList.add(Pair(bus.tiles[i], bus.blockedSlots[i]))
+            }
+            busData.add(busList)
+        }
+        return busData
     }
 
-    fun simulateUndoNewRound(game: AquaGhetto) {
-        //TODO
+    fun simulateUndoNewRound(game: AquaGhetto, busData: MutableList<MutableList<Pair<Tile?,Boolean>>>?) {
+        if (busData == null) return
+
+        for (i in game.prisonBuses.indices) {
+            val bus = game.prisonBuses[i]
+            val data = busData[i]
+
+            for (t in data.indices) {
+                bus.tiles[t] = data[t].first
+                bus.blockedSlots[t] = data[t].second
+            }
+        }
     }
 
     fun simulatePlacement(placeCard: PlaceCard, tile: PrisonerTile, coin: Boolean, player: Player): Pair<PrisonerTile, PrisonerTile>?{

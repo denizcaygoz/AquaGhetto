@@ -49,8 +49,6 @@ class EvaluateTakeBusService(private val smartAI: SmartAI) {
             undoes.add(smartAI.simulatePlacement(pos.second.first, pos.first, pos.second.second, player))
         }
 
-        //TODO check if round ended
-
         val nextPlayer = smartAI.getNextAndOldPlayer(game,false)
         game.currentPlayer = nextPlayer.second
 
@@ -58,8 +56,6 @@ class EvaluateTakeBusService(private val smartAI: SmartAI) {
         val bestAction = smartAI.minMax(game, depth, maximize, amountActions)
 
         game.currentPlayer = nextPlayer.first
-
-        //TODO undo if round ended
 
         /*undo stuff*/
         player.coins -= coins
@@ -76,6 +72,5 @@ class EvaluateTakeBusService(private val smartAI: SmartAI) {
 
         return ActionTakeBus(true, bestAction.score, busIndex , cardPos)
     }
-
 
 }
