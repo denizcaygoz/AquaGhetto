@@ -63,7 +63,7 @@ class SmartAI(val rootService: RootService, val player: Player) {
                 val placeCard = aiAction.placeCard
                 val prisoner = placeCard.placePrisoner
                 val bonus = rootService.playerActionService.movePrisonerToPrisonYard(prisoner.first, prisoner.second)
-                this.placeCardBonus(aiAction.placeCard, bonus)
+                this.placeCardBonus(game, aiAction.placeCard, bonus)
                 println("execute action move prisoner from own isolation to ${prisoner.first}  ${prisoner.second}")
             }
             is ActionMoveEmployee -> {
@@ -79,7 +79,7 @@ class SmartAI(val rootService: RootService, val player: Player) {
                 val prisoner = placeCard.placePrisoner
                 val bonus = rootService.playerActionService.buyPrisonerFromOtherIsolation(boughtFrom,
                     prisoner.first, prisoner.second)
-                this.placeCardBonus(aiAction.placeCard, bonus)
+                this.placeCardBonus(game, aiAction.placeCard, bonus)
                 println("execute action buy prisoner from ${boughtFrom.name} and place ${prisoner.first}  ${prisoner.second}")
             }
             is ActionFreePrisoner -> {
@@ -128,17 +128,22 @@ class SmartAI(val rootService: RootService, val player: Player) {
         for (i in tiles.indices) {
             val tile = tiles[i]
             if (tile !is PrisonerTile) {
-                /*This tile suppose to be a coin tile*/
-                /*Remove the tile from the list and give 1 coin to player.*/
-                game.players[game.currentPlayer].coins++
-                tiles.removeAt(i)
                 println("Found non prisoner tile in bus, this should not happen")
                 continue
             }
+
+            /*remove tile from bus*/
+            for (j in takenBus.tiles.indices) {
+                if (takenBus.tiles[j] != tile) {
+                    takenBus.tiles[j] = null
+                    break
+                }
+            }
+
             val placeCard = aiAction.placeCards[i]
             val prisoner = placeCard.placePrisoner
             val bonus = rootService.playerActionService.placePrisoner(tile, prisoner.first, prisoner.second)
-            this.placeCardBonus(placeCard, bonus)
+            this.placeCardBonus(game, placeCard, bonus)
         }
     }
 
@@ -325,9 +330,7 @@ class SmartAI(val rootService: RootService, val player: Player) {
      * @param placeCard info about the location, where to place a tile
      * @param bonus the bonus obtained by placing a card
      */
-    private fun placeCardBonus(placeCard: PlaceCard , bonus: Pair<Boolean,PrisonerTile?>) {
-        val game = rootService.currentGame
-        checkNotNull(game)
+    private fun placeCardBonus(game: AquaGhetto ,placeCard: PlaceCard , bonus: Pair<Boolean,PrisonerTile?>) {
         /*place possible employee if valid*/
         placeEmployee(bonus.first, placeCard.firstTileBonusEmployee)
 
@@ -338,7 +341,7 @@ class SmartAI(val rootService: RootService, val player: Player) {
         if (bonusBaby != null && bonusLocation == null) {
             /*If there is no place in prison area to place the bonus baby,
             * then bonus card goes to isolation.*/
-            game.players[game.currentPlayer].isolation.push(bonusBaby)
+            rootService.playerActionService.placePrisoner(bonusBaby, -101,-101)
             println("Error AI action did not matched bonus")
         } else if (bonusBaby == null && bonusLocation != null) {
             /*do nothing I guess*/

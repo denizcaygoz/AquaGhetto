@@ -101,7 +101,7 @@ class PlayerActionService(private val rootService: RootService): AbstractRefresh
             }
         }
 
-        rootService.gameService.determineNextPlayer(true)
+        //rootService.gameService.determineNextPlayer(true)
 
         onAllRefreshables {
             refreshAfterNextTurn(game.players[game.currentPlayer])
