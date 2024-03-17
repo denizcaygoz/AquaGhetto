@@ -93,7 +93,13 @@ class EvaluateAddTileToPrisonBusService(private val smartAI: SmartAI) {
         for (i in prisonBusesLeftToPlace) {
             val nextPlayer = smartAI.getNextAndOldPlayer(game, false)
             game.currentPlayer = nextPlayer.second
+
+            addTileToBus(game.prisonBuses[i] , tile)
+
             val action = smartAI.minMax(game, depth, maximize, amountActions)
+
+            removeTileFromBus(game.prisonBuses[i] , tile)
+
             game.currentPlayer = nextPlayer.first
             if ((action.score > best)) {
                 best = action.score
@@ -147,7 +153,13 @@ class EvaluateAddTileToPrisonBusService(private val smartAI: SmartAI) {
         for (i in prisonBusesLeftToPlace) {
             val nextPlayer = smartAI.getNextAndOldPlayer(game, false)
             game.currentPlayer = nextPlayer.second
+
+            addTileToBus(game.prisonBuses[i] , tile)
+
             val action = smartAI.minMax(game, depth, maximize, amountActions)
+
+            removeTileFromBus(game.prisonBuses[i] , tile)
+
             game.currentPlayer = nextPlayer.first
             if ((action.score > best)) {
                 best = action.score
@@ -169,7 +181,22 @@ class EvaluateAddTileToPrisonBusService(private val smartAI: SmartAI) {
         }
     }
 
+    private fun addTileToBus(bus: PrisonBus, tile: Tile) {
+        for (i in bus.tiles.indices) {
+            if (bus.tiles[i] != null && !bus.blockedSlots[i]) {
+                bus.tiles[i] = tile
+                return
+            }
+        }
+    }
 
+    private fun removeTileFromBus(bus: PrisonBus, tile: Tile) {
+        for (i in bus.tiles.indices) {
+            if (bus.tiles[i] != tile) {
+                bus.tiles[i] = null
+            }
+        }
+    }
 
 
 }
