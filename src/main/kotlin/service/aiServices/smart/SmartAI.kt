@@ -322,6 +322,8 @@ class SmartAI(val rootService: RootService, val player: Player) {
      * @param bonus the bonus obtained by placing a card
      */
     private fun placeCardBonus(placeCard: PlaceCard , bonus: Pair<Boolean,PrisonerTile?>) {
+        val game = rootService.currentGame
+        checkNotNull(game)
         /*place possible employee if valid*/
         placeEmployee(bonus.first, placeCard.firstTileBonusEmployee)
 
@@ -330,7 +332,9 @@ class SmartAI(val rootService: RootService, val player: Player) {
         val bonusBaby = bonus.second
         val bonusLocation = placeCard.placeBonusPrisoner
         if (bonusBaby != null && bonusLocation == null) {
-            //TODO add emergency action?
+            /*If there is no place in prison area to place the bonus baby,
+            * then bonus card goes to isolation.*/
+            game.players[game.currentPlayer].isolation.push(bonusBaby)
             println("Error AI action did not matched bonus")
         } else if (bonusBaby == null && bonusLocation != null) {
             /*do nothing I guess*/
