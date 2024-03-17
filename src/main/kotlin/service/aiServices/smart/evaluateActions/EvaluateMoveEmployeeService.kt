@@ -36,7 +36,7 @@ class EvaluateMoveEmployeeService(val smartAI: SmartAI) {
         removeEmployee(pos.first, pos.second, player)
         val betterPos = smartAI.evaluateBestPosition.getBestLocationEmployee(player)
 
-        if (betterPos.first != pos.first && betterPos.second != pos.second) {
+        if (betterPos.first == pos.first && betterPos.second == pos.second) {
             player.coins += 1
             addEmployee(pos.first, pos.second, player)
             return null
