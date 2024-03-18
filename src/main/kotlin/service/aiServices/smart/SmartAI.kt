@@ -28,7 +28,7 @@ class SmartAI(val rootService: RootService, val player: Player) {
     val evaluateGamePosition = EvaluateGamePositionService(this)
     val evaluateBestPosition = EvaluateBestPosition(this)
 
-    private val checkLayers = 6
+    private val checkLayers = 5
 
     init {
         require(player.type == PlayerType.AI) {"Player is not an AI"}
@@ -105,6 +105,8 @@ class SmartAI(val rootService: RootService, val player: Player) {
                             "bonusPrisoner: ${place.placeBonusPrisoner} secondBonusEmployee:${place.secondTileBonusEmployee}   ")
                 }
                 println()
+                /*after all tiles were placed determineNextPlayer needs to be called*/
+                rootService.gameService.determineNextPlayer(true)
             }
             else -> {
                 println("End no action")

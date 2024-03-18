@@ -9,6 +9,9 @@ import service.aiServices.smart.SmartAI
 class EvaluateMoveEmployeeService(private val smartAI: SmartAI) {
 
     fun getScoreMoveEmployee(game: AquaGhetto, depth: Int): ActionMoveEmployee {
+        //TODO maybe bugged?, validate after merge with correct place prisoner implementation
+        return ActionMoveEmployee(false, 0, Pair(0,0), Pair(0,0))
+
         val player = game.players[game.currentPlayer]
 
         if (player.coins < 1) return ActionMoveEmployee(false, 0, Pair(0,0), Pair(0,0))
