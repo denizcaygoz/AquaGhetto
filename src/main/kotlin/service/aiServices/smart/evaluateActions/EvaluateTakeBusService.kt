@@ -7,9 +7,16 @@ import entity.aIActions.PlaceCard
 import entity.tileTypes.CoinTile
 import entity.tileTypes.PrisonerTile
 import service.aiServices.smart.SmartAI
-
+/**
+ * Class that stores the function that is necessary
+ * to simulate the action of take bus.
+ */
 class EvaluateTakeBusService(private val smartAI: SmartAI) {
-
+    /**
+     * tries to take the best bus, so that the AI gets the most point.
+     * First finds the busses that is available to take. the calls simulateTakeBus.
+     * simulateTakeBus return the best action with the most point.
+     */
     fun takeBus(game: AquaGhetto, depth: Int): ActionTakeBus {
 
         val bestActions = mutableListOf<ActionTakeBus>()
@@ -24,6 +31,11 @@ class EvaluateTakeBusService(private val smartAI: SmartAI) {
         return bestActions.maxBy { it.score }
     }
 
+    /**
+     * Function checks for each bus and evaluates what will happen when the tiles on the buses is taken, by
+     * finding for each tile the best position to place.
+     * After this simulated undo stuff is called.
+     */
     private fun simulateTakeBus(game: AquaGhetto, depth: Int, player: Player, busIndex: Int): ActionTakeBus {
 
         val bus = game.prisonBuses.removeAt(busIndex)

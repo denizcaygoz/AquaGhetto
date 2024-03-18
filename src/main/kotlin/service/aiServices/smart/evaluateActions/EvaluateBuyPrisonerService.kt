@@ -5,9 +5,15 @@ import entity.Player
 import entity.aIActions.ActionBuyPrisoner
 import entity.aIActions.PlaceCard
 import service.aiServices.smart.SmartAI
-
+/**
+ * Class that stores the function that is necessary
+ * to simulate the action of buy prisoner from other isolation.
+ */
 class EvaluateBuyPrisonerService(private val smartAI: SmartAI) {
-
+    /**
+     * this function finds the best prisoner and best places to places this
+     * prisoner to get the most score.
+     */
     fun getScoreBuyPrisoner(game: AquaGhetto, depth: Int): ActionBuyPrisoner {
         val player = game.players[game.currentPlayer]
 
@@ -23,6 +29,9 @@ class EvaluateBuyPrisonerService(private val smartAI: SmartAI) {
         return actions.maxBy { it.score }
     }
 
+    /**
+     * finds the best position for the prisoner we took from other player's isolation.
+     */
     private fun forOneSpecifiedPlayer(game: AquaGhetto, depth: Int, player: Player, buyFrom: Player): ActionBuyPrisoner {
         if (player.coins < 2 || buyFrom.isolation.isEmpty()) {
             return ActionBuyPrisoner(false, 0 , player, PlaceCard(Pair(0,0)))

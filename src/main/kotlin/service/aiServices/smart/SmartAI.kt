@@ -16,6 +16,13 @@ import java.util.concurrent.locks.ReentrantLock
 import kotlin.concurrent.thread
 import kotlin.concurrent.withLock
 
+/**
+ * Main class for smartAI, consist of important classes and functions like
+ * evaluate classes, makeTurn and minimax algorithm function.
+ *
+ * @param rootService instance of the [RootService] for access to other services
+ * @param player refers to the AI that uses this class to determine its moves.
+ */
 class SmartAI(val rootService: RootService, val player: Player) {
 
     private val evaluateActionFreePrisoner = EvaluateFreePrisonerService(this)
@@ -34,6 +41,9 @@ class SmartAI(val rootService: RootService, val player: Player) {
         require(player.type == PlayerType.AI) {"Player is not an AI"}
     }
 
+    /**
+     * Main function that's called. When AI makes a turn.
+     */
     fun makeTurn(game: AquaGhetto) {
         val startTime = System.currentTimeMillis()
 
@@ -50,6 +60,10 @@ class SmartAI(val rootService: RootService, val player: Player) {
         println(count)
     }
 
+    /**
+     * This is the function called by makeTurn when AI determines the best action.
+     * Here the action realized.
+     */
     private fun executeAction(game: AquaGhetto, aiAction: AIAction) {
         when (aiAction) {
             is ActionAddTileToBus -> {
@@ -158,7 +172,18 @@ class SmartAI(val rootService: RootService, val player: Player) {
 
     private var count = 0
 
-
+    /**
+     * Minimax algorithm called by makeTurn to determine the best move for the AI.
+     * This function goes through each possible moves and finally picks the one that leads the
+     * AI to the best score that it can get.
+     * Unlike the usual AI, we did not use maximize parameter since each Player tries to maximize
+     * their own score. That's why each node in minMax here represents the AI moves.
+     *
+     * @param game the game of AquaGhetto
+     * @param depth depth of the binary tree used in MinMax. The greater the depth,
+     * the more find a good action, but more memory we use.
+     * @return returns the best AIAction by using getBestAction function.
+     */
     fun minMax(game: AquaGhetto, depth: Int): AIAction {
         count++
 
@@ -196,6 +221,9 @@ class SmartAI(val rootService: RootService, val player: Player) {
 
     //TODO check if this is useful / working
     //TODO clone game
+    /**
+     * Threaded version of minMax algorithm.
+     */
     private fun minMaxNewThread(game: AquaGhetto, depth: Int): AIAction {
         val threads = mutableListOf<Thread>()
 
@@ -370,6 +398,12 @@ class SmartAI(val rootService: RootService, val player: Player) {
         }
     }
 
+    /**
+     * set up the current and the next player.
+     * @param game the game of AquaGhetto
+     * @param busWasTakenInThisRound true if bus has just taken by current Player,
+     * used in order to adjust current and next player.
+     */
     fun getNextAndOldPlayer(game: AquaGhetto,busWasTakenInThisRound: Boolean): Pair<Int,Int> {
         val oldPlayer = game.currentPlayer
 
@@ -411,7 +445,10 @@ class SmartAI(val rootService: RootService, val player: Player) {
         return Pair(oldPlayer, nextPlayer)
     }
 
-
+    /**
+     * Is used to set up the new round. Used in minMax function.
+     * basically sets up the player's buses and buses on the mid.
+     */
     private fun simulateSetUpNewRound(game: AquaGhetto): MutableList<MutableList<Pair<Tile?,Boolean>>>?  {
         /*moving the buses back in the middle is handled in EvaluateTakeBusService*/
         var takenBuses = 0
@@ -435,7 +472,10 @@ class SmartAI(val rootService: RootService, val player: Player) {
         }
         return busData
     }
-
+    /**
+     *Used to undo the new round. Used in the minMax function.
+     *resets the busses to what they were before the evaluate functions were called.
+     */
     private fun simulateUndoNewRound(game: AquaGhetto, busData: MutableList<MutableList<Pair<Tile?,Boolean>>>?) {
         if (busData == null) return
 
@@ -450,6 +490,10 @@ class SmartAI(val rootService: RootService, val player: Player) {
         }
     }
 
+    /**
+     * Simulate the prisoner or employee placements in order to see the best possible scenario
+     * for the AI Player. Used in evaluation classes.
+     */
     fun simulatePlacement(placeCard: PlaceCard, tile: PrisonerTile, coin: Boolean, player: Player): Pair<PrisonerTile, PrisonerTile>?{
         val board = player.board
         val returnValue: Pair<PrisonerTile, PrisonerTile>? = null
@@ -515,7 +559,10 @@ class SmartAI(val rootService: RootService, val player: Player) {
         /*return parent tiles to allow undo*/
         return returnValue
     }
-
+    /**
+     * Undo everything done in simulate placement function. in order to arrange recursion calls.
+     * Used in evaluation classes.
+     */
     fun undoSimulatePlacement(placeCard: PlaceCard, coin: Boolean, player: Player, parentTiles: Pair<PrisonerTile, PrisonerTile>?) {
         val board = player.board
 
