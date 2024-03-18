@@ -62,12 +62,13 @@ class PlayerActionService(private val rootService: RootService): AbstractRefresh
             rootService.networkService.updateConnectionState(ConnectionState.WAITING_FOR_TURN)
         }
 
-        if (changePlayer)
-            rootService.gameService.determineNextPlayer(false)
-
         onAllRefreshables {
             refreshPrisonBus(prisonBus)
         }
+
+        if (changePlayer)
+            rootService.gameService.determineNextPlayer(false)
+
     }
 
     fun takePrisonBus(prisonBus: PrisonBus) {
@@ -331,8 +332,6 @@ class PlayerActionService(private val rootService: RootService): AbstractRefresh
             }
         }
 
-        rootService.gameService.determineNextPlayer(false)
-
         onAllRefreshables {
             refreshEmployee(currentPlayer) // aktualisiert refreshEmployee auch die GuardTiles?
             if (hasSetJanitorHere) {
@@ -340,6 +339,8 @@ class PlayerActionService(private val rootService: RootService): AbstractRefresh
             }
             refreshScoreStats()
         }
+
+        rootService.gameService.determineNextPlayer(false)
     }
 
     /**
@@ -407,12 +408,12 @@ class PlayerActionService(private val rootService: RootService): AbstractRefresh
             rootService.networkService.updateConnectionState(ConnectionState.WAITING_FOR_TURN)
         }
 
-        rootService.gameService.determineNextPlayer(false)
-
         onAllRefreshables {
             refreshScoreStats()
             refreshIsolation(currentPlayer)
         }
+
+        rootService.gameService.determineNextPlayer(false)
     }
 
     /**
@@ -497,12 +498,13 @@ class PlayerActionService(private val rootService: RootService): AbstractRefresh
             rootService.networkService.updateConnectionState(ConnectionState.WAITING_FOR_TURN)
         }
 
-        if (changePlayer)
-            rootService.gameService.determineNextPlayer(false)
-
         onAllRefreshables {
             refreshPrison(null, -1, -1)
         }
+
+        if (changePlayer)
+            rootService.gameService.determineNextPlayer(false)
+
     }
 
     /**
