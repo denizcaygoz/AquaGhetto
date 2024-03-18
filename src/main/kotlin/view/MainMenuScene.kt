@@ -6,14 +6,19 @@ import tools.aqua.bgw.components.uicomponents.TextField
 import tools.aqua.bgw.core.MenuScene
 
 /**
- * Buttons from Application
- * quitButton
- * newSingleplayerGameButton
- * newMultiplayerGameButton
- *
+ * Sceen for Selecting a Gameplay mode
+ * Contains: Singleplayerbutton, MultiplayerButton
+ * Multiplayer Prompts the User to Create or Join a Game
+ * Join creates a TextField Input for Lobbycode and a Button to join
+ * Create goes to the setupScene
+ * -> Maybe the Create a Game needs a Specialized Scene that Displays the Lobbycode given by Network?
  */
 class MainMenuScene(rootService : RootService) : MenuScene(), Refreshable {
 
+    /**
+     * Exits the Game
+     * Logic of the Button is in [AquaGhettoApplication]
+     */
     val quitButton = Button(
         posX = (1920 / 2)-250 ,
         posY = 1080-200,
@@ -21,6 +26,10 @@ class MainMenuScene(rootService : RootService) : MenuScene(), Refreshable {
         width = 500,
         text = "Quit the Game"
     )
+
+    /**
+     * Switches to [SetupScene] to create a Singleplayer Game
+     */
     val newSinglePlayerGameButton = Button(
         posX = (1920 / 2)-250,
         posY = 500,
@@ -28,6 +37,12 @@ class MainMenuScene(rootService : RootService) : MenuScene(), Refreshable {
         width = 500,
         text = "Singleplayer"
     )
+
+    /**
+     * Creates 2 buttons onclick
+     * [newMultiplayerGameButton] to Create a Game
+     * [joinMultiplayerButton] to join a Game
+     */
     val multiplayerButton = Button(
         posX = (1920 / 2)-250,
         posY = 700,
@@ -73,6 +88,7 @@ class MainMenuScene(rootService : RootService) : MenuScene(), Refreshable {
         addComponents( newMultiplayerGameButton , joinMultiplayerButton )
         }
     }
+    
     init {
         addComponents(
             quitButton,
