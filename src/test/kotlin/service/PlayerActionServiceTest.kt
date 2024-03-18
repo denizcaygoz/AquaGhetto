@@ -5,6 +5,7 @@ import entity.enums.PrisonerTrait
 import entity.enums.PrisonerType
 import entity.tileTypes.GuardTile
 import entity.tileTypes.PrisonerTile
+import org.junit.jupiter.api.assertThrows
 import java.util.*
 import kotlin.test.*
 
@@ -510,6 +511,29 @@ class PlayerActionServiceTest {
         assertTrue(currentPlayer.isolation.isEmpty())
     }
 
+    @Test
+    fun movePrisonerToPrisonTest(){
+        val players = mutableListOf(
+            Pair("P1", PlayerType.PLAYER),
+            Pair("P2", PlayerType.PLAYER)
+        )
+        rootService.gameService.startNewGame(players)
+        val message = assertThrows<IllegalStateException> { rootService.playerActionService.movePrisonerToPrisonYard(10 ,10) }
+        assertEquals( "Bring more money and come back!" , message.message)
+
+        rootService.currentGame!!.players[rootService.currentGame!!.currentPlayer].coins = 10
+        val message1 = assertThrows<IllegalStateException> { rootService.playerActionService.movePrisonerToPrisonYard(10 ,10) }
+        assertEquals( "Empty Isolation." , message1.message)
+
+        rootService.currentGame!!.players[rootService.currentGame!!.currentPlayer].isolation.add(PrisonerTile(0,PrisonerTrait.RICH, PrisonerType.PURPLE))
+        val result = rootService.playerActionService.movePrisonerToPrisonYard(10 ,10)
+        assertEquals(9, rootService.currentGame!!.players[rootService.currentGame!!.currentPlayer].coins)
+        val pair = Pair(false, null)
+        assertEquals(pair , result)
+
+
+
+    }
 
 
 }
