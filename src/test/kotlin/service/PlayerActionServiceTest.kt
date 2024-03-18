@@ -67,8 +67,8 @@ class PlayerActionServiceTest {
         val malePrisoner = PrisonerTile(13, PrisonerTrait.MALE, PrisonerType.RED)
         val femalePrisoner = PrisonerTile(11, PrisonerTrait.FEMALE, PrisonerType.RED)
 
-        val maleResult = rootService.playerActionService.placePrisoner(malePrisoner, 2, 2, changePlayer = false)
-        val femaleResult = rootService.playerActionService.placePrisoner(femalePrisoner, 3, 2, changePlayer = false)
+        val maleResult = rootService.playerActionService.placePrisoner(malePrisoner, 2, 2)
+        val femaleResult = rootService.playerActionService.placePrisoner(femalePrisoner, 3, 2)
 
         // First placement should result in no child
         assert(maleResult.first)
@@ -86,7 +86,7 @@ class PlayerActionServiceTest {
         // Placing the baby should also yield a coin bonus
         val oldCoins = currentPlayer.coins
         val babyResult = rootService.playerActionService.placePrisoner(
-            femaleResult.second!!, 2, 3, changePlayer = false
+            femaleResult.second!!, 2, 3
         )
         assert(babyResult.first)
         assertNull(babyResult.second)
@@ -95,8 +95,8 @@ class PlayerActionServiceTest {
         // Placing two more tiles for the employee bonus:
         val firstTile = PrisonerTile(15, PrisonerTrait.NONE, PrisonerType.RED)
         val secondTile = PrisonerTile(16, PrisonerTrait.NONE, PrisonerType.RED)
-        rootService.playerActionService.placePrisoner(firstTile, 4, 2, changePlayer = false)
-        rootService.playerActionService.placePrisoner(secondTile, 4, 3, changePlayer = false)
+        rootService.playerActionService.placePrisoner(firstTile, 4, 2)
+        rootService.playerActionService.placePrisoner(secondTile, 4, 3)
         assert(currentPlayer.board.getPrisonYard(-101, -101) is GuardTile)
     }
     /**

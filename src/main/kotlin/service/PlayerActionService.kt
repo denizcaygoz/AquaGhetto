@@ -116,15 +116,14 @@ class PlayerActionService(private val rootService: RootService): AbstractRefresh
      * @param tile The [PrisonerTile] to be placed.
      * @param x The x-coordinate on the game board.
      * @param y The y-coordinate on the game board.
-     * @param changePlayer Whether the game should switch to the next player's turn. Only intendet for debugging
-     * @return A Pair indicating the success of the placement and a [PrisonerTile] with a [PrisonerTrait.BABY], if applicable.
-     *   - First value (Boolean): True if the placement is successful, false otherwise.
+     * @return A Pair containing bonus tiles, if applicable:
+     *   - First value (Boolean): True if tile placement results in a new employee, false otherwise.
      *   - Second value (PrisonerTile?): A [PrisonerTile] with [PrisonerTrait.BABY] if a baby can be conceived,
      *   otherwise null.
      *
      * @throws IllegalStateException if the game has not been started yet.
      */
-    fun placePrisoner(tile: PrisonerTile, x: Int, y: Int, changePlayer: Boolean = true): Pair<Boolean, PrisonerTile?> {
+    fun placePrisoner(tile: PrisonerTile, x: Int, y: Int): Pair<Boolean, PrisonerTile?> {
         val game = rootService.currentGame
         checkNotNull(game) { "No game started yet." }
         val player = game.players[game.currentPlayer]
@@ -132,59 +131,59 @@ class PlayerActionService(private val rootService: RootService): AbstractRefresh
 
         val result: Pair<Boolean, PrisonerTile?>
 
-        // Validate the tile placement
-        if (rootService.validationService.validateTilePlacement(tile, x, y)) {
-            // Set the PrisonerTile on the game board
-            board.setPrisonYard(x, y, tile)
-
-            // Calculate the count of the specified PrisonerType in the player's PrisonYard
-            val count = rootService.evaluationService.getPrisonerTypeCount(player).get(tile.prisonerType)!!
-            // Never null because of setPrisonYard
-
-            // Evaluate scoring conditions based on the count
-            if (count % 3 == 0 && count != 0) {
-                // Increment player's coins for every third tile, excluding counts of 0
-                player.coins++
-            }
-            if (count % 5 == 0 && count != 0) {
-                // Place a GuardTile at (-101, -101) and return it for every fifth tile, excluding count of 0
-                board.setPrisonYard(-101, -101, GuardTile())
-            }
-            // Checking for baby prisoner
-            result = Pair(true,
-                rootService.playerActionService.checkBabyPrisoner()
-                    ?.let { rootService.boardService.getBabyTile(it) })
-
-            // Refresh score statistics and the prison layout
-            onAllRefreshables {
-                refreshScoreStats()
-                refreshPrison(tile, x, y)
-            }
-
-            if (result.second == null && changePlayer) { // No baby tile, turn is over
-                rootService.gameService.determineNextPlayer(false)
-            }
-
-            return result
-
-        } else if (x == y && x == -100) { // To put prisoners into a player's isolation
+        if (x == y && x == -100) { // To put prisoners into a player's isolation
             player.isolation.push(tile)
-            result = Pair(true, null)
+            result = Pair(false, null)
 
-            if (changePlayer)
-                rootService.gameService.determineNextPlayer(false)
+            rootService.evaluationService.evaluatePlayer(player)
 
             onAllRefreshables {
-                refreshIsolation(player)
                 refreshScoreStats()
+                refreshIsolation(player)
             }
 
             return result
         }
 
+        // Validate the tile placement
+        check(rootService.validationService.validateTilePlacement(tile, x, y)) { "Invalid Tile location" }
 
-        // Return indicating unsuccessful placement
-        return Pair(false, null)
+        // Set the PrisonerTile on the game board
+        board.setPrisonYard(x, y, tile)
+
+        // Calculate the count of the specified PrisonerType in the player's PrisonYard
+        val count = rootService.evaluationService.getPrisonerTypeCount(player)[tile.prisonerType]!!
+        // Never null because of setPrisonYard
+
+        var getsNewEmployee = false
+
+        // Evaluate scoring conditions based on the count
+        if (count % 3 == 0 && count != 0) {
+            // Increment player's coins for every third tile, excluding counts of 0
+            player.coins++
+        }
+
+        // A new employee for every 5th Tile
+        if (count % 5 == 0 && count != 0) {
+            getsNewEmployee = true
+        }
+
+        // Checking for baby prisoner
+        val babyPrisoner = rootService.playerActionService.checkBabyPrisoner()?.let {
+            rootService.boardService.getBabyTile(it)
+        }
+
+        rootService.evaluationService.evaluatePlayer(player)
+
+        // Refresh score statistics and the prison layout
+        onAllRefreshables {
+            refreshScoreStats()
+            refreshPrison(tile, x, y)
+        }
+
+        result = Pair(getsNewEmployee, babyPrisoner)
+
+        return result
     }
 
 
