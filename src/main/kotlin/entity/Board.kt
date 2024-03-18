@@ -118,11 +118,15 @@ class Board: Serializable, Cloneable {
             for (xIterator in this@Board.getPrisonGridIterator()) {
                 for (yIterator in xIterator.value) {
                     val floor = this@Board.getPrisonGrid(xIterator.key, yIterator.key)
+                    this.setPrisonGrid(xIterator.key, yIterator.key, floor)
+                }
+            }
+
+            for (xIterator in this@Board.getPrisonYardIterator()) {
+                for (yIterator in xIterator.value) {
                     val tile = this@Board.getPrisonYard(xIterator.key, yIterator.key)?.let {
                         if (it is PrisonerTile) it.clone() else it
                     }
-                    this.setPrisonGrid(xIterator.key, yIterator.key, floor)
-
                     this.setPrisonYard(xIterator.key, yIterator.key, tile)
                 }
             }
