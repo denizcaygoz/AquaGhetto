@@ -8,10 +8,15 @@ import entity.tileTypes.PrisonerTile
 import org.junit.jupiter.api.assertThrows
 import java.util.*
 import kotlin.test.*
-
+/**
+ * This class provides unit tests for the PlayerActionService class.
+ */
 class PlayerActionServiceTest {
     private val rootService = RootService()
     private val testRefreshable = TestRefreshable()
+    /**
+     * Sets up a mock game before each test.
+     */
     @BeforeTest
     fun setUpMockGame() {
         val players = mutableListOf(
@@ -94,7 +99,9 @@ class PlayerActionServiceTest {
         rootService.playerActionService.placePrisoner(secondTile, 4, 3, changePlayer = false)
         assert(currentPlayer.board.getPrisonYard(-101, -101) is GuardTile)
     }
-
+    /**
+     * Tests whether expanding the prison grid works correctly for a big extension.
+     */
     @Test
     fun `test expandPrisonGrid for a big Extension`() {
         val game = rootService.currentGame!!
@@ -118,7 +125,9 @@ class PlayerActionServiceTest {
         assert(!rootService.validationService.validateExpandPrisonGrid(true, bigExpX, bigExpY, 0))
         assertFails { rootService.playerActionService.expandPrisonGrid(true, bigExpX, bigExpY, 0) }
     }
-
+    /**
+     * Tests whether expanding the prison grid works correctly for a small extension.
+     */
     @Test
     fun `test expandPrisonGrid for a small extension`() {
         val game = rootService.currentGame!!
@@ -168,7 +177,9 @@ class PlayerActionServiceTest {
         assertSame(1,currentPlayer.coins)
         assertSame(2, currentPlayer.remainingSmallExtensions)
     }
-
+    /**
+     * Tests moving an employee from a source to a destination within the prison yard.
+     */
     @Test
     fun `move employee from source to destination within prison yard`() {
         val game = rootService.currentGame!!
@@ -181,7 +192,9 @@ class PlayerActionServiceTest {
         assertTrue(currentPlayer.board.getPrisonYard(2, 2) is GuardTile)
         assertEquals(0, currentPlayer.coins) // Check coins decremented
     }
-
+    /**
+     * Tests moving a notGuard from a source to an empty destination.
+     */
     @Test
     fun `move notGuard from source to empty destination`() {
         val game = rootService.currentGame!!
@@ -194,7 +207,9 @@ class PlayerActionServiceTest {
         assertFalse(currentPlayer.hasJanitor)
         assertEquals(0, currentPlayer.coins) // Check coins decremented
     }
-
+    /**
+     * Tests moving a Guard to a special destination.
+     */
     @Test
     fun `move Guard to special destination`() {
         val game = rootService.currentGame!!
@@ -208,6 +223,9 @@ class PlayerActionServiceTest {
         assertTrue(currentPlayer.secretaryCount == 1) // Check janitor removed
         assertEquals(0, currentPlayer.coins) // Check coins decremented
     }
+    /**
+     * Tests moving an employee to a special destination without enough coins.
+     */
     @Test
     fun `move employee to special destination without enough coins`() {
         val game = rootService.currentGame!!
@@ -217,7 +235,9 @@ class PlayerActionServiceTest {
 
         assertFails{rootService.playerActionService.moveEmployee(3, 3, -103, -103)}
     }
-
+    /**
+     * Tests moving an employee to a full destination.
+     */
     @Test
     fun `move employee to full destination`() {
         val game = rootService.currentGame!!
@@ -475,7 +495,9 @@ class PlayerActionServiceTest {
         }
 
     }
-
+    /**
+     * Tests drawing a card from the draw stack or final stack.
+     */
     @Test
     fun `draw card test`() {
         val game = rootService.currentGame!!
@@ -510,7 +532,9 @@ class PlayerActionServiceTest {
         assertEquals(3, currentPlayer.coins)
         assertTrue(currentPlayer.isolation.isEmpty())
     }
-
+    /**
+     * Tests moving a prisoner to the prison yard.
+     */
     @Test
     fun movePrisonerToPrisonTest(){
         val players = mutableListOf(

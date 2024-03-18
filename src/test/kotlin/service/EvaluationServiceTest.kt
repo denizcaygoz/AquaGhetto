@@ -10,10 +10,16 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 
-// Test class for evaluating the functionalities of EvaluationService
+/**
+ * Test class for evaluating the functionalities of EvaluationService.
+ */
 class EvaluationServiceTest {
     private val testRefreshable = TestRefreshable()
     private val rootService = RootService()
+
+    /**
+     * Sets up a mock game for testing.
+     */
     @BeforeTest
     fun setUpMockGame(){
         val players = mutableListOf(
@@ -24,10 +30,10 @@ class EvaluationServiceTest {
         rootService.gameService.startNewGame(players)
         rootService.addRefreshable(testRefreshable)
     }
-    // List of players used for testing
-    // RootService instance for testing
 
-    // Test method for checking the count of different prisoner types
+    /**
+     * Tests the count of different prisoner types.
+     */
     @Test
     fun getPrisonerCountTypeTest(){
         // Expected map containing counts of different prisoner types

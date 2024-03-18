@@ -9,17 +9,26 @@ import java.io.File
 import java.io.ObjectOutputStream
 import kotlin.test.*
 
+/**
+ * This class provides unit tests for the GameStatesService class.
+ */
 class GameStatesServiceTest {
-    val rootService = RootService()
-        @Test
-        fun loadInvalidGameTest(){
-            // Test when no saved file exists
-            val saveFile = File("saveFile")
-            if (saveFile.exists()) saveFile.delete()
-            val game1 = assertThrows<IllegalStateException> { rootService.gameStatesService.loadGame() }
-            assertEquals( "There is no game to load", game1.message)
-        }
+    private val rootService = RootService()
+    /**
+     * Tests loading an invalid game.
+     */
+    @Test
+    fun loadInvalidGameTest(){
+        // Test when no saved file exists
+        val saveFile = File("saveFile")
+        if (saveFile.exists()) saveFile.delete()
+        val game1 = assertThrows<IllegalStateException> { rootService.gameStatesService.loadGame() }
+        assertEquals( "There is no game to load", game1.message)
+    }
 
+    /**
+     * Tests loading a valid game.
+     */
     @Test
     fun loadValidGameTest() {
         // Initialize the game state
@@ -52,7 +61,9 @@ class GameStatesServiceTest {
 
     }
 
-
+    /**
+     * Tests saving an invalid game.
+     */
     @Test
     fun saveInvalidGameTest(){
         // Test when no saved file exists
@@ -60,6 +71,9 @@ class GameStatesServiceTest {
         assertEquals( "No game to save", message1.message)
     }
 
+    /**
+     * Tests saving a valid game.
+     */
     @Test
     fun saveValidGameTest() {
         // Create a mock AquaGhetto object
@@ -85,7 +99,9 @@ class GameStatesServiceTest {
         assertTrue(byteArrayOutputStream.toByteArray().isNotEmpty(), "AquaGhetto object is not saved")
     }
 
-
+    /**
+     * Tests undoing an invalid game state.
+     */
     @Test
     fun undoInvalidGameState(){
         val players = mutableListOf(
@@ -97,6 +113,9 @@ class GameStatesServiceTest {
         assertEquals( "Nothing to undo" , message1.message)
     }
 
+    /**
+     * Tests undoing a valid game state.
+     */
     @Test
     fun undoValidGameState() {
         val players = mutableListOf(
@@ -119,6 +138,9 @@ class GameStatesServiceTest {
 
     }
 
+    /**
+     * Tests redoing an invalid game state.
+     */
     @Test
     fun redoInvalidGameState(){
         val players = mutableListOf(
@@ -130,6 +152,9 @@ class GameStatesServiceTest {
         assertEquals( "Nothing to redo" , message1.message)
     }
 
+    /**
+     * Tests redoing a valid game state.
+     */
     @Test
     fun redoValidGameState() {
         val players = mutableListOf(
@@ -152,6 +177,9 @@ class GameStatesServiceTest {
 
     }
 
+    /**
+     * Tests copying an AquaGhetto object.
+     */
     @Test
     fun `test copyAquaghetto`() {
         mutableListOf(
