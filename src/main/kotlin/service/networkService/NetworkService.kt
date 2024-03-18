@@ -42,7 +42,7 @@ class NetworkService(private val rootService: RootService): AbstractRefreshingSe
      **/
     val prisoners: MutableList<Triple<Int, Int, Int>> = mutableListOf()
     val children: MutableList<Triple<Int, Int, PrisonerTile>> = mutableListOf()
-    val workers: MutableList<Triple<Int, Int, GuardTile>> = mutableListOf()
+    val workers: MutableList<Pair<Int, Int>> = mutableListOf()
 
     /**
      * Connects to server, sets the [NetworkService.client] if successful and returns `true` on success.
@@ -296,6 +296,9 @@ class NetworkService(private val rootService: RootService): AbstractRefreshingSe
 
         val message = AddTileToTruckMessage(selectedPrisonBus)
         client?.sendGameActionMessage(message)
+
+        // Nur weil determineNextPlayer nicht implementiert wurde
+        rootService.networkService.updateConnectionState(ConnectionState.WAITING_FOR_TURN)
     }
 
     /**
@@ -474,6 +477,9 @@ class NetworkService(private val rootService: RootService): AbstractRefreshingSe
         )
         /**send message **/
         client?.sendGameActionMessage(message)
+
+        // Nur weil determineNextPlayer nicht implementiert wurde
+        rootService.networkService.updateConnectionState(ConnectionState.WAITING_FOR_TURN)
     }
 
     /**
@@ -512,7 +518,6 @@ class NetworkService(private val rootService: RootService): AbstractRefreshingSe
         } else {
             when{
                 (highestCandidates.size == 2 && lowestCandidates.size == 1) -> {
-                    println("One")
                     val point = lowestCandidates[0]
                     rootService.playerActionService.expandPrisonGrid(
                         false, point.x, point.y+1, 0, PlayerType.NETWORK
@@ -524,12 +529,10 @@ class NetworkService(private val rootService: RootService): AbstractRefreshingSe
                     val point: PositionPair
                     val rotation: Int
                     if (positions[0].x < highestCandidates[0].x) {
-                        println("Two")
                         point = highestCandidates[0]
                         rotation = 90
 
                     } else {
-                        println("Three")
                         point = lowestCandidates[0]
                         rotation = 270
                     }
@@ -539,7 +542,6 @@ class NetworkService(private val rootService: RootService): AbstractRefreshingSe
                     )
                 }
                 (highestCandidates.size == 1 && lowestCandidates.size == 2) -> {
-                    println("Four")
                     val point = highestCandidates[0]
                     rootService.playerActionService.expandPrisonGrid(
                         false, point.x, point.y-1, 180, PlayerType.NETWORK
@@ -547,7 +549,8 @@ class NetworkService(private val rootService: RootService): AbstractRefreshingSe
                 }
             }
         }
-        // Nur weil determineNextPlayer nicht implementiert wurde
+
+        //Weil determineNextPlayer nicht implementiert
         updateConnectionState(ConnectionState.PLAYING_MY_TURN)
     }
 
@@ -635,7 +638,6 @@ class NetworkService(private val rootService: RootService): AbstractRefreshingSe
         rootService.playerActionService.moveEmployee(
             source.first, source.second, dest.first, dest.second, PlayerType.NETWORK)
 
-        // Nur weil determineNextPlayer nicht implementiert wurde
         updateConnectionState(ConnectionState.PLAYING_MY_TURN)
     }
 
@@ -737,6 +739,8 @@ class NetworkService(private val rootService: RootService): AbstractRefreshingSe
         val message = DiscardMessage()
         /**send message **/
         client?.sendGameActionMessage(message)
+
+        rootService.networkService.updateConnectionState(ConnectionState.WAITING_FOR_TURN)
     }
 
     /**
@@ -758,9 +762,7 @@ class NetworkService(private val rootService: RootService): AbstractRefreshingSe
 
         rootService.playerActionService.freePrisoner(PlayerType.NETWORK)
 
-        // Nur weil determineNextPlayer nicht implementiert wurde
         updateConnectionState(ConnectionState.PLAYING_MY_TURN)
-
     }
 
     /**
@@ -797,7 +799,7 @@ class NetworkService(private val rootService: RootService): AbstractRefreshingSe
      * - second -> y coordinate
      * - third -> guard tile
      **/
-    fun increaseWorkers(worker: Triple<Int, Int, GuardTile>) { workers.add(worker) }
+    fun increaseWorkers(worker: Pair<Int, Int>) { workers.add(worker) }
 
     /**
      * [resetLists] resets all network list.
@@ -815,7 +817,7 @@ class NetworkService(private val rootService: RootService): AbstractRefreshingSe
      * @return a triple that holds lists of animals (first),
      * list of offsprings (second), list of workers (third)
      **/
-    private fun prepareLists():
+    fun prepareLists():
             Triple<MutableList<AnimalTriple>,
             MutableList<OffspringTriple>,
             MutableList<WorkerTriple>>
@@ -895,8 +897,6 @@ class NetworkService(private val rootService: RootService): AbstractRefreshingSe
             } else {
                 rootService.playerActionService.placePrisoner(offspringTile, offsprings.second, offsprings.third)
             }
-            //Weil DetermineNextPlayer nicht richtig funktioniert
-            game.currentPlayer = 0
         }
     }
 
@@ -915,20 +915,18 @@ class NetworkService(private val rootService: RootService): AbstractRefreshingSe
         workerList.forEach { workers ->
             when(workers.jobEnum){
                 JobEnum.MANAGER -> { rootService.playerActionService.moveEmployee(
-                    -102, -102, -102, -102, PlayerType.NETWORK )
+                    -101, -101, -102, -102, PlayerType.NETWORK )
                 }
                 JobEnum.CASHIER -> { rootService.playerActionService.moveEmployee(
-                    -103, -103, -103, -103, PlayerType.NETWORK )
+                    -101, -101, -103, -103, PlayerType.NETWORK )
                 }
                 JobEnum.KEEPER -> { rootService.playerActionService.moveEmployee(
-                    -104, -104, -104, -104, PlayerType.NETWORK )
+                    -101, -101, -104, -104, PlayerType.NETWORK )
                 }
                 JobEnum.TRAINER -> { rootService.playerActionService.moveEmployee(
                     -101, -101, workers.x, workers.y, PlayerType.NETWORK)
                 }
             }
-            //Weil DetermineNextPlayer nicht richtig funktioniert
-            game.currentPlayer = 0
         }
     }
 

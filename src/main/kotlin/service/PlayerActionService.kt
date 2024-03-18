@@ -58,8 +58,6 @@ class PlayerActionService(private val rootService: RootService): AbstractRefresh
 
         if (isNetworkGame && sender == PlayerType.PLAYER) {
             rootService.networkService.sendAddTileToTruck(prisonBus)
-            // Nur weil determineNextPlayer nicht implementiert wurde
-            rootService.networkService.updateConnectionState(ConnectionState.WAITING_FOR_TURN)
         }
 
         onAllRefreshables {
@@ -151,6 +149,15 @@ class PlayerActionService(private val rootService: RootService): AbstractRefresh
 
         // Set the PrisonerTile on the game board
         board.setPrisonYard(x, y, tile)
+
+
+        /** keeping track of added babies and added prisoners **/
+        if (tile.prisonerTrait == PrisonerTrait.BABY) {
+            rootService.networkService.increaseChildren(Triple(x,y,tile))
+        } else {
+            //rootService.networkService.increaseWorkers(Triple(x, y, positionAufTruck))
+        }
+
 
         // Calculate the count of the specified PrisonerType in the player's PrisonYard
         val count = rootService.evaluationService.getPrisonerTypeCount(player)[tile.prisonerType]!!
@@ -330,6 +337,10 @@ class PlayerActionService(private val rootService: RootService): AbstractRefresh
                     destinationY
                 )
             }
+            /** keeping track of workers to add **/
+            if (sourceX == sourceY && sourceX == -101) {
+                rootService.networkService.increaseWorkers(Pair(destinationX, destinationY))
+            }
         }
 
         onAllRefreshables {
@@ -404,8 +415,6 @@ class PlayerActionService(private val rootService: RootService): AbstractRefresh
 
         if (isNetworkGame && sender == PlayerType.PLAYER) {
             rootService.networkService.sendDiscard()
-            // Nur weil determineNextPlayer nicht implementiert wurde
-            rootService.networkService.updateConnectionState(ConnectionState.WAITING_FOR_TURN)
         }
 
         onAllRefreshables {
@@ -494,8 +503,6 @@ class PlayerActionService(private val rootService: RootService): AbstractRefresh
 
         if (isNetworkGame && sender == PlayerType.PLAYER) {
             rootService.networkService.sendBuyExpansion(isBigExtension, x, y, rotation)
-            // Nur weil determineNextPlayer nicht implementiert wurde
-            rootService.networkService.updateConnectionState(ConnectionState.WAITING_FOR_TURN)
         }
 
         onAllRefreshables {
