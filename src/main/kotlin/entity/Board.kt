@@ -115,7 +115,7 @@ class Board: Serializable, Cloneable {
     public override fun clone(): Board {
         return Board().apply {
             guardPosition.addAll(this@Board.guardPosition)
-            for (xIterator in prisonGrid.iterator()) {
+            for (xIterator in this@Board.getPrisonGridIterator()) {
                 for (yIterator in xIterator.value) {
                     val floor = this@Board.getPrisonGrid(xIterator.key, yIterator.key)
                     val tile = this@Board.getPrisonYard(xIterator.key, yIterator.key)?.let {
