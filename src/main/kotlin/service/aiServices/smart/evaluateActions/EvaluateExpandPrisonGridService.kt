@@ -21,6 +21,9 @@ class EvaluateExpandPrisonGridService(private val smartAI: SmartAI) {
     )
 
     fun getScoreExpandPrisonGrid(game: AquaGhetto, depth: Int): ActionExpandPrison {
+        //TODO currently bugged
+        return ActionExpandPrison(false, 0, false, Pair(0,0) , 0)
+
         val player = game.players[game.currentPlayer]
 
         val bigExtension = this.bigExpand(game, depth, player)
