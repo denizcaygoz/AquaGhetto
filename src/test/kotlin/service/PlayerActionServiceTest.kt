@@ -528,8 +528,8 @@ class PlayerActionServiceTest {
         rootService.currentGame!!.players[rootService.currentGame!!.currentPlayer].isolation.add(PrisonerTile(0,PrisonerTrait.RICH, PrisonerType.PURPLE))
         val result = rootService.playerActionService.movePrisonerToPrisonYard(10 ,10)
         assertEquals(9, rootService.currentGame!!.players[rootService.currentGame!!.currentPlayer].coins)
-        val pair = Pair(false, null)
-        assertEquals(pair , result)
+        val pair1 = Pair(false, null)
+        assertEquals(pair1 , result)
 
 
 
