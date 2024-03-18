@@ -1,9 +1,6 @@
 package tools.aqua.bgw.examples.war.service
 
-import edu.udo.cs.sopra.ntf.AddTileToTruckMessage
-import edu.udo.cs.sopra.ntf.BuyExpansionMessage
-import edu.udo.cs.sopra.ntf.DiscardMessage
-import edu.udo.cs.sopra.ntf.PositionPair
+import edu.udo.cs.sopra.ntf.*
 import entity.PrisonBus
 import entity.enums.PrisonerTrait
 import entity.enums.PrisonerType
@@ -120,12 +117,13 @@ class NetworkServiceTest {
         val hostBusToPlaceOn: PrisonBus = hostGame.prisonBuses[0]
 
         assertThrows<IllegalArgumentException> {
-            rootServiceGuest.playerActionService.addTileToPrisonBus(hostTileToPlace, hostBusToPlaceOn) }
+            rootServiceGuest.networkService.sendAddTileToTruck(hostBusToPlaceOn) }
 
         val wrongMessage = AddTileToTruckMessage(4)
         assertThrows<IllegalStateException> { rootServiceGuest.networkService.receiveAddTileToTruck(wrongMessage) }
 
         rootServiceHost.playerActionService.addTileToPrisonBus(hostTileToPlace, hostBusToPlaceOn)
+
         rootServiceHost.waitForState(ConnectionState.WAITING_FOR_TURN)
         rootServiceGuest.waitForState(ConnectionState.PLAYING_MY_TURN)
 
@@ -514,12 +512,10 @@ class NetworkServiceTest {
         hostGame.players[1].isolation.add(isolationTile)
         guestGame.players[1].isolation.add(isolationTile)
 
-        val successFirst = rootServiceHost.playerActionService.buyPrisonerFromOtherIsolation(
-            hostGame.players[1], 1,1)
+        rootServiceHost.playerActionService.buyPrisonerFromOtherIsolation( hostGame.players[1], 1,1)
 
-        if (successFirst.first) {
-            rootServiceHost.networkService.sendMoveTile(hostGame.players[1].name, 1,1)
-        }
+        rootServiceHost.networkService.sendMoveTile(hostGame.players[1].name, 1,1)
+
         rootServiceHost.waitForState(ConnectionState.WAITING_FOR_TURN)
         rootServiceGuest.waitForState(ConnectionState.PLAYING_MY_TURN)
 
@@ -536,6 +532,9 @@ class NetworkServiceTest {
         hostGame.players[1].board.setPrisonYard(3,3,anotherTileRed)
         guestGame.players[1].board.setPrisonYard(3,3,anotherTileRed)
 
+        rootServiceHost.currentGame = hostGame
+        rootServiceGuest.currentGame = guestGame
+
         /** Setzt bei rootServiceHost komischer weiße die Eltern elemente auf not breedable **/
         val successSecond = rootServiceGuest.playerActionService.movePrisonerToPrisonYard(
              2,1)
@@ -543,13 +542,10 @@ class NetworkServiceTest {
         rootServiceGuest.currentGame?.currentPlayer = 1
 
         val childToPlace: PrisonerTile? = successSecond.second
-        if (successSecond.first && childToPlace!= null) {
+        if (childToPlace!= null) {
             rootServiceGuest.playerActionService.placePrisoner(childToPlace, 1,2)
             /*must be done by the gui*/
-            rootServiceGuest.networkService.increaseChildren(Triple(1,2,childToPlace))
             rootServiceGuest.playerActionService.moveEmployee(-101,-101, 2,2)
-            /*must be done by the gui*/
-            rootServiceGuest.networkService.increaseWorkers(Triple(2,2, GuardTile()))
             /*send message to player one*/
             /*must be sent by the gui*/
             rootServiceGuest.networkService.sendMoveTile(hostGame.players[1].name, 2,1)
@@ -566,6 +562,168 @@ class NetworkServiceTest {
     }
 
     /**
+     * Tests if moving tile resulting in placing a manager works properly on the network.
+     */
+    @Test
+    fun testMoveTileManager() {
+        initConnections()
+
+        val hostGame = rootServiceHost.currentGame
+        var guestGame = rootServiceGuest.currentGame
+
+        assertNotNull(hostGame)
+        assertNotNull(guestGame)
+
+        val maleBlue = PrisonerTile(26, PrisonerTrait.MALE, PrisonerType.BLUE)
+        val anotherMaleBlue = PrisonerTile(27, PrisonerTrait.MALE, PrisonerType.BLUE)
+        val isolationTile = PrisonerTile(28, PrisonerTrait.OLD, PrisonerType.BLUE)
+        val maleRed = PrisonerTile(13, PrisonerTrait.MALE, PrisonerType.RED)
+        val anotherMaleRed = PrisonerTile(14, PrisonerTrait.MALE, PrisonerType.RED)
+
+        hostGame.players[0].coins = 20
+        guestGame.players[0].coins = 20
+        hostGame.players[0].isolation.add(isolationTile)
+        guestGame.players[0].isolation.add(isolationTile)
+
+        /*prepare yard of player two*/
+        hostGame.players[0].board.setPrisonYard(1,1,maleBlue)
+        guestGame.players[0].board.setPrisonYard(1,1,maleBlue)
+        hostGame.players[0].board.setPrisonYard(1,2,anotherMaleBlue)
+        guestGame.players[0].board.setPrisonYard(1,2,anotherMaleBlue)
+        hostGame.players[0].board.setPrisonYard(3,2,anotherMaleRed)
+        guestGame.players[0].board.setPrisonYard(3,2,anotherMaleRed)
+        hostGame.players[0].board.setPrisonYard(3,3,maleRed)
+        guestGame.players[0].board.setPrisonYard(3,3,maleRed)
+
+        rootServiceHost.currentGame = hostGame
+
+        rootServiceHost.playerActionService.movePrisonerToPrisonYard(2,1)
+        rootServiceHost.currentGame?.currentPlayer = 0
+        /*must be done by the gui*/
+        rootServiceHost.playerActionService.moveEmployee(-101,-101, -102,-102)
+        /*send message to player one*/
+        /*must be sent by the gui*/
+        rootServiceHost.currentGame?.currentPlayer = 0
+        rootServiceHost.networkService.sendMoveTile(hostGame.players[0].name, 2,1)
+
+        rootServiceHost.waitForState(ConnectionState.WAITING_FOR_TURN)
+        rootServiceGuest.waitForState(ConnectionState.PLAYING_MY_TURN)
+
+        guestGame = rootServiceGuest.currentGame
+
+        assertNotNull(guestGame)
+        assertTrue { guestGame.players[0].hasJanitor }
+    }
+
+    /**
+     * Tests if moving tile resulting in placing a cashier works properly on the network.
+     */
+    @Test
+    fun testMoveTileCashier() {
+        initConnections()
+
+        val hostGame = rootServiceHost.currentGame
+        var guestGame = rootServiceGuest.currentGame
+
+        assertNotNull(hostGame)
+        assertNotNull(guestGame)
+
+        val maleBlue = PrisonerTile(26, PrisonerTrait.MALE, PrisonerType.BLUE)
+        val anotherMaleBlue = PrisonerTile(27, PrisonerTrait.MALE, PrisonerType.BLUE)
+        val isolationTile = PrisonerTile(28, PrisonerTrait.OLD, PrisonerType.BLUE)
+        val maleRed = PrisonerTile(13, PrisonerTrait.MALE, PrisonerType.RED)
+        val anotherMaleRed = PrisonerTile(14, PrisonerTrait.MALE, PrisonerType.RED)
+
+        hostGame.players[0].coins = 20
+        guestGame.players[0].coins = 20
+        hostGame.players[0].isolation.add(isolationTile)
+        guestGame.players[0].isolation.add(isolationTile)
+
+        /*prepare yard of player two*/
+        hostGame.players[0].board.setPrisonYard(1,1,maleBlue)
+        guestGame.players[0].board.setPrisonYard(1,1,maleBlue)
+        hostGame.players[0].board.setPrisonYard(1,2,anotherMaleBlue)
+        guestGame.players[0].board.setPrisonYard(1,2,anotherMaleBlue)
+        hostGame.players[0].board.setPrisonYard(3,2,anotherMaleRed)
+        guestGame.players[0].board.setPrisonYard(3,2,anotherMaleRed)
+        hostGame.players[0].board.setPrisonYard(3,3,maleRed)
+        guestGame.players[0].board.setPrisonYard(3,3,maleRed)
+
+        rootServiceHost.currentGame = hostGame
+
+        rootServiceHost.playerActionService.movePrisonerToPrisonYard(2,1)
+        rootServiceHost.currentGame?.currentPlayer = 0
+        /*must be done by the gui*/
+        rootServiceHost.playerActionService.moveEmployee(-101,-101, -103,-103)
+        /*send message to player one*/
+        /*must be sent by the gui*/
+        rootServiceHost.currentGame?.currentPlayer = 0
+        rootServiceHost.networkService.sendMoveTile(hostGame.players[0].name, 2,1)
+
+        rootServiceHost.waitForState(ConnectionState.WAITING_FOR_TURN)
+        rootServiceGuest.waitForState(ConnectionState.PLAYING_MY_TURN)
+
+        guestGame = rootServiceGuest.currentGame
+
+        assertNotNull(guestGame)
+        assertTrue { guestGame.players[0].secretaryCount == 1 }
+    }
+
+    /**
+     * Tests if moving tile resulting in placing a keeper works properly on the network.
+     */
+    @Test
+    fun testMoveTileKeeper() {
+        initConnections()
+
+        val hostGame = rootServiceHost.currentGame
+        var guestGame = rootServiceGuest.currentGame
+
+        assertNotNull(hostGame)
+        assertNotNull(guestGame)
+
+        val maleBlue = PrisonerTile(26, PrisonerTrait.MALE, PrisonerType.BLUE)
+        val anotherMaleBlue = PrisonerTile(27, PrisonerTrait.MALE, PrisonerType.BLUE)
+        val isolationTile = PrisonerTile(28, PrisonerTrait.OLD, PrisonerType.BLUE)
+        val maleRed = PrisonerTile(13, PrisonerTrait.MALE, PrisonerType.RED)
+        val anotherMaleRed = PrisonerTile(14, PrisonerTrait.MALE, PrisonerType.RED)
+
+        hostGame.players[0].coins = 20
+        guestGame.players[0].coins = 20
+        hostGame.players[0].isolation.add(isolationTile)
+        guestGame.players[0].isolation.add(isolationTile)
+
+        /*prepare yard of player two*/
+        hostGame.players[0].board.setPrisonYard(1,1,maleBlue)
+        guestGame.players[0].board.setPrisonYard(1,1,maleBlue)
+        hostGame.players[0].board.setPrisonYard(1,2,anotherMaleBlue)
+        guestGame.players[0].board.setPrisonYard(1,2,anotherMaleBlue)
+        hostGame.players[0].board.setPrisonYard(3,2,anotherMaleRed)
+        guestGame.players[0].board.setPrisonYard(3,2,anotherMaleRed)
+        hostGame.players[0].board.setPrisonYard(3,3,maleRed)
+        guestGame.players[0].board.setPrisonYard(3,3,maleRed)
+
+        rootServiceHost.currentGame = hostGame
+
+        rootServiceHost.playerActionService.movePrisonerToPrisonYard(2,1)
+        rootServiceHost.currentGame?.currentPlayer = 0
+        /*must be done by the gui*/
+        rootServiceHost.playerActionService.moveEmployee(-101,-101, -104,-104)
+        /*send message to player one*/
+        /*must be sent by the gui*/
+        rootServiceHost.currentGame?.currentPlayer = 0
+        rootServiceHost.networkService.sendMoveTile(hostGame.players[0].name, 2,1)
+
+        rootServiceHost.waitForState(ConnectionState.WAITING_FOR_TURN)
+        rootServiceGuest.waitForState(ConnectionState.PLAYING_MY_TURN)
+
+        guestGame = rootServiceGuest.currentGame
+
+        assertNotNull(guestGame)
+        assertTrue { guestGame.players[0].lawyerCount == 1 }
+    }
+
+    /**
      * Tests if taking a truck works properly on the network.
      */
     @Test
@@ -573,7 +731,7 @@ class NetworkServiceTest {
         initConnections()
 
         val hostGame = rootServiceHost.currentGame
-        val guestGame = rootServiceGuest.currentGame
+        var guestGame = rootServiceGuest.currentGame
 
         assertNotNull(hostGame)
         assertNotNull(guestGame)
@@ -624,26 +782,64 @@ class NetworkServiceTest {
         if (childToPlace is PrisonerTile) {
             rootServiceHost.networkService.increasePrisoners(Triple(2,1, 1))
             rootServiceHost.playerActionService.placePrisoner(childToPlace,1,2)
-            rootServiceHost.networkService.increaseChildren(Triple(1,2, childToPlace))
         }
         /** place tile from bus and get worker **/
         rootServiceHost.playerActionService.placePrisoner(tileThree,3,2)
         //-----------------------------------------------
         rootServiceHost.networkService.increasePrisoners(Triple(3,2, 2))
         rootServiceHost.playerActionService.moveEmployee(-101,-101, 2,2)
-        rootServiceHost.networkService.increaseWorkers(Triple(2,2, GuardTile()))
         /** send message to other player **/
         rootServiceHost.networkService.sendTakeTruck(0)
 
         rootServiceHost.waitForState(ConnectionState.WAITING_FOR_TURN)
         rootServiceGuest.waitForState(ConnectionState.PLAYING_MY_TURN)
 
+        guestGame = rootServiceGuest.currentGame
+
+        assertNotNull(guestGame)
         assertTrue { guestGame.players[0].board.getPrisonYard(1,1)?.id == parentMale.id }
         assertTrue { guestGame.players[0].board.getPrisonYard(2,1)?.id == parentFemale.id }
         assertTrue { guestGame.players[0].board.getPrisonYard(3,2)?.id == tileRed.id }
         assertTrue { guestGame.players[0].board.getPrisonYard(3,3)?.id == anotherTileRed.id }
         assertTrue { guestGame.players[0].board.getPrisonYard(1,2)?.id == childToPlace?.id }
         assertTrue { guestGame.players[0].board.getPrisonYard(2,2) is GuardTile }
+    }
+
+    /**
+     * tests if preparing lists works properly on the network.
+     **/
+    @Test
+    fun testPrepareLists() {
+        initConnections()
+
+        val hostGame = rootServiceHost.currentGame
+        val guestGame = rootServiceGuest.currentGame
+
+        assertNotNull(hostGame)
+        assertNotNull(guestGame)
+
+        rootServiceHost.networkService.increasePrisoners(Triple(-100,-100, 0))
+        rootServiceHost.networkService.increaseChildren(
+            Triple(-100,-100, hostGame.allTiles[26] as PrisonerTile))
+        rootServiceHost.networkService.increaseWorkers(Pair(-102,-102))
+        rootServiceHost.networkService.increaseWorkers(Pair(-103,-103))
+        rootServiceHost.networkService.increaseWorkers(Pair(-104,-104))
+        rootServiceHost.networkService.increaseWorkers(Pair(20,30))
+
+        val preparedLists = rootServiceHost.networkService.prepareLists()
+        // animals
+        assertTrue { preparedLists.first[0].x == 0 && preparedLists.first[0].y == 0 }
+        assertTrue { preparedLists.first[0].truck == 0 }
+        // children
+        assertTrue { preparedLists.second[0].x == 0 && preparedLists.second[0].y == 0 }
+        assertTrue { preparedLists.second[0].tileId == hostGame.allTiles[26].id }
+        // worker
+        assertTrue { preparedLists.third[0].x == 0 && preparedLists.third[0].y == 0 }
+        assertTrue { preparedLists.third[0].jobEnum == JobEnum.MANAGER }
+        assertTrue { preparedLists.third[1].x == 999 && preparedLists.third[1].y == 999 }
+        assertTrue { preparedLists.third[1].jobEnum == JobEnum.CASHIER }
+        assertTrue { preparedLists.third[2].x == 999 && preparedLists.third[2].y == 999 }
+        assertTrue { preparedLists.third[2].jobEnum == JobEnum.KEEPER }
     }
 
 
