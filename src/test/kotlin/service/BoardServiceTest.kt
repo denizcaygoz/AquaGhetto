@@ -8,14 +8,21 @@ import service.RootService
 import kotlin.test.BeforeTest
 import kotlin.test.*
 
+/**
+ * Test class for evaluating the functionalities of BoardService.
+ */
 class BoardServiceTest {
 
-    // Declaring necessary variables
+    /**
+     * Declaring necessary variables.
+     */
     private lateinit var boardService: BoardService
     private lateinit var rootService: RootService
     private lateinit var gameStatesService: GameStatesService
 
-    // Setting up initial conditions before each test
+    /**
+     * Setting up initial conditions before each test.
+     */
     @BeforeTest
     fun setUp() {
         // Initializing services
@@ -34,7 +41,9 @@ class BoardServiceTest {
         gameStatesService = GameStatesService(rootService)
     }
 
-    // Test case for checking the creation of prison buses
+    /**
+     * Test case for checking the creation of prison buses.
+     */
     @Test
     fun testCreatePrisonBuses() {
         val buses = boardService.createPrisonBuses(3)
@@ -50,7 +59,9 @@ class BoardServiceTest {
         assertEquals(2, buses2[2].blockedSlots.count { it })
     }
 
-    // Test case for checking the creation of all tiles
+    /**
+     * Test case for checking the creation of all tiles.
+     */
     @Test
     fun testCreateAllTiles() {
         boardService.createAllTiles()
@@ -59,7 +70,9 @@ class BoardServiceTest {
         assertEquals(114, allTiles.size)
     }
 
-    // Test case for checking the retrieval of baby tile
+    /**
+     * Test case for checking the retrieval of baby tile.
+     */
     @Test
     fun getBabyTileTest(){
         val players = mutableListOf(
