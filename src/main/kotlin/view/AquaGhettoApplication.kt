@@ -51,7 +51,8 @@ class AquaGhettoApplication: BoardGameApplication("AquaGhetto"), Refreshable {
      */
     private val pauseMenuScene = PauseMenuScene(rootService).apply {
         onKeyPressed = {
-            if (it.keyCode.isEscape) { this@AquaGhettoApplication.hideMenuScene(pauseMenuScene)}
+            if (it.keyCode.isEscape) { this@AquaGhettoApplication.hideMenuScene(pauseMenuScene) }
+        onMouseClicked = { this@AquaGhettoApplication.hideMenuScene(pauseMenuScene) }
         }
         //maybe this needs to be coded in the scene and not here?
         undoButton.onMouseClicked = { rootService.gameStatesService.undo() }
