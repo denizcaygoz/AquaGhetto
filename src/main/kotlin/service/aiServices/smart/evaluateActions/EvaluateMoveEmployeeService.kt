@@ -79,8 +79,9 @@ class EvaluateMoveEmployeeService(val smartAI: SmartAI) {
                 /*lawyer*/
                 player.lawyerCount++
             } else -> {
-            /*guard*/
-            player.board.setPrisonYard(x, y, GuardTile())
+                /*guard*/
+                player.board.guardPosition.add(Pair(x,y))
+                player.board.setPrisonYard(x, y, GuardTile())
             }
         }
     }
@@ -99,9 +100,10 @@ class EvaluateMoveEmployeeService(val smartAI: SmartAI) {
                 /*lawyer*/
                 player.lawyerCount--
             } else -> {
-            /*guard*/
-            player.board.setPrisonYard(x, y, null)
-        }
+                /*guard*/
+                player.board.guardPosition.remove(Pair(x,y))
+                player.board.setPrisonYard(x, y, null)
+            }
         }
     }
 
