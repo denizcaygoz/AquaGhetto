@@ -12,6 +12,8 @@ import entity.tileTypes.PrisonerTile
  */
 class ValidationService(private val rootService: RootService): AbstractRefreshingService() {
 
+    private val toCheckSurrounding = mutableListOf(Pair(1,0),Pair(-1,0),Pair(0,1),Pair(0,-1))
+
     /**
      * Validates if a card is allowed to be placed at a specific location
      *
@@ -35,7 +37,6 @@ class ValidationService(private val rootService: RootService): AbstractRefreshin
 
         /*check if there is no other prisonerType around*/
         /*check if there is a prisoner of the same type around*/
-        val toCheckSurrounding = mutableListOf(Pair(1,0),Pair(-1,0),Pair(0,1),Pair(0,-1))
         var surroundingSameType = false
         for (offset in toCheckSurrounding) {
             val tileCheck = board.getPrisonYard(x + offset.first, y + offset.second)

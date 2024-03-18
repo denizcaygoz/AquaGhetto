@@ -1,6 +1,5 @@
 package service.aiServices.random
 
-import entity.AquaGhetto
 import entity.Board
 import entity.Player
 import entity.PrisonBus
@@ -156,7 +155,7 @@ class RandomAIActionService(private val rootService: RootService, private val ra
      * @param player the current player
      */
     fun expandPrisonGrid(player: Player) {
-        val optionList = mutableListOf<Boolean>((player.remainingSmallExtensions > 0 && player.coins >= 1),
+        val optionList = mutableListOf((player.remainingSmallExtensions > 0 && player.coins >= 1),
                                                 (player.remainingBigExtensions > 0 && player.coins >= 2))
         val option = randomAIService.getRandomValidOption(optionList)
         when (option) {
