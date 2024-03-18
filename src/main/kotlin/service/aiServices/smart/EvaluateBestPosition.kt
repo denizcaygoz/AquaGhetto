@@ -13,6 +13,7 @@ class EvaluateBestPosition(private val smartAI: SmartAI) {
 
     private val nextTo = mutableListOf(Pair(0,1),Pair(1,0),Pair(0,-1),Pair(-1,0))
     private val specialPos = mutableListOf(Pair(-102,-102),Pair(-103,-103),Pair(-104,-104))
+    private val notGreatPositions = mutableListOf(Pair(0,0),Pair(0,1),Pair(1,0))
 
     /*boolean is if players earns a bonus coin*/
     fun getBestPositions(tileToPlace: PrisonerTile, player: Player): Pair<PlaceCard, Boolean>? {
@@ -20,6 +21,7 @@ class EvaluateBestPosition(private val smartAI: SmartAI) {
         val tileType = tileToPlace.prisonerType
 
         val bestLocation = getBestLocationPrisoner(tileToPlace, player) ?: return null
+
         var locationFirstEmployee: Pair<Int,Int>? = null
         var locationBaby: Pair<Int,Int>? = null
         var locationSecondEmployee: Pair<Int,Int>? = null
@@ -227,8 +229,11 @@ class EvaluateBestPosition(private val smartAI: SmartAI) {
 
     private fun getAdjacentGrid(player: Player, x: Int, y: Int): Int {
         var count = 0
-        for (pos in nextTo) {
-            if (!player.board.getPrisonGrid(x,y)) count++
+        for (offset in nextTo) {
+            if (player.board.getPrisonGrid(x + offset.first, y + offset.second)) count++
+            for (notGreatNeighbour in notGreatPositions) {
+                if (x + offset.first == notGreatNeighbour.first && y + offset.second == notGreatNeighbour.second) count++
+            }
         }
         return count
     }

@@ -38,7 +38,12 @@ class SmartAI(val rootService: RootService, val player: Player) {
     /*ruft dann intern minMax auf und so*/
     /*mal schauen ob wir hier multithreading einbauen, mehr als ein rechner zur berechnung?*/
     fun makeTurn(game: AquaGhetto) {
+        val startTime = System.currentTimeMillis()
+
         val action = this.minMax(game, checkLayers, 0, 0)
+
+        val endTime = System.currentTimeMillis()
+        println("Time: ${endTime - startTime}")
 
         if (!action.validAction) {
             println("Found no valid action?")
@@ -100,7 +105,7 @@ class SmartAI(val rootService: RootService, val player: Player) {
                 print("execute action take bus:")
                 for (place in aiAction.placeCards) {
                     print("normalPrisoner: ${place.placePrisoner} firstBonusEmployee: ${place.firstTileBonusEmployee} " +
-                            "bonusPrisoner: ${place.placeBonusPrisoner} secondBonusEmployee:${place.secondTileBonusEmployee}")
+                            "bonusPrisoner: ${place.placeBonusPrisoner} secondBonusEmployee:${place.secondTileBonusEmployee}   ")
                 }
                 println()
             }
@@ -144,6 +149,9 @@ class SmartAI(val rootService: RootService, val player: Player) {
 
             val placeCard = aiAction.placeCards[i]
             val prisoner = placeCard.placePrisoner
+
+            println("place card ${tile.id} at (${placeCard.placePrisoner.first}, ${placeCard.placePrisoner.second})")
+
             val bonus = rootService.playerActionService.placePrisoner(tile, prisoner.first, prisoner.second)
             this.placeCardBonus(game, placeCard, bonus)
         }

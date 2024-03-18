@@ -61,7 +61,6 @@ class AIService(private val rootService: RootService): AbstractRefreshingService
 
         /*wait until delay is over*/
         val endTime = System.currentTimeMillis()
-        println("Time: ${endTime - startTime}")
         Thread.sleep(Integer.max((delay) - (endTime - startTime).toInt() , 0).toLong())
     }
 
