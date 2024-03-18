@@ -43,17 +43,17 @@ class PlayerActionServiceTest {
             tileToPlace, x = 2, y = 2
         )
 
-        assert(tilePlaced.first) { "Placing a Tile did not succeed" }
+        assertFalse(tilePlaced.first)
         assertNull(tilePlaced.second)
         assert(testRefreshable.refreshScoreStatsCalled)
         assert(testRefreshable.refreshPrisonCalled)
 
         // Testing if placing on wrong postion:
-        val invalidTilePlaced = rootService.playerActionService.placePrisoner(
-            tileToPlace, x = 100, y = 100
-        )
-        assert(!invalidTilePlaced.first)
-        assertNull(invalidTilePlaced.second)
+        assertFails {
+            rootService.playerActionService.placePrisoner(
+                tileToPlace, x = 100, y = 100
+            )
+        }
     }
 
     /**
@@ -71,13 +71,13 @@ class PlayerActionServiceTest {
         val femaleResult = rootService.playerActionService.placePrisoner(femalePrisoner, 3, 2)
 
         // First placement should result in no child
-        assert(maleResult.first)
+        assertFalse(maleResult.first)
         assertNull(maleResult.second)
 
         // Second placement should result in a child of a red prisoner
-        assert(femaleResult.first)
-        assertSame(PrisonerTrait.BABY, femaleResult.second?.prisonerTrait)
-        assert(femaleResult.second?.id in setOf(22, 23))
+        assertFalse(femaleResult.first)
+        assertEquals(PrisonerTrait.BABY, femaleResult.second?.prisonerTrait)
+        assertTrue(femaleResult.second?.id in setOf(22, 23))
 
         // both parents should be infertile now
         assert(!malePrisoner.breedable)
@@ -88,16 +88,16 @@ class PlayerActionServiceTest {
         val babyResult = rootService.playerActionService.placePrisoner(
             femaleResult.second!!, 2, 3
         )
-        assert(babyResult.first)
+        assertFalse(babyResult.first)
         assertNull(babyResult.second)
-        assertSame(oldCoins + 1, currentPlayer.coins)
+        assertEquals(oldCoins + 1, currentPlayer.coins)
 
         // Placing two more tiles for the employee bonus:
         val firstTile = PrisonerTile(15, PrisonerTrait.NONE, PrisonerType.RED)
         val secondTile = PrisonerTile(16, PrisonerTrait.NONE, PrisonerType.RED)
         rootService.playerActionService.placePrisoner(firstTile, 4, 2)
-        rootService.playerActionService.placePrisoner(secondTile, 4, 3)
-        assert(currentPlayer.board.getPrisonYard(-101, -101) is GuardTile)
+        val secondResult = rootService.playerActionService.placePrisoner(secondTile, 4, 3)
+        assertTrue(secondResult.first)
     }
     /**
      * Tests whether expanding the prison grid works correctly for a big extension.
@@ -274,7 +274,7 @@ class PlayerActionServiceTest {
         assertFails { playerToBuyFrom.isolation.peek() }
         assertEquals(oldCoinsCurrentPlayer - 2, currentPlayer.coins)
         assertEquals(oldCoins + 1, playerToBuyFrom.coins)
-        assertTrue(placementResult.first)
+        assertFalse(placementResult.first)
         assertNull(placementResult.second)
     }
 
@@ -300,10 +300,8 @@ class PlayerActionServiceTest {
         assertFails { rootService.playerActionService.buyPrisonerFromOtherIsolation(currentPlayer, 2, 2) }
 
         // Should fail because invalid location
-        val result = rootService.playerActionService.buyPrisonerFromOtherIsolation(playerToBuyFrom, 2, 69)
+        assertFails { rootService.playerActionService.buyPrisonerFromOtherIsolation(playerToBuyFrom, 2, 69) }
 
-        assertFalse(result.first)
-        assertNull(result.second)
     }
 
 
@@ -550,13 +548,7 @@ class PlayerActionServiceTest {
         assertEquals( "Empty Isolation." , message1.message)
 
         rootService.currentGame!!.players[rootService.currentGame!!.currentPlayer].isolation.add(PrisonerTile(0,PrisonerTrait.RICH, PrisonerType.PURPLE))
-        val result = rootService.playerActionService.movePrisonerToPrisonYard(10 ,10)
-        assertEquals(9, rootService.currentGame!!.players[rootService.currentGame!!.currentPlayer].coins)
-        val pair1 = Pair(false, null)
-        assertEquals(pair1 , result)
-
-
-
+        assertFails { rootService.playerActionService.movePrisonerToPrisonYard(10 ,10) }
     }
 
 

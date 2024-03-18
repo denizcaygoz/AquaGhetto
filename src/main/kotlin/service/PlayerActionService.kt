@@ -56,16 +56,16 @@ class PlayerActionService(private val rootService: RootService): AbstractRefresh
         // Add the tile to the prison bus
         prisonBus.tiles[emptyAndUnblockedIndex] = tile
 
-        if (changePlayer)
-            rootService.gameService.determineNextPlayer(false)
-
         if (isNetworkGame && sender == PlayerType.PLAYER) {
             rootService.networkService.sendAddTileToTruck(prisonBus)
-        }
 
         onAllRefreshables {
             refreshPrisonBus(prisonBus)
         }
+
+        if (changePlayer)
+            rootService.gameService.determineNextPlayer(false)
+
     }
 
     fun takePrisonBus(prisonBus: PrisonBus) {
@@ -223,9 +223,12 @@ class PlayerActionService(private val rootService: RootService): AbstractRefresh
         // Deduct one coin from the player
         player.coins--
 
+        rootService.evaluationService.evaluatePlayer(player)
+
         // Refresh isolation area and prison layout for all observers
         onAllRefreshables {
             refreshIsolation(player)
+            refreshScoreStats()
         }
 
         // Place the prisoner on the game board's prison yard
@@ -339,8 +342,6 @@ class PlayerActionService(private val rootService: RootService): AbstractRefresh
             }
         }
 
-        rootService.gameService.determineNextPlayer(false)
-
         onAllRefreshables {
             refreshEmployee(currentPlayer) // aktualisiert refreshEmployee auch die GuardTiles?
             if (hasSetJanitorHere) {
@@ -348,6 +349,8 @@ class PlayerActionService(private val rootService: RootService): AbstractRefresh
             }
             refreshScoreStats()
         }
+
+        rootService.gameService.determineNextPlayer(false)
     }
 
     /**
@@ -375,6 +378,8 @@ class PlayerActionService(private val rootService: RootService): AbstractRefresh
 
         // Fetching the Prisoner from the selected player
         val prisonerFromSelectedPlayersIsolation = player.isolation.pop()
+
+        rootService.evaluationService.evaluatePlayer(currentPlayer)
 
         onAllRefreshables {
             refreshScoreStats()
@@ -411,11 +416,12 @@ class PlayerActionService(private val rootService: RootService): AbstractRefresh
             rootService.networkService.sendDiscard()
         }
 
-        rootService.gameService.determineNextPlayer(false)
-
         onAllRefreshables {
+            refreshScoreStats()
             refreshIsolation(currentPlayer)
         }
+
+        rootService.gameService.determineNextPlayer(false)
     }
 
     /**
@@ -498,12 +504,13 @@ class PlayerActionService(private val rootService: RootService): AbstractRefresh
             rootService.networkService.sendBuyExpansion(isBigExtension, x, y, rotation)
         }
 
-        if (changePlayer)
-            rootService.gameService.determineNextPlayer(false)
-
         onAllRefreshables {
             refreshPrison(null, -1, -1)
         }
+
+        if (changePlayer)
+            rootService.gameService.determineNextPlayer(false)
+
     }
 
     /**
