@@ -10,8 +10,14 @@ import entity.tileTypes.PrisonerTile
 import entity.tileTypes.Tile
 import service.aiServices.smart.SmartAI
 
+/**
+ * Class that stores the function that is necessary
+ * to simulate the action of add tile to prison bus.
+ */
 class EvaluateAddTileToPrisonBusService(private val smartAI: SmartAI) {
-
+    /**
+     * simulates the add tile to Prison Bus action. Called by minmax function in SmartAI class.
+     */
     fun getScoreAddTileToPrisonBus(game: AquaGhetto, depth: Int): ActionAddTileToBus {
         /*by simulation all possible tiles being drawn (trait is ignored) the AI
         has no advantage compared to a normal player*/
@@ -64,7 +70,9 @@ class EvaluateAddTileToPrisonBusService(private val smartAI: SmartAI) {
         return ActionAddTileToBus(validOption, totalScore.toInt(), chooseBusCoin, optionMapPrisoner)
     }
 
-
+    /**
+     * check if the player can place a tile to the bus that is available.
+      */
     private fun checkIfBusIsValid(prisonBus: PrisonBus): Boolean {
         for (i in prisonBus.tiles.indices) {
             if (prisonBus.tiles[i] == null && !prisonBus.blockedSlots[i]) return true
@@ -72,6 +80,9 @@ class EvaluateAddTileToPrisonBusService(private val smartAI: SmartAI) {
         return false
     }
 
+    /**
+     * simulates if the drawn card is a coin.
+     */
     private fun simulateCoinTileWasDrawn(game: AquaGhetto, prisonBusesLeftToPlace: MutableList<Int>,
                                          depth: Int, mult: Double): Triple<Boolean, Double , Int> {
         val allCardsLeft = mutableListOf<Tile>()
@@ -134,6 +145,9 @@ class EvaluateAddTileToPrisonBusService(private val smartAI: SmartAI) {
 
     }
 
+    /**
+     * simulates if the drawn card is a tile.
+     */
     private fun simulatePrisonerTileWasDrawn(game: AquaGhetto, prisonBusesLeftToPlace: MutableList<Int>, depth: Int,
                                              prisonerType: PrisonerType, mult: Double): Triple<Boolean, Double , Int> {
         val allCardsLeft = mutableListOf<Tile>()
@@ -198,6 +212,9 @@ class EvaluateAddTileToPrisonBusService(private val smartAI: SmartAI) {
         }
     }
 
+    /**
+     * adds the tile to the first slot of the bus that is available.
+     */
     private fun addTileToBus(bus: PrisonBus, tile: Tile) {
         for (i in bus.tiles.indices) {
             if (bus.tiles[i] == null && !bus.blockedSlots[i]) {
@@ -207,6 +224,9 @@ class EvaluateAddTileToPrisonBusService(private val smartAI: SmartAI) {
         }
     }
 
+    /**
+     * removes the tile to the first slot of the bus that is available.
+     */
     private fun removeTileFromBus(bus: PrisonBus, tile: Tile) {
         for (i in bus.tiles.indices) {
             val busTile = bus.tiles[i]
