@@ -12,6 +12,7 @@ import tools.aqua.bgw.components.layoutviews.GridPane
 import tools.aqua.bgw.components.layoutviews.Pane
 import tools.aqua.bgw.components.uicomponents.Button
 import tools.aqua.bgw.visual.ColorVisual
+import tools.aqua.bgw.visual.Visual
 import java.awt.Color
 
 class InGameScene(rootService: RootService, test: SceneTest) : BoardGameScene(1920,1080), Refreshable {
@@ -20,7 +21,7 @@ class InGameScene(rootService: RootService, test: SceneTest) : BoardGameScene(19
     private val testButton2 = Button(100,100,100,100, visual = ColorVisual.PINK)
 
     // Test Grid
-    private var prisonPlayer1 = GridPane<Button>(400,400,21,21, spacing = 2.0)
+    private val testPrison = PlayerBoard()
 
     // Camera Pane stuff
     private val targetLayout = Pane<ComponentView>(width = 1920, height = 1080, visual = ImageVisual("Test_BackGround_Ingame.png"))
@@ -33,14 +34,6 @@ class InGameScene(rootService: RootService, test: SceneTest) : BoardGameScene(19
 
     init {
         background = ImageVisual("Test_BackGround_Ingame.png")
-
-        for (y in 0 until prisonPlayer1.rows) {
-            for (x in 0 until prisonPlayer1.columns) {
-                val tempText : String = ""
-                prisonPlayer1[x,y] = Button(height = 50, width = 50, text = "$y, $x")
-
-            }
-        }
 
         onKeyPressed = { event ->
             if (event.keyCode == KeyCode.A) {
@@ -58,29 +51,46 @@ class InGameScene(rootService: RootService, test: SceneTest) : BoardGameScene(19
             }
         }
         targetLayout.addAll(
-            testButton
+            testButton,
+            testPrison
         )
 
         // Add the cameraPane to the scene
-        addComponents(
-            cameraPane,
-            prisonPlayer1,
-            testButton2)
+        addComponents(cameraPane)
     }
 }
 
-class PlayerBoard() : GridPane<Button>(rows = 21, columns = 21) {
+class PlayerBoard() : GridPane<Button>(rows = 21, columns = 21, layoutFromCenter = false) {
 
     init {
+        this.posX = 100.0
+        this.posY = 100.0
 
+        for (y in 0 until this.rows) {
+            for (x in 0 until this.columns) {
+                val tempText : String = ""
+                this[x,y] = Button(height = 50, width = 50, text = "$y, $x", visual = Visual.EMPTY)
+                this.spacing = 1.0
+                //this[x,y].apply {on}
+            }
+        }
+        for(y in 9..11) {
+            for(x in 8..12) {
+                this[x,y]?.visual = ImageVisual("tiles/default_tile.png")
+            }
+        }
+        for(x in 9..11) {
+            this[x,8]?.visual = ImageVisual("tiles/default_tile.png")
+            this[x,12]?.visual = ImageVisual("tiles/default_tile.png")
+        }
     }
 
     /**
      * Transforms coordinates from the service layer
      * to coordinates
      */
-    fun sceneCoords(serviceX : Int, serviceY : Int) : Pair<Int,Int>{
-        return Pair(0,0)
+    fun coords(serviceCoord : Int) : Int{
+        return -(serviceCoord - 21)
     }
 }
 
