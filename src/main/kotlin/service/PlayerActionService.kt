@@ -58,6 +58,7 @@ class PlayerActionService(private val rootService: RootService): AbstractRefresh
 
         if (isNetworkGame && sender == PlayerType.PLAYER) {
             rootService.networkService.sendAddTileToTruck(prisonBus)
+        }
 
         onAllRefreshables {
             refreshPrisonBus(prisonBus)
