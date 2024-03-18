@@ -20,7 +20,7 @@ class InGameScene(rootService: RootService, test: SceneTest) : BoardGameScene(19
     private val testButton2 = Button(100,100,100,100, visual = ColorVisual.PINK)
 
     // Test Grid
-    private var prisonPlayer1 = GridPane<Button>(400,400,5,5)
+    private var prisonPlayer1 = GridPane<Button>(400,400,21,21, spacing = 2.0)
 
     // Camera Pane stuff
     private val targetLayout = Pane<ComponentView>(width = 1920, height = 1080, visual = ImageVisual("Test_BackGround_Ingame.png"))
@@ -34,13 +34,13 @@ class InGameScene(rootService: RootService, test: SceneTest) : BoardGameScene(19
     init {
         background = ImageVisual("Test_BackGround_Ingame.png")
 
-        for (x in 0.. prisonPlayer1.rows) {
-            for (y in 0.. prisonPlayer1.columns) {
+        for (y in 0 until prisonPlayer1.rows) {
+            for (x in 0 until prisonPlayer1.columns) {
+                val tempText : String = ""
+                prisonPlayer1[x,y] = Button(height = 50, width = 50, text = "$y, $x")
 
             }
         }
-        prisonPlayer1[0,1] = Button()
-        //prisonPlayer1[-1,0] = Button()
 
         onKeyPressed = { event ->
             if (event.keyCode == KeyCode.A) {
@@ -66,6 +66,21 @@ class InGameScene(rootService: RootService, test: SceneTest) : BoardGameScene(19
             cameraPane,
             prisonPlayer1,
             testButton2)
+    }
+}
+
+class PlayerBoard() : GridPane<Button>(rows = 21, columns = 21) {
+
+    init {
+
+    }
+
+    /**
+     * Transforms coordinates from the service layer
+     * to coordinates
+     */
+    fun sceneCoords(serviceX : Int, serviceY : Int) : Pair<Int,Int>{
+        return Pair(0,0)
     }
 }
 
