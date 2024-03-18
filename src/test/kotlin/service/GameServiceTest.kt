@@ -7,8 +7,8 @@ import entity.enums.PrisonerType
 import entity.tileTypes.CoinTile
 import entity.tileTypes.PrisonerTile
 import org.junit.jupiter.api.Test
-import view.Refreshable
 import org.junit.jupiter.api.assertThrows
+import view.Refreshable
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertNotNull
@@ -164,7 +164,8 @@ class GameServiceTest {
 
         // Taking a bus and withdrawing
         rs.playerActionService.takePrisonBus(rs.currentGame!!.prisonBuses[0])
-        assertEquals(1, rs.currentGame!!.currentPlayer)
+        assertEquals(0, rs.currentGame!!.currentPlayer)
+        rs.gameService.determineNextPlayer(true)
 
         // Placing yet another tile, player should stay the same
         rs.playerActionService.addTileToPrisonBus(
@@ -179,7 +180,7 @@ class GameServiceTest {
     }
 
     /**
-     * Tests if current player rotates correcty and if players who have already taken a bus
+     * Tests if current player rotates correctly and if players who have already taken a bus
      * gets skipped.
      */
     @Test
@@ -203,7 +204,8 @@ class GameServiceTest {
 
         // Starting player takes a bus, ends turn, next player should have their turn now
         rs.playerActionService.takePrisonBus(rs.currentGame!!.prisonBuses[0])
-        assertEquals(1, rs.currentGame!!.currentPlayer)
+        assertEquals(0, rs.currentGame!!.currentPlayer)
+        rs.gameService.determineNextPlayer(true)
 
         // Everyone places again, should end up at player 2 again
         for (i in 0..2) {
