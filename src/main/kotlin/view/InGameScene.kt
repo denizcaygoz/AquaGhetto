@@ -158,7 +158,7 @@ class PlayerBoard(val player: Player) : GridPane<Button>(rows = 21, columns = 21
      * to service layer coordinates
      */
     fun coordsToService(viewX : Int, viewY : Int) : Pair<Int,Int>{
-        return Pair(viewX+10 , -viewY+10)
+        return Pair(viewX-10 , -viewY+10)
     }
 
     /**
