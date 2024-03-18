@@ -216,9 +216,12 @@ class PlayerActionService(private val rootService: RootService): AbstractRefresh
         // Deduct one coin from the player
         player.coins--
 
+        rootService.evaluationService.evaluatePlayer(player)
+
         // Refresh isolation area and prison layout for all observers
         onAllRefreshables {
             refreshIsolation(player)
+            refreshScoreStats()
         }
 
         // Place the prisoner on the game board's prison yard
@@ -365,6 +368,8 @@ class PlayerActionService(private val rootService: RootService): AbstractRefresh
         // Fetching the Prisoner from the selected player
         val prisonerFromSelectedPlayersIsolation = player.isolation.pop()
 
+        rootService.evaluationService.evaluatePlayer(currentPlayer)
+
         onAllRefreshables {
             refreshScoreStats()
             refreshIsolation(player)
@@ -405,6 +410,7 @@ class PlayerActionService(private val rootService: RootService): AbstractRefresh
         rootService.gameService.determineNextPlayer(false)
 
         onAllRefreshables {
+            refreshScoreStats()
             refreshIsolation(currentPlayer)
         }
     }
