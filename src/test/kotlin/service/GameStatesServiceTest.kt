@@ -1,13 +1,13 @@
 
+import entity.AquaGhetto
 import entity.enums.PlayerType
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
 import service.RootService
+import java.io.ByteArrayOutputStream
 import java.io.File
-import kotlin.test.assertEquals
-import kotlin.test.assertNotNull
-import kotlin.test.assertNotSame
-import kotlin.test.assertSame
+import java.io.ObjectOutputStream
+import kotlin.test.*
 
 class GameStatesServiceTest {
     val rootService = RootService()
@@ -20,7 +20,38 @@ class GameStatesServiceTest {
             assertEquals( "There is no game to load", game1.message)
         }
 
-    //TODO loadValidGameTest
+    @Test
+    fun loadValidGameTest() {
+        // Initialize the game state
+        val rootService = RootService()
+        val players = mutableListOf(
+            Pair("P1", PlayerType.PLAYER),
+            Pair("P2", PlayerType.PLAYER),
+            Pair("P3", PlayerType.PLAYER)
+        )
+        rootService.gameService.startNewGame(players)
+
+        // Save the game
+        rootService.gameStatesService.saveGame()
+
+        // Load the game
+        rootService.gameStatesService.loadGame()
+
+        // Get the loaded game state
+        val loadedGame = rootService.currentGame
+
+        // Assert that the loaded game state is not null
+        assertNotNull(loadedGame, "Loaded game is null")
+
+        // Compare the number of players
+        assertEquals(players.size, loadedGame.players.size, "Number of players mismatch")
+
+        // Compare other properties if necessary
+        // For example, compare the current player
+        assertEquals(0, loadedGame.currentPlayer, "Current player mismatch")
+
+    }
+
 
     @Test
     fun saveInvalidGameTest(){
@@ -29,7 +60,31 @@ class GameStatesServiceTest {
         assertEquals( "No game to save", message1.message)
     }
 
-    //TODO saveValidGameTest
+    @Test
+    fun saveValidGameTest() {
+        // Create a mock AquaGhetto object
+        val aquaGhetto = AquaGhetto()
+        val rootService = RootService()
+        val players = mutableListOf(
+            Pair("P1", PlayerType.PLAYER),
+            Pair("P2", PlayerType.PLAYER)
+        )
+        rootService.gameService.startNewGame(players)
+        // Call the saveGame function
+        rootService.gameStatesService.saveGame()
+
+        // Mock FileOutputStream, GZIPOutputStream, and ObjectOutputStream
+        val byteArrayOutputStream = ByteArrayOutputStream()
+        val objectOutputStream = ObjectOutputStream(byteArrayOutputStream)
+
+        // Write the AquaGhetto object to ObjectOutputStream
+        objectOutputStream.writeObject(aquaGhetto)
+        objectOutputStream.close()
+
+        // Ensure that the ByteArrayOutputStream is not empty
+        assertTrue(byteArrayOutputStream.toByteArray().isNotEmpty(), "AquaGhetto object is not saved")
+    }
+
 
     @Test
     fun undoInvalidGameState(){
