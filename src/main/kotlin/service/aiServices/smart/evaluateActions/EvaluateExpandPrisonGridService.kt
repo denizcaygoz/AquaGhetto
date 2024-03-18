@@ -217,7 +217,6 @@ class EvaluateExpandPrisonGridService(private val smartAI: SmartAI) {
                                   playerCards: MutableMap<PrisonerType, Int>): Int {
         val x = placement.first
         val y = placement.second
-        val rotation = placement.third
 
         /*bigger circumference -> better*/
         val placementCoordinates = createLocations(placement, isBig)
@@ -256,7 +255,6 @@ class EvaluateExpandPrisonGridService(private val smartAI: SmartAI) {
     private fun countPlayerTypes(map: MutableMap<PrisonerType, Int>): Int {
         var count = 0
         for (iterator in map) {
-            val amount = iterator.value
             if (iterator.value != 0) count++
         }
         return count
@@ -337,7 +335,6 @@ class EvaluateExpandPrisonGridService(private val smartAI: SmartAI) {
         val neededTypes = mutableSetOf<Pair<PrisonerType,Int>>()
         for (playerCard in playerCards) {
             val type = playerCard.key
-            val amount = playerCard.value
 
             var amountInGame = cardsInGame[type] ?: 0
             if (isBig) amountInGame -= 2 /*big extension is more useful if more cards of this type*/

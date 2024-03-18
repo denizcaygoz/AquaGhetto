@@ -1,10 +1,8 @@
 package service.ai
 
-import entity.AquaGhetto
 import entity.enums.PlayerType
 import org.junit.jupiter.api.assertDoesNotThrow
 import service.RootService
-import kotlin.concurrent.thread
 import kotlin.test.Test
 
 class SmartAIBasicTest {

@@ -207,7 +207,7 @@ class SmartAI(val rootService: RootService, val player: Player) {
         var scoreExpandPrison: AIAction? = null
         var scoreTakeBus: AIAction? = null
 
-        val thr = Thread.currentThread()
+        //val thr = Thread.currentThread()
         val lock = ReentrantLock()
         val condition = lock.newCondition()
 
