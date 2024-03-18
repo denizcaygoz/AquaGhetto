@@ -3,13 +3,12 @@ package service.aiServices.smart.evaluateActions
 import entity.AquaGhetto
 import entity.Player
 import entity.aIActions.ActionExpandPrison
-import entity.enums.PrisonerTrait
 import entity.enums.PrisonerType
 import entity.tileTypes.PrisonerTile
 import service.aiServices.smart.SmartAI
 import kotlin.math.abs
 
-class EvaluateExpandPrisonGridService(val smartAI: SmartAI) {
+class EvaluateExpandPrisonGridService(private val smartAI: SmartAI) {
 
     private val nextTo = mutableListOf(Pair(0,1),Pair(1,0),Pair(0,-1),Pair(-1,0))
     private val nextToFurther = mutableListOf(
@@ -18,11 +17,11 @@ class EvaluateExpandPrisonGridService(val smartAI: SmartAI) {
         Pair(0,-2),Pair(-1,-1),Pair(0,-1),Pair(1,-1)
     )
 
-    fun getScoreExpandPrisonGrid(game: AquaGhetto, depth: Int, maximize: Int, amountActions: Int): ActionExpandPrison {
+    fun getScoreExpandPrisonGrid(game: AquaGhetto, depth: Int): ActionExpandPrison {
         val player = game.players[game.currentPlayer]
 
-        val bigExtension = this.bigExpand(game, depth, maximize, amountActions, player)
-        val smallExtension = this.smallExpand(game, depth, maximize, amountActions, player)
+        val bigExtension = this.bigExpand(game, depth, player)
+        val smallExtension = this.smallExpand(game, depth, player)
 
         if (bigExtension == null && smallExtension == null) {
             return ActionExpandPrison(false, 0, false, Pair(0,0) , 0)
@@ -44,11 +43,11 @@ class EvaluateExpandPrisonGridService(val smartAI: SmartAI) {
         }
     }
 
-    private fun bigExpand(game: AquaGhetto, depth: Int, maximize: Int, amountActions: Int, player: Player): ActionExpandPrison? {
+    private fun bigExpand(game: AquaGhetto, depth: Int, player: Player): ActionExpandPrison? {
         if (player.coins < 2) return null
         if (player.remainingBigExtensions <= 0) return null
 
-        val bestPos = this.getBestLocation(game, depth, maximize, amountActions, player, false) ?: return null
+        val bestPos = this.getBestLocation(game, player, true) ?: return null
 
         player.remainingBigExtensions -= 1
         player.coins -= 2
@@ -58,7 +57,7 @@ class EvaluateExpandPrisonGridService(val smartAI: SmartAI) {
 
         val undoData = simulatePlaceExtension(bestPos, true, player)
 
-        val bestAction = smartAI.minMax(game, depth, maximize, amountActions)
+        val bestAction = smartAI.minMax(game, depth)
 
         undoSimulatePlaceExtension(player, undoData)
 
@@ -70,11 +69,11 @@ class EvaluateExpandPrisonGridService(val smartAI: SmartAI) {
             Pair(bestPos.first,bestPos.second), bestPos.third)
     }
 
-    private fun smallExpand(game: AquaGhetto, depth: Int, maximize: Int, amountActions: Int, player: Player): ActionExpandPrison? {
+    private fun smallExpand(game: AquaGhetto, depth: Int, player: Player): ActionExpandPrison? {
         if (player.coins < 1) return null
         if (player.remainingSmallExtensions <= 0) return null
 
-        val bestPos = this.getBestLocation(game, depth, maximize, amountActions, player, false) ?: return null
+        val bestPos = this.getBestLocation(game, player, false) ?: return null
 
         player.remainingSmallExtensions -= 1
         player.coins -= 1
@@ -84,7 +83,7 @@ class EvaluateExpandPrisonGridService(val smartAI: SmartAI) {
 
         val undoData = simulatePlaceExtension(bestPos, false, player)
 
-        val bestAction = smartAI.minMax(game, depth, maximize, amountActions)
+        val bestAction = smartAI.minMax(game, depth)
 
         undoSimulatePlaceExtension(player, undoData)
 
@@ -111,8 +110,7 @@ class EvaluateExpandPrisonGridService(val smartAI: SmartAI) {
         }
     }
 
-    private fun getBestLocation(game: AquaGhetto, depth: Int, maximize: Int, amountActions: Int,
-                                player: Player, isBig: Boolean): Triple<Int,Int,Int>? {
+    private fun getBestLocation(game: AquaGhetto, player: Player, isBig: Boolean): Triple<Int,Int,Int>? {
         val validPlacements = mutableListOf<Triple<Int,Int,Int>>()
 
         /*get all grid locations surrounding the outer grid*/
@@ -142,12 +140,11 @@ class EvaluateExpandPrisonGridService(val smartAI: SmartAI) {
 
         val cardsInGame = smartAI.rootService.boardService.getCardsStillInGame().second
         val playerCards = smartAI.rootService.evaluationService.getPrisonerTypeCount(player)
-        this.addCardOnBus(cardsInGame, player, game)
+        this.addCardOnBus(cardsInGame, game)
 
         val posScored = mutableListOf<Pair<Triple<Int,Int,Int>,Int>>()
         for (placement in validPlacements) {
-            posScored.add(Pair(placement, this.evaluatePlacement(placement, isBig, player,
-                game, cardsInGame, playerCards)))
+            posScored.add(Pair(placement, this.evaluatePlacement(placement, isBig, player, cardsInGame, playerCards)))
         }
 
         if (posScored.isEmpty()) return null
@@ -215,8 +212,9 @@ class EvaluateExpandPrisonGridService(val smartAI: SmartAI) {
         return placementCoordinates
     }
 
-    private fun evaluatePlacement(placement: Triple<Int,Int,Int>, isBig: Boolean, player: Player, game: AquaGhetto,
-                                  cardsInGame: MutableMap<PrisonerType, Int>, playerCards: MutableMap<PrisonerType, Int>): Int {
+    private fun evaluatePlacement(placement: Triple<Int,Int,Int>, isBig: Boolean, player: Player,
+                                  cardsInGame: MutableMap<PrisonerType, Int>,
+                                  playerCards: MutableMap<PrisonerType, Int>): Int {
         val x = placement.first
         val y = placement.second
         val rotation = placement.third
@@ -229,7 +227,7 @@ class EvaluateExpandPrisonGridService(val smartAI: SmartAI) {
         if (!isBig) {
             /*if not big used to expand an existing type, next to a type*/
             /*extension is not needed if mostNeeded is null*/
-            val mostNeeded = getMostNeededExtensionForType(playerCards, cardsInGame, player, game, false) ?: return -10
+            val mostNeeded = getMostNeededExtensionForType(playerCards, cardsInGame, player, false) ?: return -10
 
             /*location is not good if not next to the needed type*/
             if (!isNextToSpecifiedType(player, placementCoordinates, mostNeeded)) return -10
@@ -237,7 +235,7 @@ class EvaluateExpandPrisonGridService(val smartAI: SmartAI) {
             /*better for a new type, should be far away from other types*/
             if (player.maxPrisonerTypes > countPlayerTypes(playerCards)) {
                 /*big as extension because no space*/
-                val mostNeeded = getMostNeededExtensionForType(playerCards, cardsInGame, player, game, true) ?: return -10
+                val mostNeeded = getMostNeededExtensionForType(playerCards, cardsInGame, player, true) ?: return -10
 
                 /*location is not good if not next to the needed type*/
                 if (!isNextToSpecifiedType(player, placementCoordinates, mostNeeded)) return 0
@@ -285,24 +283,23 @@ class EvaluateExpandPrisonGridService(val smartAI: SmartAI) {
         return count
     }
 
-    private fun getAmountPossiblePlacesForCardDistance(player: Player, game: AquaGhetto, type: PrisonerType): Int {
+    private fun getAmountPossiblePlacesForCardDistance(player: Player, type: PrisonerType): Int {
         var validPos = 0
         for (firstIterator in player.board.getPrisonYardIterator()) {
             for (secondIterator in firstIterator.value) {
                 val tile = player.board.getPrisonYard(firstIterator.key, secondIterator.key)
                 if (tile == null || tile !is PrisonerTile || tile.prisonerType != type) continue
-                validPos += this.getAmountPossibleCard(player, game, type, firstIterator.key, secondIterator.key)
+                validPos += this.getAmountPossibleCard(player, type, firstIterator.key, secondIterator.key)
             }
         }
         return validPos
     }
 
-    private fun getAmountPossibleCard(player: Player, game: AquaGhetto, type: PrisonerType, x: Int, y: Int): Int {
+    private fun getAmountPossibleCard(player: Player, type: PrisonerType, x: Int, y: Int): Int {
         var validPos = 0
         /*get all valid options and check adjacent grid spaces -> more adjacent grid -> more blocked -> not good*/
         for (offset in nextToFurther) {
-            if (this.validateTilePlacement(game, player, type,
-                    x + offset.first, y + offset.second)) {
+            if (this.validateTilePlacement(player, type, x + offset.first, y + offset.second)) {
                 validPos++
             }
         }
@@ -310,7 +307,7 @@ class EvaluateExpandPrisonGridService(val smartAI: SmartAI) {
     }
 
     /*validation function with fewer checks*/
-    private fun validateTilePlacement(game: AquaGhetto, player: Player, prisonerType: PrisonerType, x:Int, y:Int): Boolean {
+    private fun validateTilePlacement(player: Player, prisonerType: PrisonerType, x:Int, y:Int): Boolean {
         if (player.board.getPrisonYard(x,y) != null) return false
         if (!player.board.getPrisonGrid(x,y)) return false
         for (offset in nextTo) {
@@ -323,7 +320,7 @@ class EvaluateExpandPrisonGridService(val smartAI: SmartAI) {
     }
 
     /*if cards are already on the bus they will count as 2 cards*/
-    private fun addCardOnBus(map: MutableMap<PrisonerType, Int>, player: Player, game: AquaGhetto) {
+    private fun addCardOnBus(map: MutableMap<PrisonerType, Int>, game: AquaGhetto) {
         for (bus in game.prisonBuses) {
             for (tile in bus.tiles) {
                 if (tile == null || tile !is PrisonerTile) continue
@@ -335,7 +332,7 @@ class EvaluateExpandPrisonGridService(val smartAI: SmartAI) {
 
     private fun getMostNeededExtensionForType(playerCards: MutableMap<PrisonerType,Int>,
                                               cardsInGame: MutableMap<PrisonerType,Int>,
-                                              player: Player, game: AquaGhetto, isBig: Boolean): PrisonerType? {
+                                              player: Player, isBig: Boolean): PrisonerType? {
         /*int is "how much" this is needed*/
         val neededTypes = mutableSetOf<Pair<PrisonerType,Int>>()
         for (playerCard in playerCards) {
@@ -347,7 +344,7 @@ class EvaluateExpandPrisonGridService(val smartAI: SmartAI) {
             if (amountInGame == 0) continue
 
 
-            val possiblePlacesForType = this.getAmountPossiblePlacesForCardDistance(player, game, type)
+            val possiblePlacesForType = this.getAmountPossiblePlacesForCardDistance(player, type)
             if (possiblePlacesForType > 2) continue /*extension not useful*/
 
             neededTypes.add(Pair(type, amountInGame))

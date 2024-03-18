@@ -6,16 +6,15 @@ import entity.aIActions.ActionTakeBus
 import entity.aIActions.PlaceCard
 import entity.tileTypes.CoinTile
 import entity.tileTypes.PrisonerTile
-import entity.tileTypes.Tile
 import service.aiServices.smart.SmartAI
 
 class EvaluateTakeBusService(private val smartAI: SmartAI) {
 
-    fun takeBus(game: AquaGhetto, depth: Int, maximize: Int, amountActions: Int): ActionTakeBus {
+    fun takeBus(game: AquaGhetto, depth: Int): ActionTakeBus {
 
         val bestActions = mutableListOf<ActionTakeBus>()
         for (busIndex in game.prisonBuses.indices) {
-            val action = simulateTakeBus(game, depth, maximize, amountActions, game.players[game.currentPlayer], busIndex)
+            val action = simulateTakeBus(game, depth, game.players[game.currentPlayer], busIndex)
             if (!action.validAction) continue
             bestActions.add(action)
         }
@@ -25,8 +24,7 @@ class EvaluateTakeBusService(private val smartAI: SmartAI) {
         return bestActions.maxBy { it.score }
     }
 
-    private fun simulateTakeBus(game: AquaGhetto, depth: Int, maximize: Int, amountActions: Int
-                                , player: Player, busIndex: Int): ActionTakeBus {
+    private fun simulateTakeBus(game: AquaGhetto, depth: Int, player: Player, busIndex: Int): ActionTakeBus {
 
         val bus = game.prisonBuses.removeAt(busIndex)
 
@@ -62,7 +60,7 @@ class EvaluateTakeBusService(private val smartAI: SmartAI) {
         game.currentPlayer = nextPlayer.second
 
         //sim future
-        val bestAction = smartAI.minMax(game, depth, maximize, amountActions)
+        val bestAction = smartAI.minMax(game, depth)
 
         game.currentPlayer = nextPlayer.first
 

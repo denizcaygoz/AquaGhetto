@@ -2,7 +2,6 @@ package service.aiServices.smart
 
 import entity.AquaGhetto
 import entity.Board
-import entity.Player
 import entity.enums.PrisonerTrait
 import entity.enums.PrisonerType
 import entity.tileTypes.PrisonerTile

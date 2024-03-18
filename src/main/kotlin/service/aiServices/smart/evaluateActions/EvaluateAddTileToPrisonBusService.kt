@@ -12,7 +12,7 @@ import service.aiServices.smart.SmartAI
 
 class EvaluateAddTileToPrisonBusService(private val smartAI: SmartAI) {
 
-    fun getScoreAddTileToPrisonBus(game: AquaGhetto, depth: Int, maximize: Int, amountActions: Int): ActionAddTileToBus {
+    fun getScoreAddTileToPrisonBus(game: AquaGhetto, depth: Int): ActionAddTileToBus {
         /*by simulation all possible tiles being drawn (trait is ignored) the AI
         has no advantage compared to a normal player*/
 
@@ -37,7 +37,7 @@ class EvaluateAddTileToPrisonBusService(private val smartAI: SmartAI) {
 
         if (coinsLeft > 0) {
             val coinAction = this.simulateCoinTileWasDrawn(game, prisonBusesLeftToPlace, depth,
-                maximize, amountActions, coinsLeft / allCardsAmount.toDouble())
+                coinsLeft / allCardsAmount.toDouble())
             if (coinAction.first) {
                 totalScore += coinAction.second
                 chooseBusCoin = coinAction.third
@@ -51,7 +51,7 @@ class EvaluateAddTileToPrisonBusService(private val smartAI: SmartAI) {
         val optionMapPrisoner = mutableMapOf<PrisonerType,Int>()
         for (prisoner in prisonerLeft) {
             val prisonerAction = this.simulatePrisonerTileWasDrawn(game, prisonBusesLeftToPlace, depth,
-                maximize, amountActions, prisoner.key, prisoner.value / allCardsAmount.toDouble())
+                 prisoner.key, prisoner.value / allCardsAmount.toDouble())
             if (prisonerAction.first) {
                 totalScore += prisonerAction.second
                 optionMapPrisoner[prisoner.key] = prisonerAction.third
@@ -73,7 +73,7 @@ class EvaluateAddTileToPrisonBusService(private val smartAI: SmartAI) {
     }
 
     private fun simulateCoinTileWasDrawn(game: AquaGhetto, prisonBusesLeftToPlace: MutableList<Int>,
-                                         depth: Int, maximize: Int, amountActions: Int, mult: Double): Triple<Boolean, Double , Int> {
+                                         depth: Int, mult: Double): Triple<Boolean, Double , Int> {
         val allCardsLeft = mutableListOf<Tile>()
         allCardsLeft.addAll(game.finalStack)
         allCardsLeft.addAll(game.drawStack)
@@ -106,7 +106,7 @@ class EvaluateAddTileToPrisonBusService(private val smartAI: SmartAI) {
             val tile = CoinTile(-10123)
             addTileToBus(game.prisonBuses[i] , tile)
 
-            val action = smartAI.minMax(game, depth, maximize, amountActions)
+            val action = smartAI.minMax(game, depth)
 
             removeTileFromBus(game.prisonBuses[i] , tile)
 
@@ -134,8 +134,7 @@ class EvaluateAddTileToPrisonBusService(private val smartAI: SmartAI) {
 
     }
 
-    private fun simulatePrisonerTileWasDrawn(game: AquaGhetto, prisonBusesLeftToPlace: MutableList<Int>,
-                                         depth: Int, maximize: Int, amountActions: Int,
+    private fun simulatePrisonerTileWasDrawn(game: AquaGhetto, prisonBusesLeftToPlace: MutableList<Int>, depth: Int,
                                              prisonerType: PrisonerType, mult: Double): Triple<Boolean, Double , Int> {
         val allCardsLeft = mutableListOf<Tile>()
         allCardsLeft.addAll(game.finalStack)
@@ -172,7 +171,7 @@ class EvaluateAddTileToPrisonBusService(private val smartAI: SmartAI) {
 
             addTileToBus(game.prisonBuses[i] , tile)
 
-            val action = smartAI.minMax(game, depth, maximize, amountActions)
+            val action = smartAI.minMax(game, depth)
 
             removeTileFromBus(game.prisonBuses[i] , tile)
 

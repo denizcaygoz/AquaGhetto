@@ -6,9 +6,9 @@ import entity.aIActions.ActionMoveEmployee
 import entity.tileTypes.GuardTile
 import service.aiServices.smart.SmartAI
 
-class EvaluateMoveEmployeeService(val smartAI: SmartAI) {
+class EvaluateMoveEmployeeService(private val smartAI: SmartAI) {
 
-    fun getScoreMoveEmployee(game: AquaGhetto, depth: Int, maximize: Int, amountActions: Int): ActionMoveEmployee {
+    fun getScoreMoveEmployee(game: AquaGhetto, depth: Int): ActionMoveEmployee {
         val player = game.players[game.currentPlayer]
 
         if (player.coins < 1) return ActionMoveEmployee(false, 0, Pair(0,0), Pair(0,0))
@@ -19,7 +19,7 @@ class EvaluateMoveEmployeeService(val smartAI: SmartAI) {
         val validPos = mutableListOf(Pair(-102,-102), Pair(-103,-103), Pair(-104,-104))
         validPos.addAll(player.board.guardPosition)
         for (pos in validPos) {
-            val result = this.checkEmployee(game, depth, maximize, amountActions, pos, player) ?: continue
+            val result = this.checkEmployee(game, depth, pos, player) ?: continue
             moves.add(result)
         }
 
@@ -29,7 +29,7 @@ class EvaluateMoveEmployeeService(val smartAI: SmartAI) {
         return ActionMoveEmployee(true, best.first, best.second, best.third)
     }
 
-    private fun checkEmployee(game: AquaGhetto, depth: Int, maximize: Int, amountActions: Int,
+    private fun checkEmployee(game: AquaGhetto, depth: Int,
                               pos: Pair<Int,Int>, player: Player): Triple<Int,Pair<Int,Int>,Pair<Int,Int>>? {
         val oldScore = smartAI.evaluateGamePosition.evaluateCurrentPosition(game)
         player.coins -= 1
@@ -48,7 +48,7 @@ class EvaluateMoveEmployeeService(val smartAI: SmartAI) {
         game.currentPlayer = nextPlayer.second
 
         //val newScore = smartAI.evaluateGamePosition.evaluateCurrentPosition()
-        val bestAction = smartAI.minMax(game, depth, maximize, amountActions)
+        val bestAction = smartAI.minMax(game, depth)
 
         game.currentPlayer = nextPlayer.first
 

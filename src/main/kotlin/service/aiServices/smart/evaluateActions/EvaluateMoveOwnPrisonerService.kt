@@ -2,17 +2,16 @@ package service.aiServices.smart.evaluateActions
 
 import entity.AquaGhetto
 import entity.Player
-import entity.aIActions.ActionBuyPrisoner
 import entity.aIActions.ActionMovePrisoner
 import entity.aIActions.PlaceCard
 import service.aiServices.smart.SmartAI
 
-class EvaluateMoveOwnPrisonerService(val smartAI: SmartAI) {
+class EvaluateMoveOwnPrisonerService(private val smartAI: SmartAI) {
 
-    fun getScoreMoveOwnPrisoner(game: AquaGhetto, depth: Int, maximize: Int, amountActions: Int): ActionMovePrisoner {
+    fun getScoreMoveOwnPrisoner(game: AquaGhetto, depth: Int): ActionMovePrisoner {
         val player = game.players[game.currentPlayer]
 
-        val action = this.forSimulatePlacePrisoner(game, depth, maximize, amountActions, player)
+        val action = this.forSimulatePlacePrisoner(game, depth, player)
             ?: return ActionMovePrisoner(false, 0, PlaceCard(Pair(0,0)))
 
         return action
@@ -20,7 +19,7 @@ class EvaluateMoveOwnPrisonerService(val smartAI: SmartAI) {
 
 
     /*this option should get rarely used buying extension first is better*/
-    private fun forSimulatePlacePrisoner(game: AquaGhetto, depth: Int, maximize: Int, amountActions: Int, player: Player): ActionMovePrisoner? {
+    private fun forSimulatePlacePrisoner(game: AquaGhetto, depth: Int, player: Player): ActionMovePrisoner? {
         if (player.coins < 1 || player.isolation.isEmpty()) {
             return null
         }
@@ -37,7 +36,7 @@ class EvaluateMoveOwnPrisonerService(val smartAI: SmartAI) {
         val nextPlayer = smartAI.getNextAndOldPlayer(game,false)
         game.currentPlayer = nextPlayer.second
 
-        val bestAction = smartAI.minMax(game, depth, maximize, amountActions)
+        val bestAction = smartAI.minMax(game, depth)
 
         game.currentPlayer = nextPlayer.first
 

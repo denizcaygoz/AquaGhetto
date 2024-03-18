@@ -6,15 +6,15 @@ import entity.aIActions.ActionBuyPrisoner
 import entity.aIActions.PlaceCard
 import service.aiServices.smart.SmartAI
 
-class EvaluateBuyPrisonerService(val smartAI: SmartAI) {
+class EvaluateBuyPrisonerService(private val smartAI: SmartAI) {
 
-    fun getScoreBuyPrisoner(game: AquaGhetto, depth: Int, maximize: Int, amountActions: Int): ActionBuyPrisoner {
+    fun getScoreBuyPrisoner(game: AquaGhetto, depth: Int): ActionBuyPrisoner {
         val player = game.players[game.currentPlayer]
 
         val actions = mutableListOf<ActionBuyPrisoner>()
         for (p in game.players) {
             if (p == player) continue
-            val action = forOneSpecifiedPlayer(game, depth, maximize, amountActions, player, p)
+            val action = forOneSpecifiedPlayer(game, depth, player, p)
             if (action.validAction) actions.add(action)
         }
 
@@ -23,7 +23,7 @@ class EvaluateBuyPrisonerService(val smartAI: SmartAI) {
         return actions.maxBy { it.score }
     }
 
-    private fun forOneSpecifiedPlayer(game: AquaGhetto, depth: Int, maximize: Int, amountActions: Int, player: Player, buyFrom: Player): ActionBuyPrisoner {
+    private fun forOneSpecifiedPlayer(game: AquaGhetto, depth: Int, player: Player, buyFrom: Player): ActionBuyPrisoner {
         if (player.coins < 2 || buyFrom.isolation.isEmpty()) {
             return ActionBuyPrisoner(false, 0 , player, PlaceCard(Pair(0,0)))
         }
@@ -40,7 +40,7 @@ class EvaluateBuyPrisonerService(val smartAI: SmartAI) {
         val nextPlayer = smartAI.getNextAndOldPlayer(game, false)
         game.currentPlayer = nextPlayer.second
 
-        val bestAction = smartAI.minMax(game, depth, maximize, amountActions)
+        val bestAction = smartAI.minMax(game, depth)
 
         game.currentPlayer = nextPlayer.first
 
@@ -55,12 +55,12 @@ class EvaluateBuyPrisonerService(val smartAI: SmartAI) {
         val baby = pos.first.placeBonusPrisoner
         val first = pos.first.firstTileBonusEmployee
         val second = pos.first.secondTileBonusEmployee
-        if (baby != null) {
-            return result
+        return if (baby != null) {
+            result
         } else if ((first != null || second != null) && (game.drawStack.size + game.finalStack.size) < 20) {
-            return result
+            result
         } else {
-            return ActionBuyPrisoner(false, 0 , player, PlaceCard(Pair(0,0)))
+            ActionBuyPrisoner(false, 0 , player, PlaceCard(Pair(0,0)))
         }
 
     }

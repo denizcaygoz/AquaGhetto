@@ -34,13 +34,10 @@ class SmartAI(val rootService: RootService, val player: Player) {
         require(player.type == PlayerType.AI) {"Player is not an AI"}
     }
 
-    /*wird von ai service aufgerufen*/
-    /*ruft dann intern minMax auf und so*/
-    /*mal schauen ob wir hier multithreading einbauen, mehr als ein rechner zur berechnung?*/
     fun makeTurn(game: AquaGhetto) {
         val startTime = System.currentTimeMillis()
 
-        val action = this.minMax(game, checkLayers, 0, 0)
+        val action = this.minMax(game, checkLayers)
 
         val endTime = System.currentTimeMillis()
         println("Time: ${endTime - startTime}")
@@ -70,7 +67,7 @@ class SmartAI(val rootService: RootService, val player: Player) {
                 val placeCard = aiAction.placeCard
                 val prisoner = placeCard.placePrisoner
                 val bonus = rootService.playerActionService.movePrisonerToPrisonYard(prisoner.first, prisoner.second)
-                this.placeCardBonus(game, aiAction.placeCard, bonus)
+                this.placeCardBonus(aiAction.placeCard, bonus)
                 println("execute action move prisoner from own isolation to ${prisoner.first}  ${prisoner.second}")
             }
             is ActionMoveEmployee -> {
@@ -86,7 +83,7 @@ class SmartAI(val rootService: RootService, val player: Player) {
                 val prisoner = placeCard.placePrisoner
                 val bonus = rootService.playerActionService.buyPrisonerFromOtherIsolation(boughtFrom,
                     prisoner.first, prisoner.second)
-                this.placeCardBonus(game, aiAction.placeCard, bonus)
+                this.placeCardBonus(aiAction.placeCard, bonus)
                 println("execute action buy prisoner from ${boughtFrom.name} and place ${prisoner.first}  ${prisoner.second}")
             }
             is ActionFreePrisoner -> {
@@ -153,21 +150,17 @@ class SmartAI(val rootService: RootService, val player: Player) {
             println("place card ${tile.id} at (${placeCard.placePrisoner.first}, ${placeCard.placePrisoner.second})")
 
             val bonus = rootService.playerActionService.placePrisoner(tile, prisoner.first, prisoner.second)
-            this.placeCardBonus(game, placeCard, bonus)
+            this.placeCardBonus(placeCard, bonus)
         }
     }
 
-    var count = 0
+    private var count = 0
 
-    /*
-     * actionsInspected ist nur dafür da um zu verfolgen wie viele wege schon bewertet wurden
-     * damit kann einfacher gesagt werden welche optimierungen weniger wege betrachten
-     * kann später sonst auch gelöscht werden
-     */
-    fun minMax(game: AquaGhetto, depth: Int, maximize: Int, actionsChecked: Int): AIAction {
+
+    fun minMax(game: AquaGhetto, depth: Int): AIAction {
         count++
 
-        if (depth == 0 || checkGameEnd(game)) { /*hier überprüfung ob maximale tiefe erreicht wurde oder spiel schon geendet hat*/
+        if (depth == 0 || checkGameEnd(game)) {
             return AIAction(false, evaluateGamePosition.evaluateCurrentPosition(game))
         }
 
@@ -176,32 +169,32 @@ class SmartAI(val rootService: RootService, val player: Player) {
         /*runs the 7 actions parallel*/
         /*
         if (depth == checkLayers - 0 || depth == checkLayers - 0) {
-            return minMaxNewThread(game, depth, maximize, actionsChecked)
+            return minMaxNewThread(game, depth)
         }
         */
 
         /*do not edit maximize!!!*/
-        val scoreAddTileToPrisonBus = evaluateAddTileToBus.getScoreAddTileToPrisonBus(game, depth - 1, maximize, actionsChecked)
-        val scoreMoveOwnPrisoner = evaluateMoveOwnPrisoner.getScoreMoveOwnPrisoner(game, depth - 1, maximize, actionsChecked)
-        val scoreMoveEmployee = evaluateMoveEmployee.getScoreMoveEmployee(game, depth - 1, maximize, actionsChecked)
-        val scoreBuyPrisoner = evaluateBuyPrisoner.getScoreBuyPrisoner(game, depth - 1, maximize, actionsChecked)
-        val scoreFreePrisoner = evaluateActionFreePrisoner.freePrisoner(game, depth - 1, maximize, actionsChecked)
-        val scoreExpandPrison = evaluateExpandPrison.getScoreExpandPrisonGrid(game, depth - 1, maximize, actionsChecked)
-        val scoreTakeBus = evaluateActionTakeBus.takeBus(game, depth - 1, maximize, actionsChecked)
+        val scoreAddTileToPrisonBus = evaluateAddTileToBus.getScoreAddTileToPrisonBus(game, depth - 1)
+        val scoreMoveOwnPrisoner = evaluateMoveOwnPrisoner.getScoreMoveOwnPrisoner(game, depth - 1)
+        val scoreMoveEmployee = evaluateMoveEmployee.getScoreMoveEmployee(game, depth - 1)
+        val scoreBuyPrisoner = evaluateBuyPrisoner.getScoreBuyPrisoner(game, depth - 1)
+        val scoreFreePrisoner = evaluateActionFreePrisoner.freePrisoner(game, depth - 1)
+        val scoreExpandPrison = evaluateExpandPrison.getScoreExpandPrisonGrid(game, depth - 1)
+        val scoreTakeBus = evaluateActionTakeBus.takeBus(game, depth - 1)
 
         val scoreList = mutableListOf(scoreAddTileToPrisonBus, scoreMoveOwnPrisoner, scoreMoveEmployee,
             scoreBuyPrisoner, scoreFreePrisoner, scoreExpandPrison, scoreTakeBus)
 
         simulateUndoNewRound(game, undoData)
 
-        val bestAction = this.getBestAction(maximize, scoreList, game)
+        val bestAction = this.getBestAction(scoreList)
 
         return bestAction
     }
 
     //TODO check if this is useful / working
     //TODO clone game
-    private fun minMaxNewThread(game: AquaGhetto, depth: Int, maximize: Int, actionsChecked: Int): AIAction {
+    private fun minMaxNewThread(game: AquaGhetto, depth: Int): AIAction {
         val threads = mutableListOf<Thread>()
 
         val undoData = this.simulateSetUpNewRound(game)
@@ -220,36 +213,53 @@ class SmartAI(val rootService: RootService, val player: Player) {
 
 
         threads.add(thread {
-            scoreAddTileToPrisonBus = evaluateAddTileToBus.getScoreAddTileToPrisonBus(game.clone(), depth - 1, maximize, actionsChecked)
+            scoreAddTileToPrisonBus = evaluateAddTileToBus.getScoreAddTileToPrisonBus(game.clone(), depth - 1)
             lock.withLock { condition.signal() }
         })
         threads.add(thread {
-            scoreMoveOwnPrisoner = evaluateMoveOwnPrisoner.getScoreMoveOwnPrisoner(game.clone(), depth - 1, maximize, actionsChecked)
+            scoreMoveOwnPrisoner = evaluateMoveOwnPrisoner.getScoreMoveOwnPrisoner(game.clone(), depth - 1)
             lock.withLock { condition.signal() }
         })
         threads.add(thread {
-            scoreMoveEmployee = evaluateMoveEmployee.getScoreMoveEmployee(game.clone(), depth - 1, maximize, actionsChecked)
+            scoreMoveEmployee = evaluateMoveEmployee.getScoreMoveEmployee(game.clone(), depth - 1)
             lock.withLock { condition.signal() }
         })
         threads.add(thread {
-            scoreBuyPrisoner = evaluateBuyPrisoner.getScoreBuyPrisoner(game.clone(), depth - 1, maximize, actionsChecked)
+            scoreBuyPrisoner = evaluateBuyPrisoner.getScoreBuyPrisoner(game.clone(), depth - 1)
             lock.withLock { condition.signal() }
         })
         threads.add(thread {
-            scoreFreePrisoner = evaluateActionFreePrisoner.freePrisoner(game.clone(), depth - 1, maximize, actionsChecked)
+            scoreFreePrisoner = evaluateActionFreePrisoner.freePrisoner(game.clone(), depth - 1)
             lock.withLock { condition.signal() }
         })
         threads.add(thread {
-            scoreExpandPrison = evaluateExpandPrison.getScoreExpandPrisonGrid(game.clone(), depth - 1, maximize, actionsChecked)
+            scoreExpandPrison = evaluateExpandPrison.getScoreExpandPrisonGrid(game.clone(), depth - 1)
             lock.withLock { condition.signal() }
         })
         threads.add(thread {
-            scoreTakeBus = evaluateActionTakeBus.takeBus(game.clone(), depth - 1, maximize, actionsChecked)
+            scoreTakeBus = evaluateActionTakeBus.takeBus(game.clone(), depth - 1)
             lock.withLock { condition.signal() }
         })
 
         lock.withLock {
-            condition.await(8000, TimeUnit.MILLISECONDS)
+            val startTime = System.currentTimeMillis()
+
+            while ((startTime + 8 * 1000) > System.currentTimeMillis()) {
+                val timeWait = 8000 - (System.currentTimeMillis() - startTime)
+                println(timeWait)
+                condition.await(timeWait, TimeUnit.MILLISECONDS)
+
+                if (scoreAddTileToPrisonBus != null &&
+                    scoreMoveOwnPrisoner != null &&
+                    scoreMoveEmployee != null &&
+                    scoreBuyPrisoner != null &&
+                    scoreFreePrisoner != null &&
+                    scoreExpandPrison != null &&
+                    scoreTakeBus != null) {
+                    break
+                }
+            }
+
             if (depth == checkLayers) condition.await(1000, TimeUnit.MILLISECONDS)
         }
 
@@ -272,44 +282,25 @@ class SmartAI(val rootService: RootService, val player: Player) {
 
         simulateUndoNewRound(game, undoData)
 
-        return this.getBestAction(maximize, scoreListNulls.filterNotNull(), game)
+        return this.getBestAction(scoreListNulls.filterNotNull())
     }
 
     /**
-     * Function to get the best action depending on the current value of maximize
-     * If maximize % playerCount is 0 the value should be maximized, because this would be the turn
-     * of the AI, if maximize % playerCount is not 0 this would mean another AI/player is making this
-     * turn and the lowest possible value is taken (because we assume the other players are always making the
-     * best decision)
+     * Function to get the best action
      *
-     * @param maximize the player taking the turn, 0 is the AI making the turn
      * @param actionList a list of possible actions the AI/player could make
-     * @param game the current game
      * @return the action this AI/player should/would perform
      */
-    fun getBestAction(maximize: Int, actionList: List<AIAction> , game: AquaGhetto): AIAction {
-        /*only first used, because every player wants to maximize his score*/
-        return if ((maximize % game.players.size) == 0) {
-            var bestScore = Integer.MIN_VALUE
-            var bestAction: AIAction? = null
-            for (element in actionList) {
-                if (element.score > bestScore && element.validAction) {
-                    bestAction = element
-                    bestScore = element.score
-                }
+    private fun getBestAction(actionList: List<AIAction>): AIAction {
+        var bestScore = Integer.MIN_VALUE
+        var bestAction: AIAction? = null
+        for (element in actionList) {
+            if (element.score > bestScore && element.validAction) {
+                bestAction = element
+                bestScore = element.score
             }
-            bestAction ?: AIAction(false,0)
-        } else {
-            var bestScore = Integer.MAX_VALUE
-            var bestAction: AIAction? = null
-            for (element in actionList) {
-                if (element.score < bestScore && element.validAction) {
-                    bestAction = element
-                    bestScore = element.score
-                }
-            }
-            bestAction ?: AIAction(false,0)
         }
+        return bestAction ?: AIAction(false,0)
     }
 
     /**
@@ -335,7 +326,7 @@ class SmartAI(val rootService: RootService, val player: Player) {
      * @param placeCard info about the location, where to place a tile
      * @param bonus the bonus obtained by placing a card
      */
-    private fun placeCardBonus(game: AquaGhetto ,placeCard: PlaceCard , bonus: Pair<Boolean,PrisonerTile?>) {
+    private fun placeCardBonus(placeCard: PlaceCard , bonus: Pair<Boolean,PrisonerTile?>) {
         /*place possible employee if valid*/
         placeEmployee(bonus.first, placeCard.firstTileBonusEmployee)
 
@@ -397,29 +388,19 @@ class SmartAI(val rootService: RootService, val player: Player) {
                     } while (game.players[game.currentPlayer].takenBus != null)
                 }
             }
-            0 -> { /*all players have taken a buss*/
-                //println("This should not happen, new round is handled in minMax")
-                /*
-                if (game.finalStack.size != 15) { /*reserve stack was taken*/
-                    rootService.evaluationService.evaluateGame()
-                } else {
-                    /*reserve stack was not taken*/
-                    /*next player is the current player*/
-                    startNewRound(game)
-                }
-                */
+            0 -> {
+                /*all players have taken a bus*/
+                /*moving the bus in the middle and back should get handled in EvaluateTakeBusService*/
+                /*end game should get handled in the minMax function*/
             }
             else -> {
                 /*
                 sets the current player to the next player
                 provided that they didn't take a bus
                 */
-
                 do {
                     game.currentPlayer = (game.currentPlayer + 1) % game.players.size
                 } while (game.players[game.currentPlayer].takenBus != null)
-
-
             }
         }
 
@@ -427,24 +408,9 @@ class SmartAI(val rootService: RootService, val player: Player) {
 
         return Pair(oldPlayer, nextPlayer)
     }
-    private fun startNewRound(game: AquaGhetto) {
-        for (player in game.players) {
-            val bus = player.takenBus
-            checkNotNull(bus) {"Not all players have taken a bus"}
-            game.prisonBuses.add(bus)
-            /*onAllRefreshables {
-                refreshPrisonBus(bus)
-            }*/
-            player.takenBus = null
-        }
-        /*onAllRefreshables {
-            refreshAfterNextTurn(game.players[game.currentPlayer])
-        }*/
-
-    }
 
 
-    fun simulateSetUpNewRound(game: AquaGhetto): MutableList<MutableList<Pair<Tile?,Boolean>>>?  {
+    private fun simulateSetUpNewRound(game: AquaGhetto): MutableList<MutableList<Pair<Tile?,Boolean>>>?  {
         /*moving the buses back in the middle is handled in EvaluateTakeBusService*/
         var takenBuses = 0
         for (p in game.players) {
@@ -458,9 +424,6 @@ class SmartAI(val rootService: RootService, val player: Player) {
         val busData = mutableListOf<MutableList<Pair<Tile?,Boolean>>>()
 
         for (bus in game.prisonBuses) {
-
-            //println("loop: ${bus.tiles.contentToString()} ${bus.blockedSlots.contentToString()}   $bus")
-
             val busList = mutableListOf<Pair<Tile?,Boolean>>()
             for (i in bus.tiles.indices) {
                 busList.add(Pair(bus.tiles[i], bus.blockedSlots[i]))
@@ -471,7 +434,7 @@ class SmartAI(val rootService: RootService, val player: Player) {
         return busData
     }
 
-    fun simulateUndoNewRound(game: AquaGhetto, busData: MutableList<MutableList<Pair<Tile?,Boolean>>>?) {
+    private fun simulateUndoNewRound(game: AquaGhetto, busData: MutableList<MutableList<Pair<Tile?,Boolean>>>?) {
         if (busData == null) return
 
         for (i in game.prisonBuses.indices) {
