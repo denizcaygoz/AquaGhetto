@@ -24,9 +24,15 @@ import javax.imageio.ImageIO
  * First Colum is for TextInput field
  * Second Colum is for PlayerType Switcher
  * Third Colum is to delete that Colum
+ * Buttons Should know their Position in the Grid due to Parameter Position
+ * if this is not the Case text can be used to save position
  */
 class SetupScene (rootService : RootService, test: SceneTest2) : MenuScene(1920 , 1080 ), Refreshable {
-    //idk
+    /**
+     * CheckBox that lets the Player toggle on a Random order for the PlayerList
+     * CheckBox changes its state upon click
+     *  ToggleButton might be suited better
+     */
     val testCheck = CheckBox(posX = 100, posY = 100,text = "Random order?" ).apply {
         onMouseClicked = {
             this.isChecked = !this.isChecked
@@ -36,6 +42,11 @@ class SetupScene (rootService : RootService, test: SceneTest2) : MenuScene(1920 
     /*Grid to Display PlayerCards*/
     private val playerGrid: GridPane<UIComponent> = GridPane(posX = 600, posY =450, columns = 3, rows = 5)
 
+    /**
+     * Creates a TextField were the User can Input a PlayerName
+     * Length of the input is unrestricted
+     * @param textInput String that gets put into text of the TextField
+     */
     private fun createPlayerInputfield(textInput: String): TextField {
         val textField = TextField(
             posY = 0,
@@ -45,24 +56,51 @@ class SetupScene (rootService : RootService, test: SceneTest2) : MenuScene(1920 
             font = Font(40 , Color.WHITE ),
             text = textInput,
             prompt = "PlayaNameHereUwU"
-        )
-        /*Logic what it actually does is missing*/
+        ).apply {
+            /*Check if Startnewgame should be disabled with every Keypress
+            * StartNewGameButton is Enabled from the Start so Going with Default Names works*/
+            onKeyTyped = {
+                if( determinePlayerCount() < 2 || determinePlayerCount() > 5 ) {
+                    startNewGameButton.isDisabled = true
+                }else{
+                    startNewGameButton.isDisabled = false
+                }
+                //Limit for InputLength could be added here
+            }
+        }
+
         return textField
     }
-   private fun createPlayerAddButton(position : Int) : Button {
-       val addButton = Button(
-           posX = 100,
-           posY = 0,
-           width = 50,
-           height = 50,
-           text = "add",
-           alignment = Alignment.CENTER,
-           visual = ImageVisual("Test.png")
-       )
-       /*Button Logic missing*/
-       return addButton
-   }
 
+    /**
+     * creates a Button that onCLick adds Inputfield TypeSelector and Remove Button to a Row in the grid
+     * does the Opposite as RemovePlayerButton
+     * @return Button
+     */
+    private fun createPlayerAddButton(position : Int) : Button {
+        val addButton = Button(
+            posX = 100,
+            posY = 0,
+            width = 50,
+            height = 50,
+            text = "add",
+            alignment = Alignment.CENTER,
+            visual = ImageVisual("Test.png")
+        ).apply {
+            onMouseClicked = {
+                playerGrid[ 0 , position ] = createPlayerInputfield("Player$position")
+                playerGrid[ 1 , position ] = createPlayerTypeSelector()
+                playerGrid[ 2 , position ] = createRemovePlayerButton(position)
+            }
+        }
+        return addButton
+    }
+
+    /**
+     * creates a button that will remove Player Creation Buttons from the grid at its position
+     * will also delete itself
+     * @return button
+     */
     private fun createRemovePlayerButton(position: Int): Button {
         val removeButton = Button(
             posX = 100,
@@ -72,11 +110,27 @@ class SetupScene (rootService : RootService, test: SceneTest2) : MenuScene(1920 
             text = "remove",
             alignment = Alignment.CENTER_LEFT ,
             visual = ImageVisual("Test.png"),
-        )
-        /*Button Logic missing*/
+        ).apply {
+            onMouseClicked = {
+                //remove
+                playerGrid[ 0 , position ] = createPlayerAddButton(position)
+                playerGrid[ 1 , position ] = null
+                playerGrid[ 2 , position ] = null
+
+                if(determinePlayerCount() >= 2)
+                {
+                    startNewGameButton.isDisabled = true
+                }
+            }
+        }
         return removeButton
     }
 
+    /**
+     * creates a Button that can switch from one Playertype to another
+     * State is saved in text with Fontsize 0
+     * @return Button
+     */
     private fun createPlayerTypeSelector() : Button {
         val typeSelector = Button (
             posX = 100,
@@ -88,22 +142,25 @@ class SetupScene (rootService : RootService, test: SceneTest2) : MenuScene(1920 
             alignment = Alignment.CENTER,
             visual = ImageVisual("PLAYER.png"),
         ).apply {
-           onMouseClicked = {
-               when(text){
-                   "PLAYER" -> { text = "AI" ; visual = ImageVisual("AI.png") }
-                   "AI" -> { text = "RANDOM" ; visual = ImageVisual("RANDOM.png") }
-                   "RANDOM" -> { text = "NETWORK" ; visual = ImageVisual("NETWORK.png") }
-                   "NETWORK" -> { text = "PLAYER"; visual = ImageVisual("PLAYER.png") }
-               }
-           }
+            /*Unsure if we should be able to swap a Player to a Network Player
+            * Network case can be removed in that case*/
+            onMouseClicked = {
+                when(text){
+                    "PLAYER" -> { text = "AI" ; visual = ImageVisual("AI.png") }
+                    "AI" -> { text = "RANDOM" ; visual = ImageVisual("RANDOM.png") }
+                    "RANDOM" -> { text = "NETWORK" ; visual = ImageVisual("NETWORK.png") }
+                    "NETWORK" -> { text = "PLAYER"; visual = ImageVisual("PLAYER.png") }
+                    else ->  { text = "PLAYER"; visual = ImageVisual("PLAYER.png") }
+                }
+            }
         }
         return typeSelector
     }
 
     /**This Button Needs
-    * a [getPlayerList] Function
-    * to validate amount of Players with Names [determinePlayerCount]
-    */
+     * a [getPlayerList] Function
+     * to validate amount of Players with Names [determinePlayerCount]
+     */
     val startNewGameButton = Button(
         posX = ((1920/2)-100),
         posY = (1080-150),
@@ -118,6 +175,11 @@ class SetupScene (rootService : RootService, test: SceneTest2) : MenuScene(1920 
         }
     }
 
+    /**
+     * Determines the PlayerType of the Playertype Button
+     * @param button that needs to be determined
+     * @return PlayerType of button
+     */
     private fun getPlayerType(button : UIComponent?) : PlayerType{
         var selectedPlayerType: PlayerType = PlayerType.PLAYER
         if(button is Button) {
@@ -134,8 +196,9 @@ class SetupScene (rootService : RootService, test: SceneTest2) : MenuScene(1920 
 
     /**
      *  Creates a List of Players [playerList] for the Start game button
+     *  DONE: needs to acutally shuffle the List if [random] == true
      *  @return List with <Player>
-    */
+     */
     private fun getPlayerList(random : Boolean) : MutableList<Pair<String,PlayerType>> {
         val playerList: MutableList<Pair<String,PlayerType>> = mutableListOf()
         for (i in 0 until playerGrid.rows) {
@@ -148,6 +211,7 @@ class SetupScene (rootService : RootService, test: SceneTest2) : MenuScene(1920 
                 playerList.add( Pair( current.text , getPlayerType( playerGrid[1,i] )))
             }
         }
+        if( random ) { playerList.shuffle() }
         return playerList
     }
 
@@ -174,8 +238,6 @@ class SetupScene (rootService : RootService, test: SceneTest2) : MenuScene(1920 
         return playerCount
     }
 
-
-
     init {
         addComponents(
             testCheck,
@@ -194,6 +256,7 @@ class SetupScene (rootService : RootService, test: SceneTest2) : MenuScene(1920 
     }
 }
 
+/*Fails to build in Bgw? :(((*/
 fun main() {
     val test = SceneTest2()
     test.show()
@@ -205,7 +268,8 @@ class SceneTest2 : BoardGameApplication("Test") , Refreshable {
 
     init {
         rootService.addRefreshables(this,setupScene)
-        rootService.gameService.startNewGame(mutableListOf(Pair("Moin", PlayerType.PLAYER), Pair("Moin2", PlayerType.PLAYER)))
+        rootService.gameService.startNewGame(
+            mutableListOf(Pair("Moin", PlayerType.PLAYER), Pair("Moin2", PlayerType.PLAYER)))
         this.showMenuScene(setupScene)
     }
 }
