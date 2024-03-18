@@ -5,9 +5,17 @@ import entity.Player
 import entity.aIActions.ActionMoveEmployee
 import entity.tileTypes.GuardTile
 import service.aiServices.smart.SmartAI
-
+/**
+ * Class that stores the function that is necessary
+ * to simulate the action of move employee.
+ */
 class EvaluateMoveEmployeeService(private val smartAI: SmartAI) {
-
+    /**
+     * simulates the moving of employees. Every possible employee type needs to be considered.
+     * All these types of employees are checked in checkEmployee function.
+     * And we store each possible action in result variable.
+     * And we get the action with the highest score.
+     */
     fun getScoreMoveEmployee(game: AquaGhetto, depth: Int): ActionMoveEmployee {
         val player = game.players[game.currentPlayer]
 
@@ -29,6 +37,9 @@ class EvaluateMoveEmployeeService(private val smartAI: SmartAI) {
         return ActionMoveEmployee(true, best.first, best.second, best.third)
     }
 
+    /**
+     * finds the best position to place an employee.
+     */
     private fun checkEmployee(game: AquaGhetto, depth: Int,
                               pos: Pair<Int,Int>, player: Player): Triple<Int,Pair<Int,Int>,Pair<Int,Int>>? {
         val oldScore = smartAI.evaluateGamePosition.evaluateCurrentPosition(game)
@@ -65,6 +76,9 @@ class EvaluateMoveEmployeeService(private val smartAI: SmartAI) {
         }
     }
 
+    /**
+     * Adds an employee to the coordinates x and y.
+     */
     private fun addEmployee(x: Int, y: Int, player:Player) {
         when (x) {
             -102 -> {
@@ -85,7 +99,9 @@ class EvaluateMoveEmployeeService(private val smartAI: SmartAI) {
             }
         }
     }
-
+    /**
+     * removes an employee on the coordinates x and y.
+     */
     private fun removeEmployee(x: Int, y: Int, player:Player) {
         when (x) {
             -102 -> {

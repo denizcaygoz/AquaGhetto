@@ -5,9 +5,15 @@ import entity.Player
 import entity.aIActions.ActionMovePrisoner
 import entity.aIActions.PlaceCard
 import service.aiServices.smart.SmartAI
-
+/**
+ * Class that stores the function that is necessary
+ * to simulate the action of move own prisoner.
+ */
 class EvaluateMoveOwnPrisonerService(private val smartAI: SmartAI) {
-
+    /**
+     * simulates the move the prisoner from the isolation to the prison yard
+     * by calling forSimulatePlacePrisoner function.
+     */
     fun getScoreMoveOwnPrisoner(game: AquaGhetto, depth: Int): ActionMovePrisoner {
         val player = game.players[game.currentPlayer]
 
@@ -17,8 +23,14 @@ class EvaluateMoveOwnPrisonerService(private val smartAI: SmartAI) {
         return action
     }
 
-
-    /*this option should get rarely used buying extension first is better*/
+    /**
+     * First the player is taken from the isolation and placed the best position by finding
+     * the best position with getBestPositions function.
+     *
+     * bonus cases are checked at the end as well.
+     *
+     * Note: this action should get rarely used buying extension first is better
+     */
     private fun forSimulatePlacePrisoner(game: AquaGhetto, depth: Int, player: Player): ActionMovePrisoner? {
         if (player.coins < 1 || player.isolation.isEmpty()) {
             return null

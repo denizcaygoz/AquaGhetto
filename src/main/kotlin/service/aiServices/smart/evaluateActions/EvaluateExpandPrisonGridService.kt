@@ -7,7 +7,10 @@ import entity.enums.PrisonerType
 import entity.tileTypes.PrisonerTile
 import service.aiServices.smart.SmartAI
 import kotlin.math.abs
-
+/**
+ * Class that stores the function that is necessary
+ * to simulate the action of expand prison grid.
+ */
 class EvaluateExpandPrisonGridService(private val smartAI: SmartAI) {
 
     private val nextTo = mutableListOf(Pair(0,1),Pair(1,0),Pair(0,-1),Pair(-1,0))
