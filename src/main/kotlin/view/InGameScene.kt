@@ -75,34 +75,38 @@ class InGameScene(var rootService: RootService, test: SceneTest) : BoardGameScen
                 posY = 850.0
             }
             prisons[1].apply{
-                posX = 230.0
+                posX = 430.0
                 posY = 540.0
             }
             prisons[2].apply{
-                posX = 480.0
+                posX = 680.0
                 posY = 230.0
             }
             prisons[3].apply{
-                posX = 1440.0
+                posX = 1240.0
                 posY = 230.0
             }
             prisons[4].apply{
-                posX = 1690.0
+                posX = 1490.0
                 posY = 540.0
             }
         }
+
         targetLayout.addAll(prisons)
     }
 }
 
 class PlayerBoard(player: Player) : GridPane<Button>(rows = 21, columns = 21, layoutFromCenter = true) {
 
+    // Size of the whole grid,
+    val currentGridSize = 1.0
+
     init {
         this.posX = 100.0
         this.posY = 100.0
         this.spacing = 1.0
 
-        /**
+        /*
         for (y in 0 until this.rows) {
             for (x in 0 until this.columns) {
                 this[x,y] = Button(height = 50, width = 50, visual = Visual.EMPTY).apply {
@@ -113,36 +117,31 @@ class PlayerBoard(player: Player) : GridPane<Button>(rows = 21, columns = 21, la
             }
         }
         */
+        val iterator = player.board.getPrisonGridIterator()
+        while (iterator.hasNext()) {
+            val entry = iterator.next()
+            val x = entry.key
+            val yMap = entry.value
 
-        for(y in 9..11) {
-            for(x in 8..12) {
-                this[x,y] = Button(height = 50, width = 50, visual = Visual.EMPTY).apply{
-                    this.visual = ImageVisual("tiles/default_tile.png")
-                    this.isDisabled = false
-                    this.isVisible = true
+            for ((y, floor) in yMap) {
+                if(floor) {
+                    val tempX = coords(x,y).first
+                    val tempY = coords(x,y).second
+                    this[tempX, tempY] = Button(height = 50, width = 50, visual = Visual.EMPTY).apply{
+                        this.visual = ImageVisual("tiles/default_tile.png")
+                    }
                 }
             }
         }
-        for(x in 9..11) {
-            this[x,8] = Button(height = 50, width = 50, visual = Visual.EMPTY).apply{
-                this.visual = ImageVisual("tiles/default_tile.png")
-                this.isDisabled = false
-                this.isVisible = true
-            }
-            this[x,12] = Button(height = 50, width = 50, visual = Visual.EMPTY).apply{
-                this.visual = ImageVisual("tiles/default_tile.png")
-                this.isDisabled = false
-                this.isVisible = true
-            }
-        }
+
     }
 
     /**
      * Transforms coordinates from the service layer
-     * to coordinates
+     * to grid coordinates
      */
-    fun coords(serviceCoord : Int) : Int{
-        return -(serviceCoord - 21)
+    fun coords(serviceX : Int, serviceY : Int) : Pair<Int,Int>{
+        return Pair(serviceX+10 , -serviceY+10)
     }
 
     /**
@@ -171,6 +170,7 @@ class PlayerBoard(player: Player) : GridPane<Button>(rows = 21, columns = 21, la
             (maxX.absoluteValue-minX.absoluteValue)
         } else (maxY.absoluteValue-minY.absoluteValue)
 
+        // Numbers are not final, just to test
         if(importantNumber <= 7) return 1.0
         else if(importantNumber <= 9) return 0.8
         else return 0.5
