@@ -24,19 +24,21 @@ class AIService(private val rootService: RootService): AbstractRefreshingService
      * RANDOM_AI -> random move
      * PLAYER, NETWORK -> throws exception
      *
-     * @param player the player in whose name the action is performed
+     * @param player the player in whose name the action is performed, has to be the current player
      * @param delay the total delay of this action, if the computing of the turn already takes longer than delay
      * there is no additional delay. Delay is measured in milliseconds
-     * @throws IllegalArgumentException if the provides player is not an AI or a RandomAI
+     * @throws IllegalArgumentException if the provided player is not an AI or a RandomAI
+     * @throws IllegalArgumentException if the provided player is not the current player
      */
     fun makeTurn(player: Player, delay: Int) {
         /*get the time when function is called*/
         val startTime = System.currentTimeMillis()
 
-        require(player.type == PlayerType.AI || player.type == PlayerType.RANDOM_AI) {"player need to be an ai"}
-
         val game = rootService.currentGame
         checkNotNull(game) { "No running game." }
+
+        require(player.type == PlayerType.AI || player.type == PlayerType.RANDOM_AI) {"player need to be an ai"}
+        require(player == game.players[game.currentPlayer]) {"provided player has to be the current player"}
 
         if (player.type == PlayerType.RANDOM_AI) {
             randomAIService.randomAITurn(player, game)

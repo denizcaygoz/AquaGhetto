@@ -1,8 +1,9 @@
 package entity
 
+import entity.tileTypes.PrisonerTile
 import entity.tileTypes.Tile
-import java.util.Stack
 import java.io.Serializable
+import java.util.*
 
 
 /**
@@ -23,7 +24,7 @@ import java.io.Serializable
  * @property nextState saves the next state of the game, is null if there is no previous state
  * @property allTiles a list containing all free tiles in the game
  */
-class AquaGhetto: Serializable {
+class AquaGhetto: Serializable, Cloneable {
     companion object {
         private const val serialVersionUID: Long = -6431955668823631957L
     }
@@ -37,4 +38,23 @@ class AquaGhetto: Serializable {
     var nextState: AquaGhetto? = null
     var allTiles: MutableList<Tile> = mutableListOf()
 
+    @Suppress("UNCHECKED_CAST")
+    public override fun clone(): AquaGhetto {
+        return AquaGhetto().apply {
+            // Copying every property as deep copy
+            drawStack = this@AquaGhetto.drawStack.clone() as Stack<Tile>
+            finalStack = this@AquaGhetto.finalStack.clone() as Stack<Tile>
+
+            players = this@AquaGhetto.players.map { it.clone() }.toMutableList()
+            currentPlayer = this@AquaGhetto.currentPlayer
+            prisonBuses = this@AquaGhetto.prisonBuses.map { it.clone() }.toMutableList()
+
+            // Since baby tiles can disappear, this needs to be cloned as well
+            allTiles = this@AquaGhetto.allTiles.map {
+                if (it is PrisonerTile) PrisonerTile(it.id, it.prisonerTrait, it.prisonerType) else it
+            }.toMutableList()
+
+
+        }
+    }
 }

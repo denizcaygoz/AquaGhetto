@@ -3,6 +3,7 @@ package view
 import entity.Player
 import entity.PrisonBus
 import entity.tileTypes.PrisonerTile
+import service.networkService.ConnectionState
 
 /**
  * This interface provides a mechanism for the service layer classes to communicate
@@ -29,7 +30,7 @@ interface Refreshable {
 
     fun refreshScoreStats() {}
 
-    fun refreshPrison(tile: PrisonerTile, x: Int, y: Int) {}
+    fun refreshPrison(tile: PrisonerTile?, x: Int, y: Int) {}
 
     fun refreshAfterSelectGameMode(multiplayer: Boolean) {}
 
@@ -38,5 +39,9 @@ interface Refreshable {
     fun refreshIsolation(player: Player) {}
 
     fun refreshEmployee(player: Player) {}
+
+    fun refreshConnectionState(state: ConnectionState) {}
+
+
 
 }

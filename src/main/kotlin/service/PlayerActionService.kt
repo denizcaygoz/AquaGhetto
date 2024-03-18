@@ -4,13 +4,15 @@ import entity.AquaGhetto
 import entity.Board
 import entity.Player
 import entity.PrisonBus
+import entity.enums.PlayerType
 import entity.enums.PrisonerTrait
 import entity.enums.PrisonerType
 import entity.tileTypes.CoinTile
 import entity.tileTypes.GuardTile
 import entity.tileTypes.PrisonerTile
 import entity.tileTypes.Tile
-import java.util.*
+import service.networkService.ConnectionState
+
 
 /**
  * Service layer class that provides basic functions for the actions a player can take
@@ -19,7 +21,13 @@ import java.util.*
  */
 class PlayerActionService(private val rootService: RootService): AbstractRefreshingService() {
 
-    fun addTileToPrisonBus(tile: Tile, prisonBus: PrisonBus) {
+    fun addTileToPrisonBus(
+        tile: Tile,
+        prisonBus: PrisonBus,
+        sender: PlayerType = PlayerType.PLAYER,
+        changePlayer: Boolean = true
+    ) {
+        val isNetworkGame = rootService.networkService.connectionState != ConnectionState.DISCONNECTED
         val game = rootService.currentGame
         checkNotNull(game) { "No game started yet." }
 
@@ -27,25 +35,39 @@ class PlayerActionService(private val rootService: RootService): AbstractRefresh
         checkNotNull(currentPlayer) { "Invalid current player." }
 
         // To check if the game has at least one prison bus available
-        require(game.prisonBuses.isEmpty()) {"No prison buses available."}
+        require(game.prisonBuses.isNotEmpty()) {"No prison buses available."}
 
         // To check if the current player has not taken a bus yet
-        require(currentPlayer.takenBus != null) {"Current player has already taken a bus."}
+        require(currentPlayer.takenBus == null) {"Current player has already taken a bus."}
 
         // To check tile is not an instance of GuardTile
-        require(tile is GuardTile) {"Cannot add a guard tile to a prison bus."}
+        require(tile !is GuardTile) {"Cannot add a guard tile to a prison bus."}
 
         // To check if there is at least one slot that is empty and not blocked
-        val emptyAndUnblockedIndex = prisonBus.tiles.indexOfFirst { it == null && !prisonBus.blockedSlots[prisonBus.tiles.indexOf(it)] }
+        var emptyAndUnblockedIndex = -1
+        for (index in prisonBus.tiles.indices) {
+            if (prisonBus.tiles[index] == null && !prisonBus.blockedSlots[index]) {
+                emptyAndUnblockedIndex = index
+                break
+            }
+        }
         require(emptyAndUnblockedIndex != -1) { "No empty slots available on the bus." }
 
         // Add the tile to the prison bus
         prisonBus.tiles[emptyAndUnblockedIndex] = tile
 
+        if (isNetworkGame && sender == PlayerType.PLAYER) {
+            rootService.networkService.sendAddTileToTruck(prisonBus)
+            // Nur weil determineNextPlayer nicht implementiert wurde
+            rootService.networkService.updateConnectionState(ConnectionState.WAITING_FOR_TURN)
+        }
+
+        if (changePlayer)
+            rootService.gameService.determineNextPlayer(false)
+
         onAllRefreshables {
             refreshPrisonBus(prisonBus)
         }
-
     }
 
     fun takePrisonBus(prisonBus: PrisonBus) {
@@ -83,25 +105,32 @@ class PlayerActionService(private val rootService: RootService): AbstractRefresh
                 refreshPrisonBus(prisonBus)
             }
         }
+
+        // GUI muss nach dieser Methode seperat placePrisoner und determineNextPlayer aufrufen
     }
 
     /**
-     * Places a PrisonerTile on the game board at the specified coordinates and evaluates scoring conditions.
+     * Places a [PrisonerTile] on the game board at the specified coordinates and evaluates scoring conditions.
+     * A [PrisonerTile] is placed in the isolation if (-100, -100) is passed as coordinate.
      *
-     * @param tile The PrisonerTile to be placed.
+     * @param tile The [PrisonerTile] to be placed.
      * @param x The x-coordinate on the game board.
      * @param y The y-coordinate on the game board.
-     * @return A Pair indicating the success of the placement and the placed PrisonerTile (or null if unsuccessful or no special conditions met).
+     * @param changePlayer Whether the game should switch to the next player's turn. Only intendet for debugging
+     * @return A Pair indicating the success of the placement and a [PrisonerTile] with a [PrisonerTrait.BABY], if applicable.
      *   - First value (Boolean): True if the placement is successful, false otherwise.
-     *   - Second value (PrisonerTile?): The placed PrisonerTile or null if unsuccessful or no special conditions met.
+     *   - Second value (PrisonerTile?): A [PrisonerTile] with [PrisonerTrait.BABY] if a baby can be conceived,
+     *   otherwise null.
      *
      * @throws IllegalStateException if the game has not been started yet.
      */
-    fun placePrisoner(tile: PrisonerTile, x: Int, y: Int): Pair<Boolean, PrisonerTile?> {
+    fun placePrisoner(tile: PrisonerTile, x: Int, y: Int, changePlayer: Boolean = true): Pair<Boolean, PrisonerTile?> {
         val game = rootService.currentGame
         checkNotNull(game) { "No game started yet." }
         val player = game.players[game.currentPlayer]
         val board = player.board
+
+        val result: Pair<Boolean, PrisonerTile?>
 
         // Validate the tile placement
         if (rootService.validationService.validateTilePlacement(tile, x, y)) {
@@ -109,37 +138,50 @@ class PlayerActionService(private val rootService: RootService): AbstractRefresh
             board.setPrisonYard(x, y, tile)
 
             // Calculate the count of the specified PrisonerType in the player's PrisonYard
-            val count = rootService.evaluationService.getPrisonerTypeCount(player).get(tile.prisonerType)
+            val count = rootService.evaluationService.getPrisonerTypeCount(player).get(tile.prisonerType)!!
+            // Never null because of setPrisonYard
 
             // Evaluate scoring conditions based on the count
-            if (count == null) {
-                // Return indicating successful placement, but no special conditions met
-                return Pair(true, null)
-            } else {
-                if (count % 3 == 0 && count != 0) {
-                    // Increment player's coins for every third tile, excluding counts of 0
-                    player.coins++
-                }
-                if (count % 5 == 0 && count != 0) {
-                    // Place a GuardTile at (-101, -101) and return it for every fifth tile, excluding count of 0
-                    board.setPrisonYard(-101, -101, GuardTile())
-                    // Return indicating successful placement with the GuardTile
-                    return Pair(true,
-                        rootService.playerActionService.checkBabyPrisoner()
-                            ?.let { rootService.boardService.getBabyTile(it) })
-                }
+            if (count % 3 == 0 && count != 0) {
+                // Increment player's coins for every third tile, excluding counts of 0
+                player.coins++
+            }
+            if (count % 5 == 0 && count != 0) {
+                // Place a GuardTile at (-101, -101) and return it for every fifth tile, excluding count of 0
+                board.setPrisonYard(-101, -101, GuardTile())
+            }
+            // Checking for baby prisoner
+            result = Pair(true,
+                rootService.playerActionService.checkBabyPrisoner()
+                    ?.let { rootService.boardService.getBabyTile(it) })
+
+            // Refresh score statistics and the prison layout
+            onAllRefreshables {
+                refreshScoreStats()
+                refreshPrison(tile, x, y)
             }
 
-            // Return indicating successful placement, but no special conditions met
-            return Pair(false, rootService.playerActionService.checkBabyPrisoner()
-                ?.let { rootService.boardService.getBabyTile(it) })
+            if (result.second == null && changePlayer) { // No baby tile, turn is over
+                rootService.gameService.determineNextPlayer(false)
+            }
+
+            return result
+
+        } else if (x == y && x == -100) { // To put prisoners into a player's isolation
+            player.isolation.push(tile)
+            result = Pair(true, null)
+
+            if (changePlayer)
+                rootService.gameService.determineNextPlayer(false)
+
+            onAllRefreshables {
+                refreshIsolation(player)
+                refreshScoreStats()
+            }
+
+            return result
         }
 
-        // Refresh score statistics and the prison layout
-        onAllRefreshables {
-            refreshScoreStats()
-            refreshPrison(tile, x, y)
-        }
 
         // Return indicating unsuccessful placement
         return Pair(false, null)
@@ -172,33 +214,56 @@ class PlayerActionService(private val rootService: RootService): AbstractRefresh
         // Pop a prisoner tile from the player's isolation area
         val tile = player.isolation.pop()
 
-        // Place the prisoner on the game board's prison yard
-        val bonus = placePrisoner(tile, x, y)
-
         // Deduct one coin from the player
         player.coins--
 
         // Refresh isolation area and prison layout for all observers
         onAllRefreshables {
             refreshIsolation(player)
-            refreshPrison(tile, x, y)
         }
 
-        return bonus
+        // Place the prisoner on the game board's prison yard
+        return placePrisoner(tile, x, y)
     }
 
 
-
-    /* new employee -> sourceX = sourceY = -101 */
-    /* janitor -> sourceX = sourceY = -102 */
-    /* secretary -> sourceX = sourceY = -103 */
-    /* lawyer -> sourceX = sourceY = -104 */
-    fun moveEmployee(sourceX: Int, sourceY: Int , destinationX: Int, destinationY: Int) {
+    /**
+     * Places a new employee or moves an employee from a source location to another destination.
+     * To determine if a janitor, secretary or lawyer must be moved/placed, special coordinates
+     * are used as an indicator:
+     *
+     * - new employee without a role: (-101, -101)
+     * (Note: only be used as ([sourceX], [sourceY])
+     * - janitor: (-102, -102)
+     * - secretary: (-103, -103)
+     * - lawyer: (-104, -104)
+     *
+     * All other coordinates result in a guard being placed/moved.
+     *
+     * @param sourceX X-coordinate of the employee to be moved
+     * @param sourceY Y-coordinate of the employee to be moved
+     * @param sourceY Y-coordinate of the destination
+     * @param sourceY Y-coordinate of the employee to be moved
+     *
+     * @throws IllegalStateException There is no game running
+     * @throws IllegalStateException The selected player does not have enough coins.
+     * @throws IllegalStateException Guards are moved from/to invalid locations
+     * or the player already has the maximum number of employees from a type.
+     */
+    fun moveEmployee(
+        sourceX: Int,
+        sourceY: Int,
+        destinationX: Int,
+        destinationY: Int,
+        sender: PlayerType = PlayerType.PLAYER
+    ) {
+        val isNetworkGame = rootService.networkService.connectionState != ConnectionState.DISCONNECTED
         val game = rootService.currentGame
 
         checkNotNull(game) { "No game is running right now."}
 
         val currentPlayer = game.players[game.currentPlayer]
+        check(currentPlayer.coins >= 1) { "${currentPlayer.name} has only ${currentPlayer.coins} coins" }
         val employeeToMove: Tile = GuardTile()
         var hasSetJanitorHere = false
 
@@ -253,6 +318,19 @@ class PlayerActionService(private val rootService: RootService): AbstractRefresh
             currentPlayer.board.guardPosition.add(Pair(destinationX, destinationY))
         }
 
+        if (isNetworkGame && sender == PlayerType.PLAYER) {
+            if (sourceX == sourceY && sourceX != -101) {
+                rootService.networkService.sendPlaceWorker(
+                    sourceX,
+                    sourceY,
+                    destinationX,
+                    destinationY
+                )
+            }
+        }
+
+        rootService.gameService.determineNextPlayer(false)
+
         onAllRefreshables {
             refreshEmployee(currentPlayer) // aktualisiert refreshEmployee auch die GuardTiles?
             if (hasSetJanitorHere) {
@@ -278,7 +356,7 @@ class PlayerActionService(private val rootService: RootService): AbstractRefresh
         val currentPlayer = game.players[game.currentPlayer]
 
         check(currentPlayer.coins >= 2) { "Insufficient player funds."}
-        check(player.isolation.isNotEmpty()) { "Player has no Prisoner in their isolation." }
+        check(player.isolation.isNotEmpty()) { "Player ${player.name} has no Prisoner in their isolation." }
         check(player != currentPlayer) { "Player can't buy from their own isolation."}
 
         // Transferring money
@@ -287,15 +365,13 @@ class PlayerActionService(private val rootService: RootService): AbstractRefresh
 
         // Fetching the Prisoner from the selected player
         val prisonerFromSelectedPlayersIsolation = player.isolation.pop()
-        val bonusTile = placePrisoner(prisonerFromSelectedPlayersIsolation, x, y)
 
         onAllRefreshables {
             refreshScoreStats()
             refreshIsolation(player)
-            refreshPrison(prisonerFromSelectedPlayersIsolation, x, y)
         }
 
-        return bonusTile
+        return placePrisoner(prisonerFromSelectedPlayersIsolation, x, y)
     }
 
     /**
@@ -306,13 +382,14 @@ class PlayerActionService(private val rootService: RootService): AbstractRefresh
      * @throws IllegalArgumentException when there is no prisoner on his isolation stack
      *
      **/
-    fun freePrisoner() {
+    fun freePrisoner(sender: PlayerType = PlayerType.PLAYER) {
+        val isNetworkGame = rootService.networkService.connectionState != ConnectionState.DISCONNECTED
         val game: AquaGhetto? = rootService.currentGame
 
         checkNotNull(game) { "There is no game running" }
 
         val currentPlayer: Player = game.players[game.currentPlayer]
-        require(currentPlayer.coins >= 2) { "The current player has not enough money" }
+        require(currentPlayer.coins >= 2) { "The current player: ${currentPlayer.name} has not enough money" }
         require(!currentPlayer.isolation.empty()) { "There is not prisoner to be freed" }
 
         currentPlayer.isolation.pop()
@@ -320,22 +397,41 @@ class PlayerActionService(private val rootService: RootService): AbstractRefresh
 
         rootService.evaluationService.evaluatePlayer(currentPlayer)
 
-        //rootService.gameService.determineNextPlayer()
+        if (isNetworkGame && sender == PlayerType.PLAYER) {
+            rootService.networkService.sendDiscard()
+            // Nur weil determineNextPlayer nicht implementiert wurde
+            rootService.networkService.updateConnectionState(ConnectionState.WAITING_FOR_TURN)
+        }
 
-        /**
-         * onAllRefreshables { refreshIsolation() }
-         * */
+        rootService.gameService.determineNextPlayer(false)
+
+        onAllRefreshables {
+            refreshIsolation(currentPlayer)
+        }
     }
 
     /**
      * [expandPrisonGrid] places a prison extension on a valid (x,y) on the board.
      *
+     * @param isBigExtension Whether to add a big or small extention.
+     * @param x X-Coordinate.
+     * @param y Y-Coordinate.
+     * @param rotation Rotation of the grid in 90° increments.
+     * @param changePlayer Whether to change the currentPlayer or not. Only intended for debugging.
      * @throws IllegalStateException when there is no game running
      * @throws IllegalArgumentException when the player has not enough money
      * @throws IllegalArgumentException when the placement of the extension is not valid
      *
      **/
-    fun expandPrisonGrid(isBigExtension: Boolean, x: Int, y: Int , rotation: Int) {
+    fun expandPrisonGrid(
+        isBigExtension: Boolean,
+        x: Int,
+        y: Int ,
+        rotation: Int,
+        sender: PlayerType = PlayerType.PLAYER,
+        changePlayer: Boolean = true
+    ) {
+        val isNetworkGame = rootService.networkService.connectionState != ConnectionState.DISCONNECTED
         val game: AquaGhetto? = rootService.currentGame
 
         checkNotNull(game) { "There is no game running" }
@@ -390,14 +486,27 @@ class PlayerActionService(private val rootService: RootService): AbstractRefresh
             currentPlayer.remainingSmallExtensions -= 1
         }
 
-        //rootService.gameService.determineNextPlayer()
+        if (isNetworkGame && sender == PlayerType.PLAYER) {
+            rootService.networkService.sendBuyExpansion(isBigExtension, x, y, rotation)
+            // Nur weil determineNextPlayer nicht implementiert wurde
+            rootService.networkService.updateConnectionState(ConnectionState.WAITING_FOR_TURN)
+        }
 
-        /**
-         * onAllRefreshables { refreshPrison() }
-         **/
+        if (changePlayer)
+            rootService.gameService.determineNextPlayer(false)
+
+        onAllRefreshables {
+            refreshPrison(null, -1, -1)
+        }
     }
 
-    fun checkBabyPrisoner(): PrisonerType? {
+    /**
+     * Function to determine if the current player should get a bonus tile, because a baby
+     * was born, this function sets breedable to false for the two tiles
+     *
+     * @return the type of the baby or null
+     */
+    private fun checkBabyPrisoner(): PrisonerType? {
         val game = rootService.currentGame
         checkNotNull(game) { "No game started yet." }
 
@@ -413,8 +522,8 @@ class PlayerActionService(private val rootService: RootService): AbstractRefresh
                 if (tile !is PrisonerTile) continue
                 val trait = tile.prisonerTrait
                 val type = tile.prisonerType
-                if (trait == PrisonerTrait.MALE || tile.breedable) foundBreedableMale[type] = tile
-                if (trait == PrisonerTrait.FEMALE || tile.breedable) foundBreedableFemale[type] = tile
+                if (trait == PrisonerTrait.MALE && tile.breedable) foundBreedableMale[type] = tile
+                if (trait == PrisonerTrait.FEMALE && tile.breedable) foundBreedableFemale[type] = tile
             }
         }
 
@@ -434,13 +543,15 @@ class PlayerActionService(private val rootService: RootService): AbstractRefresh
     }
 
     /**
-     * Draws a card from the given Stack.
+     * Draws a card from the drawStack or, if empty, from the finalStack.
      *
-     * @param stack The tile stack to draw from
-     * @throws IllegalArgumentException The given stack is empty.
+     * @throws IllegalArgumentException No game is currently running.
      */
-    fun drawCard(stack: Stack<Tile>): Tile {
-        require(stack.isNotEmpty()) { "Can't draw from an empty stack" }
-        return stack.pop()
+    fun drawCard(): Tile {
+        val game = rootService.currentGame
+        checkNotNull(game) { "No game is currently running." }
+        val stackToDrawFrom = game.drawStack.ifEmpty { game.finalStack }
+        return stackToDrawFrom.removeAt(0)
     }
+
 }

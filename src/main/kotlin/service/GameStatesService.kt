@@ -1,13 +1,7 @@
 package service
 
 import entity.AquaGhetto
-import java.io.File
-import java.io.FileInputStream
-import java.io.FileNotFoundException
-import java.io.FileOutputStream
-import java.io.IOException
-import java.io.ObjectInputStream
-import java.io.ObjectOutputStream
+import java.io.*
 import java.util.zip.GZIPInputStream
 import java.util.zip.GZIPOutputStream
 
@@ -93,6 +87,7 @@ class GameStatesService(private val rootService: RootService): AbstractRefreshin
         val gzipOut = GZIPOutputStream(fileOut)
         val objOut = ObjectOutputStream(gzipOut)
         objOut.writeObject(aquaGhetto)
+        objOut.close()
     }
 
     /**
@@ -101,7 +96,6 @@ class GameStatesService(private val rootService: RootService): AbstractRefreshin
      * set the current game to the loaded one and does not call a refresh.
      *
      * @return an instance of AquaGhetto saved in the file "saveFile"
-     * @param aquaGhetto the instance to save
      * @throws IOException see [FileInputStream], [GZIPInputStream], [ObjectInputStream]
      * @throws SecurityException see [FileInputStream], [ObjectInputStream]
      * @throws NullPointerException see [ObjectInputStream], [File]
@@ -115,6 +109,23 @@ class GameStatesService(private val rootService: RootService): AbstractRefreshin
         val obj = objIn.readObject()
         check(obj is AquaGhetto) {"Loaded object was not an instance of AquaGhetto"}
         return obj
+    }
+
+    /**
+     * Creates a deep copy of the current aquaghetto game.
+     *
+     * @return A copy of the current AquaGhetto game with the old instance kept as a reference
+     * in [AquaGhetto.previousState].
+     */
+    fun copyAquaGhetto(): AquaGhetto {
+        val currentGame = rootService.currentGame
+        checkNotNull(currentGame) {"No active game"}
+        val copiedGame = currentGame.clone()
+
+        copiedGame.previousState = currentGame
+        currentGame.nextState = copiedGame
+
+        return copiedGame
     }
 
 }

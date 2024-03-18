@@ -37,21 +37,21 @@ class BoardService(private val rootService: RootService): AbstractRefreshingServ
         val game = rootService.currentGame
         checkNotNull(game) { "No running game." }
 
-        require(game.allTiles.size == 114) {"Not all cards are on the allTiles stack. Call createAllTiles first."}
-
+        check(game.allTiles.size == 114) {"Not all cards are on the allTiles stack. Call createAllTiles first."}
+        check(playerCount in 2..5) { "Not a valid amount of players."}
         val tilesInGame = mutableListOf<Tile>()
 
         val typesNotAdd = mutableListOf<PrisonerType>()
 
         when (playerCount) {
-            2 -> {
+            4 -> {
                 typesNotAdd.add(PrisonerType.CYAN)
             }
             3 -> {
                 typesNotAdd.add(PrisonerType.CYAN)
                 typesNotAdd.add(PrisonerType.BROWN)
             }
-            4 -> {
+            2 -> {
                 typesNotAdd.add(PrisonerType.CYAN)
                 typesNotAdd.add(PrisonerType.BROWN)
                 typesNotAdd.add(PrisonerType.PURPLE)
@@ -71,11 +71,11 @@ class BoardService(private val rootService: RootService): AbstractRefreshingServ
 
         tilesInGame.shuffle()
 
-        val normalStack = Stack<Tile>()
-        normalStack.addAll(tilesInGame.subList(0 , 15))
-
         val finalStack = Stack<Tile>()
-        finalStack.addAll(tilesInGame.subList(15 , tilesInGame.size))
+        finalStack.addAll(tilesInGame.reversed().subList(0 , 15))
+
+        val normalStack = Stack<Tile>()
+        normalStack.addAll(tilesInGame.subList(15 , tilesInGame.size))
 
         return Pair(normalStack, finalStack)
     }

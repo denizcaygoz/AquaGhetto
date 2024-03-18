@@ -22,7 +22,7 @@ import java.io.Serializable
  *
  * @property guardPosition a list of [Pair] containing the locations of the guards placed on the yard.
  */
-class Board: Serializable {
+class Board: Serializable, Cloneable {
     companion object {
         private const val serialVersionUID: Long = -5505146300869386926L
     }
@@ -112,4 +112,20 @@ class Board: Serializable {
         return prisonGrid.iterator()
     }
 
+    public override fun clone(): Board {
+        return Board().apply {
+            guardPosition.addAll(this@Board.guardPosition)
+            for (xIterator in prisonGrid.iterator()) {
+                for (yIterator in xIterator.value) {
+                    val floor = this@Board.getPrisonGrid(xIterator.key, yIterator.key)
+                    val tile = this@Board.getPrisonYard(xIterator.key, yIterator.key)?.let {
+                        if (it is PrisonerTile) it.clone() else it
+                    }
+                    this.setPrisonGrid(xIterator.key, yIterator.key, floor)
+
+                    this.setPrisonYard(xIterator.key, yIterator.key, tile)
+                }
+            }
+        }
+    }
 }

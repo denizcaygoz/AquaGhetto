@@ -41,7 +41,7 @@ class ValidationService(private val rootService: RootService): AbstractRefreshin
             val tileCheck = board.getPrisonYard(x + offset.first, y + offset.second)
             if (tileCheck is PrisonerTile && (tileCheck.prisonerType != tile.prisonerType)) {
                 return false
-            } else if (tileCheck is PrisonerTile && offset.first != 0 && offset.second != 0) {
+            } else if (tileCheck is PrisonerTile) {
                 surroundingSameType = true
             }
         }
@@ -131,17 +131,9 @@ class ValidationService(private val rootService: RootService): AbstractRefreshin
             }
         }
 
-        /*
-         * player is not allowed to place extension on (0,0) (1,0) (0,1)
-         */
-        for(location in placementCoordinates) {
-            val xT = location.first
-            val yT = location.second
-            if ((xT == 0 && yT == 0) ||
-                (xT == 1 && yT == 0) ||
-                (xT == 0 && yT == 1)) {
-                return false
-            }
+        /*player is not allowed to place extension on (0,0) (1,0) (0,1)*/
+        if (!this.checkInvalidSpecialLocations(placementCoordinates)) {
+            return false
         }
 
 
@@ -161,6 +153,33 @@ class ValidationService(private val rootService: RootService): AbstractRefreshin
         if (!nextTo) return false
 
         /*requirements for placing a card are fulfilled*/
+        return true
+    }
+
+    /**
+     * Function to check if an extension is not placed on one of the special invalid locations
+     * The invalid locations are (0,0) (1,0) (0,1)
+     *
+     * @param placementCoordinates the locations to check
+     * @return true if [placementCoordinates] does not contain one of the invalid locations
+     */
+    private fun checkInvalidSpecialLocations(placementCoordinates: MutableList<Pair<Int, Int>>): Boolean {
+        /*2 loops are needed because 3 conditions is the maximum*/
+        for(location in placementCoordinates) {
+            val xT = location.first
+            val yT = location.second
+            /*(xT == 0 && yT == 0) || (xT == 1 && yT == 0) is easier to read but 3 conditions is the maximum*/
+            if (yT == 0 && (xT == 0 || xT == 1)) {
+                return false
+            }
+        }
+        for(location in placementCoordinates) {
+            val xT = location.first
+            val yT = location.second
+            if (xT == 0 && yT == 1) {
+                return false
+            }
+        }
         return true
     }
 
