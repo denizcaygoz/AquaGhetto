@@ -213,18 +213,18 @@ class EvaluateBestPosition(private val smartAI: SmartAI) {
     }
 
     private fun calcDistanceToDifferentType(player: Player, tileToPlace: PrisonerTile, x: Int, y: Int): Int {
-        var largestDistance = Integer.MIN_VALUE
+        var smallestDistance = Integer.MAX_VALUE
         for (firstIterator in player.board.getPrisonYardIterator()) {
             for (secondIterator in firstIterator.value) {
                 val tile = secondIterator.value
                 if (tile !is PrisonerTile || tile.prisonerType == tileToPlace.prisonerType) continue
                 val dist = abs(x - firstIterator.key) + abs(y - secondIterator.key)
-                if (dist > largestDistance) {
-                    largestDistance = dist
+                if (dist < smallestDistance) {
+                    smallestDistance = dist
                 }
             }
         }
-        return largestDistance
+        return smallestDistance
     }
 
     private fun getAdjacentGrid(player: Player, x: Int, y: Int): Int {

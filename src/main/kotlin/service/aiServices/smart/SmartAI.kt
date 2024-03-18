@@ -168,7 +168,7 @@ class SmartAI(val rootService: RootService, val player: Player) {
         count++
 
         if (depth == 0 || checkGameEnd(game)) { /*hier überprüfung ob maximale tiefe erreicht wurde oder spiel schon geendet hat*/
-            return AIAction(false, evaluateGamePosition.evaluateCurrentPosition())
+            return AIAction(false, evaluateGamePosition.evaluateCurrentPosition(game))
         }
 
         val undoData = this.simulateSetUpNewRound(game)

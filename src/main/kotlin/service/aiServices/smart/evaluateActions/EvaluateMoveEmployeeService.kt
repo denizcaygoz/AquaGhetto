@@ -31,7 +31,7 @@ class EvaluateMoveEmployeeService(val smartAI: SmartAI) {
 
     private fun checkEmployee(game: AquaGhetto, depth: Int, maximize: Int, amountActions: Int,
                               pos: Pair<Int,Int>, player: Player): Triple<Int,Pair<Int,Int>,Pair<Int,Int>>? {
-        val oldScore = smartAI.evaluateGamePosition.evaluateCurrentPosition()
+        val oldScore = smartAI.evaluateGamePosition.evaluateCurrentPosition(game)
         player.coins -= 1
         removeEmployee(pos.first, pos.second, player)
         val betterPos = smartAI.evaluateBestPosition.getBestLocationEmployee(player)
