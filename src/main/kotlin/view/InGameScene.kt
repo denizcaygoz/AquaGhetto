@@ -2,6 +2,8 @@ package view
 
 import entity.Player
 import entity.enums.PlayerType
+import entity.enums.PrisonerTrait
+import entity.enums.PrisonerType
 import service.RootService
 import tools.aqua.bgw.core.BoardGameApplication
 import tools.aqua.bgw.core.BoardGameScene
@@ -96,52 +98,67 @@ class InGameScene(var rootService: RootService, test: SceneTest) : BoardGameScen
     }
 }
 
-class PlayerBoard(player: Player) : GridPane<Button>(rows = 21, columns = 21, layoutFromCenter = true) {
+class PlayerBoard(val player: Player) : GridPane<Button>(rows = 21, columns = 21, layoutFromCenter = true) {
 
     // Size of the whole grid,
-    val currentGridSize = 1.0
+    var currentGridSize = calculateSize()
 
     init {
         this.posX = 100.0
         this.posY = 100.0
         this.spacing = 1.0
 
-        /*
-        for (y in 0 until this.rows) {
-            for (x in 0 until this.columns) {
-                this[x,y] = Button(height = 50, width = 50, visual = Visual.EMPTY).apply {
-                    this.isDisabled = true
-                    this.isVisible = false
-                    //text = "$y, $x"
-                }
-            }
-        }
-        */
-        val iterator = player.board.getPrisonGridIterator()
-        while (iterator.hasNext()) {
-            val entry = iterator.next()
+        // Iterator for grid
+        val gridIterator = player.board.getPrisonGridIterator()
+        while (gridIterator.hasNext()) {
+            val entry = gridIterator.next()
             val x = entry.key
             val yMap = entry.value
 
             for ((y, floor) in yMap) {
                 if(floor) {
-                    val tempX = coords(x,y).first
-                    val tempY = coords(x,y).second
-                    this[tempX, tempY] = Button(height = 50, width = 50, visual = Visual.EMPTY).apply{
+                    val tempX = coordsToView(x,y).first
+                    val tempY = coordsToView(x,y).second
+                    this[tempX, tempY] = Button(height = 50*currentGridSize, width = 50*currentGridSize, visual = Visual.EMPTY).apply{
                         this.visual = ImageVisual("tiles/default_tile.png")
                     }
+                }
+            }
+        }
+        // Iterator for Yard
+        val yardIterator = player.board.getPrisonYardIterator()
+        while (yardIterator.hasNext()) {
+            val entry = yardIterator.next()
+            val x = entry.key
+            val yMap = entry.value
+
+            for ((y) in yMap) {
+                val slot = this[coordsToView(x,y).first, coordsToView(x,y).second]
+                checkNotNull(slot) {"There is no Yard at the given coordinates x:$x and y: $y (View cords)"}
+                slot.apply{
+                    this.visual = ImageVisual("tiles/default_tile.png")
                 }
             }
         }
 
     }
 
+    // Assisting methods from here on
+
     /**
      * Transforms coordinates from the service layer
-     * to grid coordinates
+     * to view coordinates
      */
-    fun coords(serviceX : Int, serviceY : Int) : Pair<Int,Int>{
+    fun coordsToView(serviceX : Int, serviceY : Int) : Pair<Int,Int>{
         return Pair(serviceX+10 , -serviceY+10)
+    }
+
+    /**
+     * Transforms coordinates from the view layer
+     * to service layer coordinates
+     */
+    fun coordsToService(viewX : Int, viewY : Int) : Pair<Int,Int>{
+        return Pair(viewX+10 , -viewY+10)
     }
 
     /**
@@ -149,7 +166,7 @@ class PlayerBoard(player: Player) : GridPane<Button>(rows = 21, columns = 21, la
      * 1.0 is full size
      * 0.5 is half size and so on
      */
-    fun calculateSize(player: Player) : Double {
+    fun calculateSize() : Double {
         // Save the span of the grid first
         var maxX = -20
         var minX = 20
@@ -171,11 +188,27 @@ class PlayerBoard(player: Player) : GridPane<Button>(rows = 21, columns = 21, la
         } else (maxY.absoluteValue-minY.absoluteValue)
 
         // Numbers are not final, just to test
-        if(importantNumber <= 7) return 1.0
-        else if(importantNumber <= 9) return 0.8
-        else return 0.5
-
+        if(importantNumber <= 7) {
+            currentGridSize = 1.0
+            return 1.0
+        }
+        else if(importantNumber <= 9) {
+            currentGridSize = 0.8
+            return 0.8
+        }
+        else {
+            currentGridSize = 0.6
+            return 0.6
+        }
     }
+
+    /**
+     * Returns the fitting visual for a tile
+     */
+    fun tileType(prisonerType: PrisonerType, prisonerTrait: PrisonerTrait) : ImageVisual {
+        return ImageVisual("tiles/${prisonerType}_${prisonerTrait}_tile.png")
+    }
+
 }
 
 /**
