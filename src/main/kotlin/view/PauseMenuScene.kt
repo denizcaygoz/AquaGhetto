@@ -5,6 +5,7 @@ import tools.aqua.bgw.components.ComponentView
 import tools.aqua.bgw.components.layoutviews.GridPane
 import tools.aqua.bgw.components.uicomponents.Button
 import tools.aqua.bgw.components.uicomponents.Label
+import tools.aqua.bgw.core.Alignment
 import tools.aqua.bgw.core.MenuScene
 
 /**
@@ -15,17 +16,37 @@ import tools.aqua.bgw.core.MenuScene
  */
 class PauseMenuScene (rootService : RootService) : MenuScene(1920,1080), Refreshable{
 
-    val pauseGrid = GridPane<ComponentView>(1920,1080,3,2)
+    private val pauseGrid = GridPane<ComponentView>( (1920/2)-250 , (1080/2)-300 , 3 , 2)
 
     /*Action Handling is currently in AquaGhettoApplication*/
-    val resumeGameButton = Button(width = 400, height = 100, text = "Resume Game")
-    val undoButton = Button(width = 400, height = 100, text = "Undo")
-    val redoButton = Button(width = 400, height = 100, text = "Redo")
-    val saveButton = Button(width = 400, height = 100, text = "Save")
-    val loadButton = Button(width = 400, height = 100, text = "Load")
+    val resumeGameButton = Button(width = 450, height = 100, text = "Resume Game")
+    val undoButton = Button(width = 400, height = 100, text = "Undo").apply {
+        onMouseClicked = {
+            rootService.gameStatesService.undo()
+        }
+    }
+    val redoButton = Button(width = 400, height = 100, text = "Redo").apply {
+        onMouseClicked = {
+            rootService.gameStatesService.redo()
+        }
+    }
+    val saveButton = Button(width = 400, height = 100, text = "Save").apply {
+        onMouseClicked = {
+            rootService.gameStatesService.saveGame()
+        }
+    }
+    val loadButton = Button(width = 400, height = 100, text = "Load").apply {
+        onMouseClicked = {
+            rootService.gameStatesService.loadGame()
+        }
+    }
 
     init {
-        /*Buttons dont do anything jet*/
+        pauseGrid.setRowHeights(50)
+        pauseGrid.setCenterMode(Alignment.CENTER_LEFT)
+        pauseGrid.setCellCenterMode(0 , 0 ,  Alignment.TOP_CENTER)
+
+        /*Not sure if resume Button will span both Rows if not needs to be created outside*/
         pauseGrid[0,0] = resumeGameButton
         pauseGrid[1,0] = undoButton
         pauseGrid[1,1] = redoButton
