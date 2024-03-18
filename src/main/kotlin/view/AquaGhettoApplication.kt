@@ -39,10 +39,19 @@ class AquaGhettoApplication: BoardGameApplication("AquaGhetto"), Refreshable {
             this@AquaGhettoApplication.showMenuScene(setupScene)
         }
 
-        /*this is a Placeholder for a Button that starts or Joins a Multiplayer Game
-        For the Time being the Multiplayer Button will refer to Single Player Setup */
+        /**
+        * the newMultiplayerGameButton creates a new Game
+        * if need be [setupScene] can be duplicated to display the Lobbycode in there
+        */
         newMultiplayerGameButton.onMouseClicked = {
             this@AquaGhettoApplication.showMenuScene(setupScene)
+        }
+
+        /**
+         * the join button get the Lobbycode out of [lobbycodeInputfield]
+        */
+        joinButton.onMouseClicked = {
+        this@AquaGhettoApplication.showMenuScene(setupScene)
         }
     }
 
