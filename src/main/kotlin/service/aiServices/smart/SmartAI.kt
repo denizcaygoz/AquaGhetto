@@ -11,6 +11,7 @@ import entity.tileTypes.PrisonerTile
 import entity.tileTypes.Tile
 import service.RootService
 import service.aiServices.smart.evaluateActions.*
+import java.util.*
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.locks.ReentrantLock
 import kotlin.concurrent.thread
@@ -35,7 +36,7 @@ class SmartAI(val rootService: RootService, val player: Player) {
     val evaluateGamePosition = EvaluateGamePositionService(this)
     val evaluateBestPosition = EvaluateBestPosition(this)
 
-    private val checkLayers = 5
+    private val checkLayers = 4
 
     init {
         require(player.type == PlayerType.AI) {"Player is not an AI"}
@@ -47,7 +48,7 @@ class SmartAI(val rootService: RootService, val player: Player) {
     fun makeTurn(game: AquaGhetto) {
         val startTime = System.currentTimeMillis()
 
-        val action = this.minMax(game, checkLayers)
+        val action = this.minMax(game.clone(), checkLayers)
 
         val endTime = System.currentTimeMillis()
         println("Time: ${endTime - startTime}")
@@ -195,12 +196,11 @@ class SmartAI(val rootService: RootService, val player: Player) {
 
         /*runs the 7 actions parallel*/
         /*
-        if (depth == checkLayers - 0 || depth == checkLayers - 0) {
+        if (depth == checkLayers - 0 || depth == checkLayers - 1) {
             return minMaxNewThread(game, depth)
         }
         */
 
-        /*do not edit maximize!!!*/
         val scoreAddTileToPrisonBus = evaluateAddTileToBus.getScoreAddTileToPrisonBus(game, depth - 1)
         val scoreMoveOwnPrisoner = evaluateMoveOwnPrisoner.getScoreMoveOwnPrisoner(game, depth - 1)
         val scoreMoveEmployee = evaluateMoveEmployee.getScoreMoveEmployee(game, depth - 1)
