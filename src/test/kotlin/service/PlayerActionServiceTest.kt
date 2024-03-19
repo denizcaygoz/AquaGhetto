@@ -540,15 +540,17 @@ class PlayerActionServiceTest {
             Pair("P2", PlayerType.PLAYER)
         )
         rootService.gameService.startNewGame(players)
-        val message = assertThrows<IllegalStateException> { rootService.playerActionService.movePrisonerToPrisonYard(10 ,10) }
+        val game = rootService.currentGame!!
+        val pas = rootService.playerActionService
+        val message = assertThrows<IllegalStateException> { pas.movePrisonerToPrisonYard(10 ,10) }
         assertEquals( "Bring more money and come back!" , message.message)
 
-        rootService.currentGame!!.players[rootService.currentGame!!.currentPlayer].coins = 10
-        val message1 = assertThrows<IllegalStateException> { rootService.playerActionService.movePrisonerToPrisonYard(10 ,10) }
+        game.players[game.currentPlayer].coins = 10
+        val message1 = assertThrows<IllegalStateException> { pas.movePrisonerToPrisonYard(10 ,10) }
         assertEquals( "Empty Isolation." , message1.message)
 
-        rootService.currentGame!!.players[rootService.currentGame!!.currentPlayer].isolation.add(PrisonerTile(0,PrisonerTrait.RICH, PrisonerType.PURPLE))
-        assertFails { rootService.playerActionService.movePrisonerToPrisonYard(10 ,10) }
+        game.players[game.currentPlayer].isolation.add(PrisonerTile(0,PrisonerTrait.RICH, PrisonerType.PURPLE))
+        assertFails { pas.movePrisonerToPrisonYard(10 ,10) }
     }
 
 

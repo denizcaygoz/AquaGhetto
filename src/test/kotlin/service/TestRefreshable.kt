@@ -33,6 +33,9 @@ class TestRefreshable: Refreshable {
     var refreshEmployeeCalled: Boolean = false
         private set
 
+    /**
+     * Resets all refresh flags to their initial state.
+     */
     fun reset() {
         refreshAfterStartGameCalled = false
         refreshAfterNextTurnCalled = false
