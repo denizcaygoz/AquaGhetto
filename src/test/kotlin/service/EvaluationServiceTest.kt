@@ -36,15 +36,16 @@ class EvaluationServiceTest {
      */
     @Test
     fun getPrisonerCountTypeTest(){
+        val game = rootService.currentGame!!
         // Expected map containing counts of different prisoner types
         val map1 = mutableMapOf(PrisonerType.PURPLE to 1, PrisonerType.RED to 2)
 
         // Setting up prisoner tiles on the board for testing
-        rootService.currentGame!!.players.first().board.setPrisonYard(10,10, PrisonerTile(0, PrisonerTrait.RICH, PrisonerType.PURPLE))
-        rootService.currentGame!!.players.first().board.setPrisonYard(20,20, PrisonerTile(1, PrisonerTrait.RICH, PrisonerType.RED))
-        rootService.currentGame!!.players.first().board.setPrisonYard(30,30, PrisonerTile(2, PrisonerTrait.RICH, PrisonerType.RED))
+        game.players.first().board.setPrisonYard(10,10, PrisonerTile(0, PrisonerTrait.RICH, PrisonerType.PURPLE))
+        game.players.first().board.setPrisonYard(20,20, PrisonerTile(1, PrisonerTrait.RICH, PrisonerType.RED))
+        game.players.first().board.setPrisonYard(30,30, PrisonerTile(2, PrisonerTrait.RICH, PrisonerType.RED))
         // Asserting that the count of prisoner types matches the expected map
-        assertEquals(map1, rootService.evaluationService.getPrisonerTypeCount(rootService.currentGame!!.players.first()))
+        assertEquals(map1, rootService.evaluationService.getPrisonerTypeCount(game.players.first()))
     }
 
     /**

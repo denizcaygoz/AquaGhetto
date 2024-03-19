@@ -45,7 +45,7 @@ class RandomAIService(rootService: RootService) {
 
         when (option) {
             0 -> { /*place tile on prison bus*/
-                randomAIActionService.addTileToPrisonBus(canTakeBuses.toList())
+                randomAIActionService.addTileToPrisonBus(canPlaceTile.toList())
             }
             1 -> { /*move own prisoner from isolation*/
                 randomAIActionService.moveOwnPrisonerFromIsolation(player)
@@ -81,10 +81,10 @@ class RandomAIService(rootService: RootService) {
             if (option) amountValid++
         }
         if(amountValid <= 0) return -1
-        var ranValue = ran.nextInt(amountValid)
+        var ranValue = ran.nextInt(amountValid) + 1
         for (i in validOptions.indices) {
-            if (ranValue == 0) return i
             if (validOptions[i]) ranValue--
+            if (ranValue == 0) return i
         }
         return -1
     }

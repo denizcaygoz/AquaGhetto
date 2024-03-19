@@ -9,9 +9,8 @@ import service.AbstractRefreshingService
 import service.RootService
 import entity.AquaGhetto
 import entity.enums.PlayerType
-import entity.tileTypes.CoinTile
-import entity.tileTypes.GuardTile
 import java.util.*
+import kotlin.random.Random
 
 /**
  * Service layer class that realizes the necessary logic for sending and receiving messages
@@ -42,7 +41,14 @@ class NetworkService(private val rootService: RootService): AbstractRefreshingSe
      **/
     val prisoners: MutableList<Triple<Int, Int, Int>> = mutableListOf()
     val children: MutableList<Triple<Int, Int, PrisonerTile>> = mutableListOf()
-    val workers: MutableList<Triple<Int, Int, GuardTile>> = mutableListOf()
+    val workers: MutableList<Pair<Int, Int>> = mutableListOf()
+
+    /**
+     * list of players that joined the game and the name of host
+     **/
+    val playersJoined: MutableList<String> = mutableListOf()
+    var hostPlayer: String? = null
+    var createadSessionID: String? = null
 
     /**
      * Connects to server, sets the [NetworkService.client] if successful and returns `true` on success.
@@ -103,26 +109,24 @@ class NetworkService(private val rootService: RootService): AbstractRefreshingSe
      *
      * @throws IllegalStateException if [connectionState] != [ConnectionState.WAITING_FOR_GUEST]
      */
-    fun startNewHostedGame(hostPlayerName: String, guestPlayers: MutableList<String>) {
+    fun startNewHostedGame() {
         check(connectionState == ConnectionState.WAITING_FOR_GUEST)
         { "currently not prepared to start a new hosted game." }
 
         val players: MutableList<Pair<String, PlayerType>> = mutableListOf()
         val messagePlayerList: MutableList<String> = mutableListOf()
         val drawStackList: MutableList<Int> = mutableListOf()
+        val hostPlayerName: String? = hostPlayer
+
+        checkNotNull(hostPlayerName)
 
         /**Add hostPlayer to playersList and to messagePlayerList **/
         players.add(Pair(hostPlayerName, PlayerType.PLAYER))
         messagePlayerList.add(hostPlayerName)
 
         /**Add guestPlayers to players and to messagePlayerList **/
-        guestPlayers.forEach { playerName ->
-            if (playerName == hostPlayerName) {
-                players.add(Pair(playerName, PlayerType.NETWORK))
-            } else {
-                players.add(Pair(playerName, PlayerType.PLAYER))
-            }
-
+        playersJoined.forEach { playerName ->
+            players.add(Pair(playerName, PlayerType.NETWORK))
             messagePlayerList.add(playerName)
         }
 
@@ -140,7 +144,7 @@ class NetworkService(private val rootService: RootService): AbstractRefreshingSe
         drawStack.addAll(game.drawStack)
         drawStack.addAll(game.finalStack)
 
-        drawStack.forEachIndexed { index, tile -> drawStackList.add(tile.id) }
+        drawStack.forEach { tile -> drawStackList.add(tile.id) }
 
         val message = InitGameMessage(
             messagePlayerList.toList(),
@@ -148,8 +152,12 @@ class NetworkService(private val rootService: RootService): AbstractRefreshingSe
         )
 
         when(currentPlayer.name) {
-            hostPlayerName -> updateConnectionState(ConnectionState.PLAYING_MY_TURN)
-            else -> updateConnectionState(ConnectionState.WAITING_FOR_TURN)
+            hostPlayerName -> {
+                updateConnectionState(ConnectionState.PLAYING_MY_TURN)
+            }
+            else -> {
+                updateConnectionState(ConnectionState.WAITING_FOR_TURN)
+            }
         }
 
         client?.sendGameActionMessage(message)
@@ -220,8 +228,12 @@ class NetworkService(private val rootService: RootService): AbstractRefreshingSe
         game.prisonBuses = rootService.boardService.createPrisonBuses(playerList.size)
 
         when(currentPlayer.name) {
-            sender -> updateConnectionState(ConnectionState.PLAYING_MY_TURN)
-            else -> updateConnectionState(ConnectionState.WAITING_FOR_TURN)
+            sender -> {
+                updateConnectionState(ConnectionState.PLAYING_MY_TURN)
+            }
+            else -> {
+                updateConnectionState(ConnectionState.WAITING_FOR_TURN)
+            }
         }
 
         onAllRefreshables {
@@ -250,6 +262,9 @@ class NetworkService(private val rootService: RootService): AbstractRefreshingSe
         updateConnectionState(ConnectionState.WAITING_FOR_JOIN_CONFIRMATION)
     }
 
+    fun createSessionID(): String {
+        return "aquaghetto"+ Random.nextInt(1000)
+    }
 
     /**
      * Connects to server and creates a new game session.
@@ -266,11 +281,16 @@ class NetworkService(private val rootService: RootService): AbstractRefreshingSe
         }
         updateConnectionState(ConnectionState.CONNECTED)
 
+        createadSessionID = createSessionID()
+        val newSessionID: String = createadSessionID as String
+
         if (sessionID.isNullOrBlank()) {
-            client?.createGame(GAME_ID, "Welcome!")
+            client?.createGame(GAME_ID, newSessionID,"Welcome!", )
         } else {
             client?.createGame(GAME_ID, sessionID, "Welcome!")
         }
+
+        hostPlayer = name
         updateConnectionState(ConnectionState.WAITING_FOR_HOST_CONFIRMATION)
     }
 
@@ -296,6 +316,9 @@ class NetworkService(private val rootService: RootService): AbstractRefreshingSe
 
         val message = AddTileToTruckMessage(selectedPrisonBus)
         client?.sendGameActionMessage(message)
+
+        // Nur weil determineNextPlayer nicht implementiert wurde
+        rootService.networkService.updateConnectionState(ConnectionState.WAITING_FOR_TURN)
     }
 
     /**
@@ -474,6 +497,9 @@ class NetworkService(private val rootService: RootService): AbstractRefreshingSe
         )
         /**send message **/
         client?.sendGameActionMessage(message)
+
+        // Nur weil determineNextPlayer nicht implementiert wurde
+        rootService.networkService.updateConnectionState(ConnectionState.WAITING_FOR_TURN)
     }
 
     /**
@@ -512,7 +538,6 @@ class NetworkService(private val rootService: RootService): AbstractRefreshingSe
         } else {
             when{
                 (highestCandidates.size == 2 && lowestCandidates.size == 1) -> {
-                    println("One")
                     val point = lowestCandidates[0]
                     rootService.playerActionService.expandPrisonGrid(
                         false, point.x, point.y+1, 0, PlayerType.NETWORK
@@ -524,12 +549,10 @@ class NetworkService(private val rootService: RootService): AbstractRefreshingSe
                     val point: PositionPair
                     val rotation: Int
                     if (positions[0].x < highestCandidates[0].x) {
-                        println("Two")
                         point = highestCandidates[0]
                         rotation = 90
 
                     } else {
-                        println("Three")
                         point = lowestCandidates[0]
                         rotation = 270
                     }
@@ -539,7 +562,6 @@ class NetworkService(private val rootService: RootService): AbstractRefreshingSe
                     )
                 }
                 (highestCandidates.size == 1 && lowestCandidates.size == 2) -> {
-                    println("Four")
                     val point = highestCandidates[0]
                     rootService.playerActionService.expandPrisonGrid(
                         false, point.x, point.y-1, 180, PlayerType.NETWORK
@@ -547,7 +569,8 @@ class NetworkService(private val rootService: RootService): AbstractRefreshingSe
                 }
             }
         }
-        // Nur weil determineNextPlayer nicht implementiert wurde
+
+        //Weil determineNextPlayer nicht implementiert
         updateConnectionState(ConnectionState.PLAYING_MY_TURN)
     }
 
@@ -615,17 +638,15 @@ class NetworkService(private val rootService: RootService): AbstractRefreshingSe
         val srcWorker: WorkerTriple = message.start
         val destWorker: WorkerTriple = message.destination
 
-        var source: Pair<Int, Int> = Pair(0, 0)
-        var dest: Pair<Int, Int> = Pair(0, 0)
         /** map src jobEnum to our magic numbers **/
-        source = when(srcWorker.jobEnum) {
+        val source = when(srcWorker.jobEnum) {
             JobEnum.MANAGER -> { Pair(-102, -102) }
             JobEnum.CASHIER -> { Pair(-103, -103) }
             JobEnum.KEEPER -> { Pair(-104, -104) }
             JobEnum.TRAINER -> { Pair(srcWorker.x, srcWorker.y) }
         }
         /** map dest jobEnum to our magic numbers **/
-        dest = when(destWorker.jobEnum) {
+        val dest = when(destWorker.jobEnum) {
             JobEnum.MANAGER -> { Pair(-102, -102) }
             JobEnum.CASHIER -> { Pair(-103, -103) }
             JobEnum.KEEPER -> {Pair(-104, -104) }
@@ -635,7 +656,6 @@ class NetworkService(private val rootService: RootService): AbstractRefreshingSe
         rootService.playerActionService.moveEmployee(
             source.first, source.second, dest.first, dest.second, PlayerType.NETWORK)
 
-        // Nur weil determineNextPlayer nicht implementiert wurde
         updateConnectionState(ConnectionState.PLAYING_MY_TURN)
     }
 
@@ -737,6 +757,8 @@ class NetworkService(private val rootService: RootService): AbstractRefreshingSe
         val message = DiscardMessage()
         /**send message **/
         client?.sendGameActionMessage(message)
+
+        rootService.networkService.updateConnectionState(ConnectionState.WAITING_FOR_TURN)
     }
 
     /**
@@ -758,9 +780,7 @@ class NetworkService(private val rootService: RootService): AbstractRefreshingSe
 
         rootService.playerActionService.freePrisoner(PlayerType.NETWORK)
 
-        // Nur weil determineNextPlayer nicht implementiert wurde
         updateConnectionState(ConnectionState.PLAYING_MY_TURN)
-
     }
 
     /**
@@ -797,7 +817,9 @@ class NetworkService(private val rootService: RootService): AbstractRefreshingSe
      * - second -> y coordinate
      * - third -> guard tile
      **/
-    fun increaseWorkers(worker: Triple<Int, Int, GuardTile>) { workers.add(worker) }
+    fun increaseWorkers(worker: Pair<Int, Int>) { workers.add(worker) }
+
+    fun increasePlayersJoined(player: String) { playersJoined.add(player) }
 
     /**
      * [resetLists] resets all network list.
@@ -815,7 +837,7 @@ class NetworkService(private val rootService: RootService): AbstractRefreshingSe
      * @return a triple that holds lists of animals (first),
      * list of offsprings (second), list of workers (third)
      **/
-    private fun prepareLists():
+    fun prepareLists():
             Triple<MutableList<AnimalTriple>,
             MutableList<OffspringTriple>,
             MutableList<WorkerTriple>>
@@ -895,8 +917,6 @@ class NetworkService(private val rootService: RootService): AbstractRefreshingSe
             } else {
                 rootService.playerActionService.placePrisoner(offspringTile, offsprings.second, offsprings.third)
             }
-            //Weil DetermineNextPlayer nicht richtig funktioniert
-            game.currentPlayer = 0
         }
     }
 
@@ -915,20 +935,18 @@ class NetworkService(private val rootService: RootService): AbstractRefreshingSe
         workerList.forEach { workers ->
             when(workers.jobEnum){
                 JobEnum.MANAGER -> { rootService.playerActionService.moveEmployee(
-                    -102, -102, -102, -102, PlayerType.NETWORK )
+                    -101, -101, -102, -102, PlayerType.NETWORK )
                 }
                 JobEnum.CASHIER -> { rootService.playerActionService.moveEmployee(
-                    -103, -103, -103, -103, PlayerType.NETWORK )
+                    -101, -101, -103, -103, PlayerType.NETWORK )
                 }
                 JobEnum.KEEPER -> { rootService.playerActionService.moveEmployee(
-                    -104, -104, -104, -104, PlayerType.NETWORK )
+                    -101, -101, -104, -104, PlayerType.NETWORK )
                 }
                 JobEnum.TRAINER -> { rootService.playerActionService.moveEmployee(
                     -101, -101, workers.x, workers.y, PlayerType.NETWORK)
                 }
             }
-            //Weil DetermineNextPlayer nicht richtig funktioniert
-            game.currentPlayer = 0
         }
     }
 

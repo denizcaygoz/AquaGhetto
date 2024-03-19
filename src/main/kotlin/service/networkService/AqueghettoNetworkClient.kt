@@ -29,7 +29,7 @@ class AqueghettoNetworkClient(
     var sessionID: String? = null
 
     /** the name of the opponent player; can be null if no message from the opponent received yet */
-    var otherPlayerNames: MutableList<String> = mutableListOf()
+    var otherPlayerName: String = ""
 
 
     /**
@@ -70,9 +70,15 @@ class AqueghettoNetworkClient(
 
             when (response.status) {
                 JoinGameResponseStatus.SUCCESS -> {
-                    otherPlayerNames.add(response.opponents[0])
+                    otherPlayerName = response.opponents[0]
                     sessionID = response.sessionID
-                    networkService.updateConnectionState(ConnectionState.WAITING_FOR_INIT)
+                    response.opponents.forEach {
+                        if (it == playerName ) {
+                            networkService.updateConnectionState(ConnectionState.WAITING_FOR_GUEST)
+                        } else {
+                            networkService.updateConnectionState(ConnectionState.WAITING_FOR_INIT)
+                        }
+                    }
                 }
                 else -> {
                     disconnectAndError(response.status)
@@ -89,13 +95,15 @@ class AqueghettoNetworkClient(
      * @throws IllegalStateException if not currently expecting any guests to join.
      */
     override fun onPlayerJoined(notification: PlayerJoinedNotification) {
-        BoardGameApplication.runOnGUIThread {
-            check(networkService.connectionState == ConnectionState.WAITING_FOR_GUEST )
-            { "not awaiting any guests."}
+        if (networkService.hostPlayer != null) {
+            BoardGameApplication.runOnGUIThread {
+                check(networkService.connectionState == ConnectionState.WAITING_FOR_GUEST )
+                { "not awaiting any guests."}
 
-            otherPlayerNames.add(notification.sender)
+                otherPlayerName = notification.sender
 
-            networkService.startNewHostedGame(playerName, otherPlayerNames)
+                networkService.increasePlayersJoined(notification.sender)
+            }
         }
     }
 
