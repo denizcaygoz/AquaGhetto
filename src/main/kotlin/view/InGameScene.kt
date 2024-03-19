@@ -59,23 +59,7 @@ class InGameScene(var rootService: RootService, test: SceneTest = SceneTest()) :
             isVerticalLocked = false
             isZoomLocked = false
         }
-    private val ownGui = Pane<ComponentView>(width = 130, height = 1080, visual = ColorVisual.LIGHT_GRAY)
-    private val statGui = Pane<ComponentView>(posX = 1790, width = 130, height = 1080, visual = ColorVisual.LIGHT_GRAY)
-
-    // ownGui elements
-    var bigExtension =
-        TokenView(posY = 10, height = 100, width = 100, visual = ImageVisual("tiles/big_expansion_tile.png")).apply {
-            isDraggable = true
-            name = "big_extension"
-            isDisabled = false
-        }
-
-    var smallExtension =
-        TokenView(posY = 110, height = 100, width = 100, visual = ImageVisual("tiles/small_expansion_tile.png")).apply {
-            isDraggable = true
-            name = "small_extension"
-            isDisabled = false
-        }
+    var statGui = Pane<ComponentView>(posX = 1790, width = 130, height = 1080, visual = ColorVisual.LIGHT_GRAY)
 
 
     init {
@@ -99,37 +83,11 @@ class InGameScene(var rootService: RootService, test: SceneTest = SceneTest()) :
             }
         }
 
-        onKeyPressed = { event ->
-            if (event.keyCode == KeyCode.R) {
-                print("r was typed")
-                val game = rootService.currentGame
-                if (!smallExtension.isDisabled && game != null) {
-                    when (prisons[game.currentPlayer].smallExtensionRotation) {
-                        0 -> {prisons[game.currentPlayer].smallExtensionRotation = 90
-                                smallExtension.apply { rotation = 90.0}}
-                        90 -> {prisons[game.currentPlayer].smallExtensionRotation = 180
-                                smallExtension.apply { rotation = 180.0}}
-                        180 -> {prisons[game.currentPlayer].smallExtensionRotation = 270
-                                smallExtension.apply { rotation = 270.0}}
-                        270 -> {prisons[game.currentPlayer].smallExtensionRotation = 0
-                                smallExtension.apply { rotation = 0.0}}
-                    }
-                }
-            }
-
-        }
 
         // Add the cameraPane to the scene
         addComponents(
             cameraPane,
-            ownGui,
             statGui
-        )
-
-        // Add Hug to the scene
-        ownGui.addAll(
-            bigExtension,
-            smallExtension
         )
     }
 
@@ -201,22 +159,9 @@ class InGameScene(var rootService: RootService, test: SceneTest = SceneTest()) :
         targetLayout.addAll(isolations)
         targetLayout.addAll(drawStack, finalStack)
 
-        // Extension toggles Slots
-        bigExtension.onMousePressed = {
-            prisons[game.currentPlayer].toggleExpansionSlots()
-        }
-        bigExtension.onMouseReleased = {
-            prisons[game.currentPlayer].toggleExpansionSlots()
-        }
-        smallExtension.onMousePressed = {
-            prisons[game.currentPlayer].toggleExpansionSlots()
-        }
-        smallExtension.onMouseReleased = {
-            prisons[game.currentPlayer].toggleExpansionSlots()
-        }
 
 
-        refreshAfterNextTurn(game.players[game.currentPlayer])
+        //refreshAfterNextTurn(game.players[game.currentPlayer])
     }
 
     override fun refreshPrison(tile: PrisonerTile?, x: Int, y: Int) {
@@ -241,25 +186,91 @@ class InGameScene(var rootService: RootService, test: SceneTest = SceneTest()) :
     }
 
     override fun refreshAfterNextTurn(player: Player) {
-        if (player.remainingBigExtensions > 0) {
-            bigExtension =
-                TokenView(height = 100, width = 100, visual = ImageVisual("tiles/big_expansion_tile.png")).apply {
+        val ownGui = Pane<ComponentView>(width = 130, height = 1080, visual = ColorVisual.LIGHT_GRAY)
+        val bigExtension =
+            if (player.remainingBigExtensions > 1) {
+                TokenView(posY = 10, posX = 10, height = 100, width = 100, visual = ImageVisual("tiles/big_expansion_tile.png")).apply {
                     isDraggable = true
                     name = "big_extension"
                     isDisabled = false
                 }
-        }
-        if (player.remainingSmallExtensions > 0) {
-            smallExtension =
-                TokenView(height = 100, width = 100, visual = ImageVisual("tiles/small_expansion_tile.png")).apply {
+            } else {
+                TokenView(posY = 10, posX = 10, height = 100, width = 100, visual = ImageVisual("tiles/big_expansion_tile.png")).apply {
+                    isDraggable = false
+                    name = "big_extension"
+                    isDisabled = true
+                    isVisible = false
+                }
+            }
+
+        val smallExtension =
+            if (player.remainingSmallExtensions > 1) {
+                TokenView(posY = 120, posX = 10, height = 100, width = 100, visual = ImageVisual("tiles/small_expansion_tile.png")).apply {
                     isDraggable = true
                     name = "small_extension"
                     isDisabled = false
                 }
+            } else {
+                TokenView(posY = 120, posX = 10, height = 100, width = 100, visual = ImageVisual("tiles/small_expansion_tile.png")).apply {
+                    isDraggable = false
+                    name = "small_extension"
+                    isDisabled = true
+                    isVisible = false
+                }
+            }
+
+        if(player.remainingBigExtensions > 1) {
+            ownGui.add(bigExtension)
         }
+        if(player.remainingSmallExtensions > 1) {
+            ownGui.add(smallExtension)
+        }
+
+        onKeyPressed = { event ->
+            if (event.keyCode == KeyCode.R) {
+                print("r was typed")
+                val game = rootService.currentGame
+                if (!smallExtension.isDisabled && game != null) {
+                    when (prisons[game.currentPlayer].smallExtensionRotation) {
+                        0 -> {
+                            prisons[game.currentPlayer].smallExtensionRotation = 90
+                            smallExtension.apply { rotation = 90.0 }
+                        }
+
+                        90 -> {
+                            prisons[game.currentPlayer].smallExtensionRotation = 180
+                            smallExtension.apply { rotation = 180.0 }
+                        }
+
+                        180 -> {
+                            prisons[game.currentPlayer].smallExtensionRotation = 270
+                            smallExtension.apply { rotation = 270.0 }
+                        }
+
+                        270 -> {
+                            prisons[game.currentPlayer].smallExtensionRotation = 0
+                            smallExtension.apply { rotation = 0.0 }
+                        }
+                    }
+                }
+            }
+        }
+        // Extension toggles Slots
+        bigExtension.onMousePressed = {
+            prisons[rootService.currentGame!!.currentPlayer].toggleExpansionSlots()
+        }
+        bigExtension.onMouseReleased = {
+            prisons[rootService.currentGame!!.currentPlayer].toggleExpansionSlots()
+        }
+        smallExtension.onMousePressed = {
+            prisons[rootService.currentGame!!.currentPlayer].toggleExpansionSlots()
+        }
+        smallExtension.onMouseReleased = {
+            prisons[rootService.currentGame!!.currentPlayer].toggleExpansionSlots()
+        }
+
+        addComponents(ownGui)
     }
-
-
 
 
     class PlayerBoard(val player: Player, val rootService: RootService) :
@@ -444,27 +455,23 @@ class InGameScene(var rootService: RootService, test: SceneTest = SceneTest()) :
                                 }
                                 this.onDragDropped = { dragEvent ->
                                     when (dragEvent.draggedComponent.name) {
-                                        "big_extension" -> rootService.playerActionService.expandPrisonGrid(
-                                            true,
-                                            x,
-                                            y,
-                                            0
-                                        )
+                                        "big_extension" -> {
+                                            rootService.playerActionService.expandPrisonGrid(true, x, y, 0)
+                                        }
 
-                                        "small_extension" -> rootService.playerActionService.expandPrisonGrid(
-                                            false,
-                                            x,
-                                            y,
-                                            smallExtensionRotation
-                                        )
+
+                                        "small_extension" -> {
+                                            rootService.playerActionService.expandPrisonGrid(false, x, y, smallExtensionRotation)
+                                        }
                                     }
+
+
                                 }
                             }
                     }
                 }
             }
             return currentGridSize
-
         }
 
         fun toggleExpansionSlots() {
@@ -563,14 +570,22 @@ class SceneTest : BoardGameApplication("AquaGhetto"), Refreshable {
             Pair("Moin3", PlayerType.PLAYER),
             Pair("Moin4", PlayerType.PLAYER)))
 
-        rootService.currentGame?.players?.get(rootService.currentGame!!.currentPlayer)?.apply {
-            this.coins = 5
+        rootService.currentGame?.players?.get(0)?.apply {
+            this.coins = 6
             this.board.setPrisonGrid(2,2,true)
             this.board.setPrisonYard(2,2,PrisonerTile(13,PrisonerTrait.MALE,PrisonerType.RED))
             for(i in 0..4) {
                 this.isolation.add(PrisonerTile(13, PrisonerTrait.MALE, PrisonerType.RED))
             }
         }
+        rootService.currentGame?.players?.get(1)?.apply {
+            this.coins = 6 }
+        rootService.currentGame?.players?.get(2)?.apply {
+            this.coins = 5 }
+        rootService.currentGame?.players?.get(3)?.apply {
+            this.coins = 5 }
+        rootService.currentGame?.players?.get(4)?.apply {
+            this.coins = 5 }
         showGameScene(gameScene)
     }
 }

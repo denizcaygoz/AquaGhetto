@@ -514,12 +514,12 @@ class PlayerActionService(private val rootService: RootService): AbstractRefresh
             rootService.networkService.sendBuyExpansion(isBigExtension, x, y, rotation)
         }
 
+
         for (location in placementCoordinates) {
             onAllRefreshables {
                 refreshPrison(null, location.first, location.second)
             }
         }
-
 
         if (changePlayer)
             rootService.gameService.determineNextPlayer(false)
