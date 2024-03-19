@@ -460,6 +460,11 @@ class PlayerActionService(private val rootService: RootService): AbstractRefresh
         val board: Board = currentPlayer.board
 
         check(currentPlayer.coins >= neededMoney) { "The current player has not enough money" }
+        if (isBigExtension) {
+            require(currentPlayer.remainingBigExtensions > 0) {"No big extension"}
+        } else {
+            require(currentPlayer.remainingSmallExtensions > 0) {"No small extension"}
+        }
         check(rootService.validationService.validateExpandPrisonGrid(isBigExtension, x, y, rotation)) {
             "Cannot place extension at ($x, $y)"
         }
