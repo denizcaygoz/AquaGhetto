@@ -13,12 +13,14 @@ import tools.aqua.bgw.core.BoardGameApplication
 import tools.aqua.bgw.core.BoardGameScene
 import tools.aqua.bgw.visual.ImageVisual
 import tools.aqua.bgw.components.ComponentView
+import tools.aqua.bgw.components.gamecomponentviews.TokenView
 import tools.aqua.bgw.event.KeyCode
 import tools.aqua.bgw.components.layoutviews.CameraPane
 import tools.aqua.bgw.components.layoutviews.GridPane
 import tools.aqua.bgw.components.layoutviews.Pane
 import tools.aqua.bgw.components.uicomponents.Button
 import tools.aqua.bgw.visual.ColorVisual
+import tools.aqua.bgw.visual.CompoundVisual
 import tools.aqua.bgw.visual.Visual
 import java.awt.Color
 import java.util.*
@@ -30,7 +32,9 @@ class InGameScene(var rootService: RootService, test: SceneTest) : BoardGameScen
     private val prisons : MutableList<PlayerBoard> = mutableListOf()
     private val prisonBuses : MutableList<BoardPrisonBus> = mutableListOf()
     private val isolations : MutableList<BoardIsolation> = mutableListOf()
-    private val drawStack = Button(posX = 845, posY = 505,height = 70, width = 70, visual = ImageVisual("tiles/default_drawStack.png"))
+    private val drawStack = TokenView(posX = 845, posY = 505,height = 70, width = 70, visual = ImageVisual("tiles/default_drawStack.png")).apply{
+        isDraggable = true
+    }
     private val finalStack = Button(posX = 785, posY = 515,height = 50, width = 50, visual = ImageVisual("tiles/default_finalStack.png")).apply{
         isDisabled = true
     }
@@ -65,6 +69,10 @@ class InGameScene(var rootService: RootService, test: SceneTest) : BoardGameScen
             }
         }
 
+        drawStack.onMouseClicked = {
+            prisons[0].toggleExpansionSlots()
+        }
+
         // Add the cameraPane to the scene
         addComponents(
             cameraPane,
@@ -96,7 +104,7 @@ class InGameScene(var rootService: RootService, test: SceneTest) : BoardGameScen
             }
             prisons[1].apply {
                 posX = 380.0
-                posY = 540.0
+                posY = 600.0
             }
             prisons[2].apply {
                 posX = 680.0
@@ -108,7 +116,7 @@ class InGameScene(var rootService: RootService, test: SceneTest) : BoardGameScen
             }
             prisons[4].apply {
                 posX = 1540.0
-                posY = 540.0
+                posY = 600.0
             }
         }
         for(i in 0 until playerCount) {
@@ -129,7 +137,11 @@ class InGameScene(var rootService: RootService, test: SceneTest) : BoardGameScen
 
 class PlayerBoard(val player: Player) : GridPane<Button>(rows = 21, columns = 21, layoutFromCenter = true) {
 
+    // Both get patched by calculateSize()
     var currentGridSize = calculateSize()
+    var currentExpansionSlots : MutableList<Int> = mutableListOf()
+
+    var expansionSlotsShowed = false
 
     init {
         this.spacing = 1.0*currentGridSize
@@ -184,8 +196,6 @@ class PlayerBoard(val player: Player) : GridPane<Button>(rows = 21, columns = 21
             this.visual = ImageVisual("tiles/no_tile.png")
             this.isDisabled = true
         }
-
-
     }
 
     // Assisting methods from here on
@@ -210,6 +220,8 @@ class PlayerBoard(val player: Player) : GridPane<Button>(rows = 21, columns = 21
      * Returns the size, which the prison has to have on screen.
      * 1.0 is full size
      * 0.5 is half size and so on
+     *
+     * And adjusts the expansion slots
      */
     fun calculateSize() : Double {
         // Save the span of the grid first
@@ -235,17 +247,57 @@ class PlayerBoard(val player: Player) : GridPane<Button>(rows = 21, columns = 21
         // Numbers are not final, just to test
         if(importantNumber <= 7) {
             currentGridSize = 1.0
-            return 1.0
         }
         else if(importantNumber <= 9) {
             currentGridSize = 0.8
-            return 0.8
         }
         else {
             currentGridSize = 0.6
-            return 0.6
+        }
+
+        // Calculating the border of the new Tile placements
+        // minX, maxX, minY, maxY
+        currentExpansionSlots = mutableListOf(
+            if(minX-2 >= -10) { minX-2 } else -10,
+            if(maxX+2 <= 10){ maxX+2 } else 10,
+            if(minY-2 >= -10) { minY-2 } else -10,
+            if(maxY+2 <= 10){ maxY+2 } else 10
+        )
+
+        minX = if(minX-2 >= -10) { minX-2 } else -10
+        maxX = if(maxX+2 <= 10){ maxX+2 } else 10
+        minY = if(minY-2 >= -10) { minY-2 } else -10
+        maxY = if(maxY+2 <= 10){ maxY+2 } else 10
+
+        for(x in minX .. maxX) {
+            for(y in minY .. maxY) {
+                if (!player.board.getPrisonGrid(x, y)) {
+                    this[coordsToView(x,y).first, coordsToView(x,y).second] = Button(height = 50 * currentGridSize, width = 50 * currentGridSize).apply {
+                        this.visual = ImageVisual("tiles/expansion_tile.png")
+                        this.isVisible = false
+                        this.name = "expansion"
+                    }
+                }
+            }
+        }
+        return currentGridSize
+    }
+
+    fun toggleExpansionSlots() {
+        for(x in 0..20) {
+            for(y in 0..20) {
+                val currentButton = this[x,y]
+                if(currentButton != null)
+                if (currentButton.name == "expansion") {
+                    currentButton.apply{
+                        if(this.isVisible) this.isVisible = false
+                        else this.isVisible = true
+                    }
+                }
+            }
         }
     }
+
 
     /**
      * Returns the fitting visual for a prison tile
