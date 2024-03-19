@@ -1,9 +1,11 @@
 package view
 
 import entity.Player
+import entity.PrisonBus
 import entity.enums.PlayerType
 import entity.enums.PrisonerTrait
 import entity.enums.PrisonerType
+import entity.tileTypes.GuardTile
 import entity.tileTypes.PrisonerTile
 import entity.tileTypes.Tile
 import service.RootService
@@ -19,23 +21,29 @@ import tools.aqua.bgw.components.uicomponents.Button
 import tools.aqua.bgw.visual.ColorVisual
 import tools.aqua.bgw.visual.Visual
 import java.awt.Color
+import java.util.*
 import kotlin.math.absoluteValue
 
 class InGameScene(var rootService: RootService, test: SceneTest) : BoardGameScene(1920,1080), Refreshable {
 
-    private val testButton = Button(100,100,100,100)
-    private val testButton2 = Button(100,100,100,100, visual = ColorVisual.PINK)
-
-    // Grids
+    // Assets on screen
     private val prisons : MutableList<PlayerBoard> = mutableListOf()
+    private val prisonBuses : MutableList<BoardPrisonBus> = mutableListOf()
+    private val isolations : MutableList<BoardIsolation> = mutableListOf()
+    private val drawStack = Button(posX = 845, posY = 505,height = 70, width = 70, visual = ImageVisual("tiles/default_drawStack.png"))
+    private val finalStack = Button(posX = 785, posY = 515,height = 50, width = 50, visual = ImageVisual("tiles/default_finalStack.png")).apply{
+        isDisabled = true
+    }
 
     // Camera Pane stuff
     private val targetLayout = Pane<ComponentView>(width = 1920, height = 1080, visual = ColorVisual.RED)
-    private val cameraPane = CameraPane(width = 1920, height = 1080, target = targetLayout, visual = ColorVisual.BLUE).apply {
+    private val cameraPane = CameraPane(width = 1920, height = 1080, target = targetLayout, visual = ColorVisual.DARK_GRAY).apply {
         isHorizontalLocked = false
         isVerticalLocked = false
         isZoomLocked = false
     }
+    private val ownGui = Pane<ComponentView>(width = 130, height = 1080, visual = ColorVisual.DARK_GRAY)
+    private val statGui = Pane<ComponentView>(posX = 1790, width = 130, height = 1080, visual = ColorVisual.DARK_GRAY)
 
 
     init {
@@ -56,12 +64,13 @@ class InGameScene(var rootService: RootService, test: SceneTest) : BoardGameScen
 
             }
         }
-        targetLayout.addAll(
-            testButton
-        )
 
         // Add the cameraPane to the scene
-        addComponents(cameraPane)
+        addComponents(
+            cameraPane,
+            ownGui,
+            statGui
+        )
     }
 
     override fun refreshAfterStartGame() {
@@ -69,31 +78,43 @@ class InGameScene(var rootService: RootService, test: SceneTest) : BoardGameScen
         checkNotNull(game) {"There is no game running"}
         val playerCount = game.players.size
 
+        // Prison Grids and Isolations
         for(i in 0 until playerCount) {
             prisons.add(PlayerBoard(game.players[i]))
+            isolations.add(BoardIsolation(game.players[i].isolation))
         }
-
+        // Prison Busses in Middle
+        for(i in 0 until game.prisonBuses.size) {
+            prisonBuses.add(BoardPrisonBus(game.prisonBuses[i]))
+            prisonBuses[i].posX = (1000 + i*60).toDouble()
+            prisonBuses[i].posY = 540.0
+        }
         if (playerCount == 5) {
             prisons[0].apply{
                 posX = 960.0
                 posY = 850.0
             }
-            prisons[1].apply{
-                posX = 430.0
+            prisons[1].apply {
+                posX = 380.0
                 posY = 540.0
             }
-            prisons[2].apply{
+            prisons[2].apply {
                 posX = 680.0
                 posY = 230.0
             }
-            prisons[3].apply{
+            prisons[3].apply {
                 posX = 1240.0
                 posY = 230.0
             }
-            prisons[4].apply{
-                posX = 1490.0
+            prisons[4].apply {
+                posX = 1540.0
                 posY = 540.0
             }
+        }
+        for(i in 0 until playerCount) {
+            isolations[i].posX = prisons[i].posX
+            isolations[i].posY = prisons[i].posY+180
+
         }
 
         /*
@@ -101,17 +122,19 @@ class InGameScene(var rootService: RootService, test: SceneTest) : BoardGameScen
          */
 
         targetLayout.addAll(prisons)
+        targetLayout.addAll(prisonBuses)
+        targetLayout.addAll(isolations)
+        targetLayout.addAll(drawStack,finalStack)
+        addComponents()
     }
 }
 
 class PlayerBoard(val player: Player) : GridPane<Button>(rows = 21, columns = 21, layoutFromCenter = true) {
 
     var currentGridSize = calculateSize()
-    //var isolation = player.
+    var isolation = player.isolation
 
     init {
-        this.posX = 100.0
-        this.posY = 100.0
         this.spacing = 1.0*currentGridSize
 
         // Iterator for grid
@@ -209,7 +232,7 @@ class PlayerBoard(val player: Player) : GridPane<Button>(rows = 21, columns = 21
     }
 
     /**
-     * Returns the fitting visual for a tile
+     * Returns the fitting visual for a prison tile
      */
     fun tileVisual(tile: PrisonerTile) : ImageVisual {
         return ImageVisual("tiles/${tile.prisonerType}_${tile.prisonerTrait}_tile.png")
@@ -217,6 +240,54 @@ class PlayerBoard(val player: Player) : GridPane<Button>(rows = 21, columns = 21
 
 }
 
+class BoardPrisonBus(val bus : PrisonBus) : GridPane<Button>(rows = 3, columns = 1, layoutFromCenter = true) {
+
+    /**
+     * Fills the bus with tiles
+     */
+    init {
+        this.spacing = 1.0
+        for(i in 0 until bus.tiles.size) {
+            if(bus.tiles[i] == null) {
+                this[0,i] = Button(height = 50, width = 50, visual = ImageVisual("tiles/default_tile.png"))
+            }
+            else if(bus.tiles[i] is GuardTile) {
+                this[0,i] = Button(height = 50, width = 50, visual = ImageVisual("tiles/default_guard.png"))
+            }
+            else this[0,i] = Button(height = 50, width = 50, visual = tileVisual(bus.tiles[i] as PrisonerTile))
+        }
+    }
+
+    /**
+     * Returns the fitting visual for a prison tile
+     */
+    fun tileVisual(tile: PrisonerTile) : ImageVisual {
+        return ImageVisual("tiles/${tile.prisonerType}_${tile.prisonerTrait}_tile.png")
+    }
+}
+
+class BoardIsolation(val isolation : Stack<PrisonerTile>) : GridPane<Button> (rows = 1, columns = 120, layoutFromCenter = true) {
+
+    init {
+        this.spacing = 0.5
+        if (isolation.isNotEmpty()) {
+            for (i in 0 until isolation.size) {
+                if(i == 0) {
+                    this[i, 0] = Button(height = 40, width = 40, visual = tileVisual(isolation[i]))
+                }
+                else {
+                    this[i, 0] = Button(height = 25, width = 25, visual = tileVisual(isolation[i])).apply {
+                        isDisabled = true
+                    }
+                }
+            }
+        }
+    }
+
+    fun tileVisual(tile: PrisonerTile) : ImageVisual {
+        return ImageVisual("tiles/${tile.prisonerType}_${tile.prisonerTrait}_tile.png")
+    }
+}
 /**
  * Below this are methods for testing the IngameScene
  */
@@ -241,6 +312,9 @@ class SceneTest : BoardGameApplication("AquaGhetto"), Refreshable {
         rootService.currentGame?.players?.get(rootService.currentGame!!.currentPlayer)?.apply {
             this.board.setPrisonGrid(2,2,true)
             this.board.setPrisonYard(2,2,PrisonerTile(13,PrisonerTrait.MALE,PrisonerType.RED))
+            for(i in 0..4) {
+                this.isolation.add(PrisonerTile(13, PrisonerTrait.MALE, PrisonerType.RED))
+            }
         }
         gameScene.refreshAfterStartGame()
         showGameScene(gameScene)
