@@ -11,6 +11,7 @@ import entity.tileTypes.PrisonerTile
 import entity.tileTypes.Tile
 import service.RootService
 import service.aiServices.smart.evaluateActions.*
+import java.util.*
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.locks.ReentrantLock
 import kotlin.concurrent.thread
@@ -35,7 +36,7 @@ class SmartAI(val rootService: RootService, val player: Player) {
     val evaluateGamePosition = EvaluateGamePositionService(this)
     val evaluateBestPosition = EvaluateBestPosition(this)
 
-    private val checkLayers = 5
+    private val checkLayers = 4
 
     init {
         require(player.type == PlayerType.AI) {"Player is not an AI"}
@@ -47,7 +48,7 @@ class SmartAI(val rootService: RootService, val player: Player) {
     fun makeTurn(game: AquaGhetto) {
         val startTime = System.currentTimeMillis()
 
-        val action = this.minMax(game, checkLayers)
+        val action = this.minMax(game.clone(), checkLayers)
 
         val endTime = System.currentTimeMillis()
         println("Time: ${endTime - startTime}")
@@ -147,17 +148,13 @@ class SmartAI(val rootService: RootService, val player: Player) {
         }
         for (i in tiles.indices) {
             val tile = tiles[i]
+
+            /*remove tile from bus*/
+            takenBus.tiles[i] = null
+
             if (tile !is PrisonerTile) {
                 println("Found non prisoner tile in bus, this should not happen")
                 continue
-            }
-
-            /*remove tile from bus*/
-            for (j in takenBus.tiles.indices) {
-                if (takenBus.tiles[j] != tile) {
-                    takenBus.tiles[j] = null
-                    break
-                }
             }
 
             val placeCard = aiAction.placeCards[i]
@@ -188,22 +185,21 @@ class SmartAI(val rootService: RootService, val player: Player) {
         count++
 
         if (depth == 0 || checkGameEnd(game)) {
-            return AIAction(false, evaluateGamePosition.evaluateCurrentPosition(game))
+            return AIAction(false, evaluateGamePosition.evaluateCurrentPosition(game, player))
         }
 
         val undoData = this.simulateSetUpNewRound(game)
 
         /*runs the 7 actions parallel*/
         /*
-        if (depth == checkLayers - 0 || depth == checkLayers - 0) {
+        if (depth == checkLayers - 0 || depth == checkLayers - 1) {
             return minMaxNewThread(game, depth)
         }
         */
 
-        /*do not edit maximize!!!*/
         val scoreAddTileToPrisonBus = evaluateAddTileToBus.getScoreAddTileToPrisonBus(game, depth - 1)
         val scoreMoveOwnPrisoner = evaluateMoveOwnPrisoner.getScoreMoveOwnPrisoner(game, depth - 1)
-        val scoreMoveEmployee = evaluateMoveEmployee.getScoreMoveEmployee(game, depth - 1)
+        val scoreMoveEmployee = evaluateMoveEmployee.getScoreMoveEmployee(game, depth - 1, player)
         val scoreBuyPrisoner = evaluateBuyPrisoner.getScoreBuyPrisoner(game, depth - 1)
         val scoreFreePrisoner = evaluateActionFreePrisoner.freePrisoner(game, depth - 1)
         val scoreExpandPrison = evaluateExpandPrison.getScoreExpandPrisonGrid(game, depth - 1)
@@ -251,7 +247,7 @@ class SmartAI(val rootService: RootService, val player: Player) {
             lock.withLock { condition.signal() }
         })
         threads.add(thread {
-            scoreMoveEmployee = evaluateMoveEmployee.getScoreMoveEmployee(game.clone(), depth - 1)
+            scoreMoveEmployee = evaluateMoveEmployee.getScoreMoveEmployee(game.clone(), depth - 1, player)
             lock.withLock { condition.signal() }
         })
         threads.add(thread {

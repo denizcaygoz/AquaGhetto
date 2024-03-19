@@ -1,5 +1,6 @@
 package service.aiServices.smart
 
+import entity.AquaGhetto
 import entity.Player
 import entity.aIActions.PlaceCard
 import entity.enums.PrisonerTrait
@@ -16,11 +17,11 @@ class EvaluateBestPosition(private val smartAI: SmartAI) {
     private val notGreatPositions = mutableListOf(Pair(0,0),Pair(0,1),Pair(1,0))
 
     /*boolean is if players earns a bonus coin*/
-    fun getBestPositions(tileToPlace: PrisonerTile, player: Player): Pair<PlaceCard, Boolean>? {
+    fun getBestPositions(tileToPlace: PrisonerTile, player: Player, game: AquaGhetto): Pair<PlaceCard, Boolean>? {
 
         val tileType = tileToPlace.prisonerType
 
-        val bestLocation = getBestLocationPrisoner(tileToPlace, player) ?: return null
+        val bestLocation = getBestLocationPrisoner(tileToPlace, player, game) ?: return null
 
         var locationFirstEmployee: Pair<Int,Int>? = null
         var locationBaby: Pair<Int,Int>? = null
@@ -40,7 +41,7 @@ class EvaluateBestPosition(private val smartAI: SmartAI) {
         val shouldGetBaby = this.checkBabyNotRemove(player)
         if (shouldGetBaby != null) {
             val babyToPlace = PrisonerTile(-1, PrisonerTrait.BABY, shouldGetBaby.first.prisonerType)
-            val bestBabyLocation = getBestLocationPrisoner(tileToPlace, player)
+            val bestBabyLocation = getBestLocationPrisoner(tileToPlace, player, game)
             if (bestBabyLocation != null) {
 
                 player.board.setPrisonYard(bestBabyLocation.first, bestBabyLocation.second, babyToPlace)
@@ -140,7 +141,7 @@ class EvaluateBestPosition(private val smartAI: SmartAI) {
         return points
     }
 
-    private fun getBestLocationPrisoner(tileToPlace: PrisonerTile, player: Player): Pair<Int,Int>? {
+    private fun getBestLocationPrisoner(tileToPlace: PrisonerTile, player: Player, game: AquaGhetto): Pair<Int,Int>? {
 
         val allValidPositions = mutableListOf<Pair<Pair<Int,Int>, Int>>()
 
@@ -149,10 +150,12 @@ class EvaluateBestPosition(private val smartAI: SmartAI) {
             for (secondIterator in firstIterator.value) {
                 val tile = player.board.getPrisonYard(firstIterator.key, secondIterator.key)
                 if (tile != null) continue
-                if (smartAI.rootService.validationService.validateTilePlacement(tileToPlace,
-                        firstIterator.key, secondIterator.key)) {
-                    allValidPositions.add(Pair(Pair(firstIterator.key, secondIterator.key),
-                        getAdjacentGrid(player, firstIterator.key, secondIterator.key)))
+                val xPos = firstIterator.key
+                val yPos = firstIterator.key
+                val validPlacement = smartAI.rootService.validationService.validateTilePlacement(tileToPlace, xPos, yPos, game)
+                if (validPlacement) {
+                    val pos = Pair(xPos, yPos)
+                    allValidPositions.add(Pair(pos, getAdjacentGrid(player, xPos, yPos)))
                 }
             }
         }

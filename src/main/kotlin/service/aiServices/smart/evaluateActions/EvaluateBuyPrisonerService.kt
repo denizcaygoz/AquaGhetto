@@ -41,7 +41,7 @@ class EvaluateBuyPrisonerService(private val smartAI: SmartAI) {
         player.coins -= 2
         buyFrom.coins += 1
 
-        val pos = smartAI.evaluateBestPosition.getBestPositions(removedTile, player)
+        val pos = smartAI.evaluateBestPosition.getBestPositions(removedTile, player, game)
             ?: return ActionBuyPrisoner(false, 0 , player, PlaceCard(Pair(0,0))) /*don't buy if no valid place*/
 
         val undoData = smartAI.simulatePlacement(pos.first, removedTile, pos.second, player)

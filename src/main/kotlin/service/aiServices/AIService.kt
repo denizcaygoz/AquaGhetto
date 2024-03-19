@@ -56,7 +56,7 @@ class AIService(private val rootService: RootService): AbstractRefreshingService
             }
 
             /*make turn*/
-            serviceAI.makeTurn(game.clone())
+            serviceAI.makeTurn(game)
         }
 
         /*wait until delay is over*/

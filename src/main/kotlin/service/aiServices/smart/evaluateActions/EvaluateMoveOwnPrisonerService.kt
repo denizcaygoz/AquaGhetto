@@ -40,7 +40,7 @@ class EvaluateMoveOwnPrisonerService(private val smartAI: SmartAI) {
         player.coins -= 1
 
         /*don't do anything if no valid place*/
-        val pos = smartAI.evaluateBestPosition.getBestPositions(removedTile, player)
+        val pos = smartAI.evaluateBestPosition.getBestPositions(removedTile, player, game)
             ?: return null
 
         val undoData = smartAI.simulatePlacement(pos.first, removedTile, pos.second, player)

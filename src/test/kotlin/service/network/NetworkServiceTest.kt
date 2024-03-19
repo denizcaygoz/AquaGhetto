@@ -33,12 +33,18 @@ class NetworkServiceTest {
         rootServiceHost = RootService()
         rootServiceGuest = RootService()
 
-        rootServiceHost.networkService.hostGame(NETWORK_SECRET, "Test Host", null)
-        rootServiceHost.waitForState(ConnectionState.WAITING_FOR_GUEST)
-        val sessionID = rootServiceHost.networkService.client?.sessionID
-        assertNotNull(sessionID)
+        val sessionID = rootServiceHost.networkService.createSessionID()
 
-        rootServiceGuest.networkService.joinGame(NETWORK_SECRET, "Test Guest", sessionID)
+        rootServiceHost.networkService.hostGame(ConnectionTest.NETWORK_SECRET, "Test Host", sessionID)
+        rootServiceHost.waitForState(ConnectionState.WAITING_FOR_GUEST)
+
+
+        rootServiceGuest.networkService.joinGame(ConnectionTest.NETWORK_SECRET, "Test Guest", sessionID)
+        rootServiceGuest.waitForState(ConnectionState.WAITING_FOR_INIT)
+
+        rootServiceHost.networkService.startNewHostedGame()
+
+        rootServiceHost.waitForState(ConnectionState.PLAYING_MY_TURN)
         rootServiceGuest.waitForState(ConnectionState.WAITING_FOR_TURN)
     }
 

@@ -3,6 +3,7 @@ package view
 import entity.enums.PlayerType
 import service.RootService
 import tools.aqua.bgw.components.uicomponents.Button
+import tools.aqua.bgw.components.uicomponents.Label
 import tools.aqua.bgw.components.uicomponents.TextField
 import tools.aqua.bgw.core.BoardGameApplication
 import tools.aqua.bgw.core.MenuScene
@@ -68,33 +69,125 @@ class MainMenuScene(rootService : RootService, test:SceneTest3) : MenuScene(), R
                 height = 100,
                 width = 225,
                 text = "Join",
+            )
+            val lobbycodeInputfield = TextField(
+                posX = (1920 / 2)-250,
+                posY = 600,
+                height = 100,
+                width = 225,
+                text = "LobbyCode"
+            ).apply { isVisible = false }
+            val nameGuestInputField = TextField(
+                posX = (1920 / 2) + 25,
+                posY = 600,
+                height = 100,
+                width = 225,
+                text = "Name"
+            ).apply { isVisible = false }
+            val joinButton = Button(
+                posX = (1920 / 2) -250,
+                posY = 750,
+                height = 100,
+                width = 500,
+                text = "Go!"
             ).apply {
+                isVisible = false
                 onMouseClicked = {
+                    val guestName = nameGuestInputField.text
+                    val sessionID = lobbycodeInputfield.text
+                    rootService.networkService.joinGame("aqua24a", guestName, sessionID)
+                    newMultiplayerGameButton.isDisabled = true
+                }
+            }
+
+            val nameHostInputField = TextField(
+                posX = (1920 / 2) -250,
+                posY = 600,
+                height = 100,
+                width = 325,
+                text = "Name"
+            ).apply { isVisible = false }
+            val sessionLabel = Label(
+                posX = (1920 / 2),
+                posY = 550,
+                height = 100,
+                width = 225,
+                text = ""
+            ).apply { isVisible = false }
+            val hostButton = Button(
+                posX = (1920 / 2) -250,
+                posY = 750,
+                height = 100,
+                width = 500,
+                text = "Create Game"
+            ).apply {
+                isVisible = false
+                onMouseClicked = {
+                    rootService.networkService.startNewHostedGame()
+                }
+            }
+            val lobbyButton = Button(
+                posX = (1920 / 2) + 125,
+                posY = 600,
+                height = 100,
+                width = 125,
+                text = "Open Lobby"
+            ).apply {
+                isVisible = false
+                onMouseClicked = {
+                    val hostName = nameHostInputField.text
+                    rootService.networkService.hostGame("aqua24a", hostName, "")
+                    val sessionID = rootService.networkService.createadSessionID
+                    requireNotNull(sessionID) { "No sessionID was created." }
+                    nameHostInputField.isDisabled = true
+                    joinMultiplayerButton.isDisabled = true
+                    newMultiplayerGameButton.isDisabled = true
+                    hostButton.isVisible = true
+                    nameHostInputField.text = "SessionID: "+sessionID
+                    nameHostInputField.width = 500.0
                     this.isVisible = false
-                    this.isFocusable = false
-                    newMultiplayerGameButton.width = 100.0
-                    val lobbycodeInputfield = TextField(
-                        posX = (1920 / 2)-100,
-                        posY = 450,
-                        height = 100,
-                        width = 250,
-                        text = "LobbyCode"
-                    ).apply {
+                }
+            }
+
+            joinMultiplayerButton.apply {
+                onMouseClicked = {
+                    lobbycodeInputfield.isVisible = true
+                    nameGuestInputField.isVisible = true
+                    joinButton.isVisible = true
+                    sessionLabel.isVisible = false
+                    hostButton.isVisible = false
+                    lobbyButton.isVisible = false
+                    nameHostInputField.isVisible = false
+                }
+            }
+
+            newMultiplayerGameButton.apply {
+                onMouseClicked = {
+                    lobbycodeInputfield.isVisible = false
+                    nameGuestInputField.isVisible = false
+                    joinButton.isVisible = false
+                    sessionLabel.isVisible = true
+                    hostButton.isVisible = false
+                    lobbyButton.isVisible = true
+                    nameHostInputField.isVisible = true
+                    nameHostInputField.apply {
                         onMouseClicked = {
                             text = ""
                         }
                     }
-                    val joinButton = Button(
-                        posX = (1920 / 2)+150,
-                        posY = 450,
-                        height = 100,
-                        width = 100,
-                        text = "Go!"
-                    )
-                    addComponents( lobbycodeInputfield , joinButton )
                 }
             }
-        addComponents( newMultiplayerGameButton , joinMultiplayerButton )
+        addComponents(
+            newMultiplayerGameButton,
+            joinMultiplayerButton,
+            nameHostInputField,
+            nameGuestInputField,
+            hostButton,
+            sessionLabel,
+            lobbyButton,
+            lobbycodeInputfield,
+            joinButton
+            )
         }
     }
     

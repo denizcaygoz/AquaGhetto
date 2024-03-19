@@ -151,12 +151,14 @@ class GameService(private val rootService: RootService): AbstractRefreshingServi
             val bus = player.takenBus
             checkNotNull(bus) {"Not all players have taken a bus"}
             game.prisonBuses.add(bus)
-            onAllRefreshables {
-                refreshPrisonBus(bus)
-            }
             player.takenBus = null
         }
+        for (bus in game.prisonBuses) {
+            bus.tiles = Array(3) {null}
+        }
+
         onAllRefreshables {
+            refreshPrisonBus(null)
             refreshAfterNextTurn(game.players[game.currentPlayer])
         }
         this.checkAITurn(game.players[game.currentPlayer], 1500)

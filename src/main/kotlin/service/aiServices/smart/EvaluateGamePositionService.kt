@@ -2,6 +2,7 @@ package service.aiServices.smart
 
 import entity.AquaGhetto
 import entity.Board
+import entity.Player
 import entity.enums.PrisonerTrait
 import entity.enums.PrisonerType
 import entity.tileTypes.PrisonerTile
@@ -9,9 +10,7 @@ import kotlin.math.round
 
 class EvaluateGamePositionService(private val smartAI: SmartAI) {
 
-    fun evaluateCurrentPosition(game: AquaGhetto): Int {
-        val player = game.players[game.currentPlayer]
-
+    fun evaluateCurrentPosition(game: AquaGhetto, player: Player): Int {
         var points = 0
 
         /*get points from all prisoners*/
