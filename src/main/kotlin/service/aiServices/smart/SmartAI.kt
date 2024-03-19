@@ -189,7 +189,7 @@ class SmartAI(val rootService: RootService, val player: Player) {
         count++
 
         if (depth == 0 || checkGameEnd(game)) {
-            return AIAction(false, evaluateGamePosition.evaluateCurrentPosition(game))
+            return AIAction(false, evaluateGamePosition.evaluateCurrentPosition(game, player))
         }
 
         val undoData = this.simulateSetUpNewRound(game)
@@ -203,7 +203,7 @@ class SmartAI(val rootService: RootService, val player: Player) {
 
         val scoreAddTileToPrisonBus = evaluateAddTileToBus.getScoreAddTileToPrisonBus(game, depth - 1)
         val scoreMoveOwnPrisoner = evaluateMoveOwnPrisoner.getScoreMoveOwnPrisoner(game, depth - 1)
-        val scoreMoveEmployee = evaluateMoveEmployee.getScoreMoveEmployee(game, depth - 1)
+        val scoreMoveEmployee = evaluateMoveEmployee.getScoreMoveEmployee(game, depth - 1, player)
         val scoreBuyPrisoner = evaluateBuyPrisoner.getScoreBuyPrisoner(game, depth - 1)
         val scoreFreePrisoner = evaluateActionFreePrisoner.freePrisoner(game, depth - 1)
         val scoreExpandPrison = evaluateExpandPrison.getScoreExpandPrisonGrid(game, depth - 1)
@@ -251,7 +251,7 @@ class SmartAI(val rootService: RootService, val player: Player) {
             lock.withLock { condition.signal() }
         })
         threads.add(thread {
-            scoreMoveEmployee = evaluateMoveEmployee.getScoreMoveEmployee(game.clone(), depth - 1)
+            scoreMoveEmployee = evaluateMoveEmployee.getScoreMoveEmployee(game.clone(), depth - 1, player)
             lock.withLock { condition.signal() }
         })
         threads.add(thread {

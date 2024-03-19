@@ -16,7 +16,7 @@ class EvaluateMoveEmployeeService(private val smartAI: SmartAI) {
      * And we store each possible action in result variable.
      * And we get the action with the highest score.
      */
-    fun getScoreMoveEmployee(game: AquaGhetto, depth: Int): ActionMoveEmployee {
+    fun getScoreMoveEmployee(game: AquaGhetto, depth: Int, evalPlayer: Player): ActionMoveEmployee {
         //TODO maybe bugged?, validate after merge with correct place prisoner implementation
         return ActionMoveEmployee(false, 0, Pair(0,0), Pair(0,0))
 
@@ -30,7 +30,7 @@ class EvaluateMoveEmployeeService(private val smartAI: SmartAI) {
         val validPos = mutableListOf(Pair(-102,-102), Pair(-103,-103), Pair(-104,-104))
         validPos.addAll(player.board.guardPosition)
         for (pos in validPos) {
-            val result = this.checkEmployee(game, depth, pos, player) ?: continue
+            val result = this.checkEmployee(game, depth, pos, player, evalPlayer) ?: continue
             moves.add(result)
         }
 
@@ -44,8 +44,8 @@ class EvaluateMoveEmployeeService(private val smartAI: SmartAI) {
      * finds the best position to place an employee.
      */
     private fun checkEmployee(game: AquaGhetto, depth: Int,
-                              pos: Pair<Int,Int>, player: Player): Triple<Int,Pair<Int,Int>,Pair<Int,Int>>? {
-        val oldScore = smartAI.evaluateGamePosition.evaluateCurrentPosition(game)
+                              pos: Pair<Int,Int>, player: Player, evalPlayer: Player): Triple<Int,Pair<Int,Int>,Pair<Int,Int>>? {
+        val oldScore = smartAI.evaluateGamePosition.evaluateCurrentPosition(game, evalPlayer)
         player.coins -= 1
         removeEmployee(pos.first, pos.second, player)
         val betterPos = smartAI.evaluateBestPosition.getBestLocationEmployee(player)
