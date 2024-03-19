@@ -148,17 +148,13 @@ class SmartAI(val rootService: RootService, val player: Player) {
         }
         for (i in tiles.indices) {
             val tile = tiles[i]
+
+            /*remove tile from bus*/
+            takenBus.tiles[i] = null
+
             if (tile !is PrisonerTile) {
                 println("Found non prisoner tile in bus, this should not happen")
                 continue
-            }
-
-            /*remove tile from bus*/
-            for (j in takenBus.tiles.indices) {
-                if (takenBus.tiles[j] != tile) {
-                    takenBus.tiles[j] = null
-                    break
-                }
             }
 
             val placeCard = aiAction.placeCards[i]

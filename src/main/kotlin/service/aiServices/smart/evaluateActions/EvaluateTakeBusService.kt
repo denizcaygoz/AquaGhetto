@@ -47,6 +47,14 @@ class EvaluateTakeBusService(private val smartAI: SmartAI) {
 
         player.takenBus = bus
 
+        /*
+        if (bus.tiles.filterNotNull().size == 3) {
+            if (bus.tiles.filterNotNull().count { it is PrisonerTile && it.id != -10123 } == 3) {
+                println("ABC")
+            }
+        }
+        */
+
         var coins = 0
         val bestPos = mutableListOf<Pair<PrisonerTile, Pair<PlaceCard, Boolean>>>()
         val undoes = mutableListOf<Pair<PrisonerTile, PrisonerTile>?>()
@@ -56,13 +64,13 @@ class EvaluateTakeBusService(private val smartAI: SmartAI) {
             } else if (card is CoinTile) {
                 coins++
             } else if (card is PrisonerTile) {
-                val pos = smartAI.evaluateBestPosition.getBestPositions(card, player)
+                val pos = smartAI.evaluateBestPosition.getBestPositions(card, player, game)
                 if (pos != null) {
                     undoes.add(smartAI.simulatePlacement(pos.first, card, pos.second, player))
                     bestPos.add(Pair(card, Pair(pos.first, pos.second)))
                 } else {
-                    undoes.add(smartAI.simulatePlacement(PlaceCard(Pair(-101,-101)), card, false, player))
-                    bestPos.add(Pair(card, Pair(PlaceCard(Pair(-101,-101)), false)))
+                    undoes.add(smartAI.simulatePlacement(PlaceCard(Pair(-100,-100)), card, false, player))
+                    bestPos.add(Pair(card, Pair(PlaceCard(Pair(-100,-100)), false)))
                 }
             }
         }

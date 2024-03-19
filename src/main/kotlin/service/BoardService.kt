@@ -7,6 +7,7 @@ import entity.tileTypes.CoinTile
 import entity.tileTypes.PrisonerTile
 import entity.tileTypes.Tile
 import java.util.Stack
+import kotlin.random.Random
 
 /**
  * Service layer class that provides basic functions related to some board elements, like creating
@@ -69,7 +70,7 @@ class BoardService(private val rootService: RootService): AbstractRefreshingServ
         }
         game.allTiles.removeAll(toRemove)
 
-        tilesInGame.shuffle()
+        tilesInGame.shuffle(Random(2)) //TODO remove static seed, only for testing
 
         val finalStack = Stack<Tile>()
         finalStack.addAll(tilesInGame.reversed().subList(0 , 15))

@@ -1,5 +1,6 @@
 package service
 
+import entity.AquaGhetto
 import entity.Board
 import entity.Player
 import entity.enums.PrisonerType
@@ -26,7 +27,20 @@ class ValidationService(private val rootService: RootService): AbstractRefreshin
     fun validateTilePlacement(tile: PrisonerTile, x: Int, y: Int): Boolean {
         val game = rootService.currentGame
         checkNotNull(game) { "No running game." }
+        return this.validateTilePlacement(tile, x, y, game)
+    }
 
+    /**
+     * Validates if a card is allowed to be placed at a specific location
+     *
+     * @param x the x-coordinate to place the tile onto
+     * @param y the y-coordinate to place the tile onto
+     * @param tile the tile to place
+     * @param game the instance of AquaGhetto
+     * @return if this location is valid
+     * @throws IllegalStateException if there is no running game
+     */
+    fun validateTilePlacement(tile: PrisonerTile, x: Int, y: Int, game: AquaGhetto): Boolean {
         val player = game.players[game.currentPlayer]
         val board = player.board
 
