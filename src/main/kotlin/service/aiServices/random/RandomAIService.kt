@@ -37,7 +37,7 @@ class RandomAIService(rootService: RootService) {
             canPlaceTile.isNotEmpty(),
             randomAICheckValidService.canMoveOwnPrisoner(player),
             randomAICheckValidService.canMoveEmployee(player),
-            canBuyOtherPrisoners.isNotEmpty(),
+            canBuyOtherPrisoners.toList().isNotEmpty(),
             randomAICheckValidService.canFreeOwnPrisoner(player),
             randomAICheckValidService.canBuyExpansion(player),
             canTakeBuses.isNotEmpty()
@@ -49,7 +49,7 @@ class RandomAIService(rootService: RootService) {
         /*wait until delay is over*/
         val endTime = System.currentTimeMillis()
         Thread.sleep(Integer.max((delay) - (endTime - startTime).toInt() , 0).toLong())
-
+        println("random ai action: $option")
         when (option) {
             0 -> { /*place tile on prison bus*/
                 randomAIActionService.addTileToPrisonBus(canPlaceTile.toList())

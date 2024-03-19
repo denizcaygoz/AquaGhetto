@@ -37,7 +37,7 @@ class SmartAI(val rootService: RootService, var player: Player, val playerIndex:
     val evaluateGamePosition = EvaluateGamePositionService(this)
     val evaluateBestPosition = EvaluateBestPosition(this)
 
-    private val checkLayers = 3
+    private val checkLayers = 4
 
     init {
         require(player.type == PlayerType.AI) {"Player is not an AI"}
@@ -378,7 +378,7 @@ class SmartAI(val rootService: RootService, var player: Player, val playerIndex:
             /*If there is no place in prison area to place the bonus baby,
             * then bonus card goes to isolation.*/
             rootService.playerActionService.placePrisoner(bonusBaby, -100,-100)
-            println("Error AI action did not matched bonus Card 1")
+            println("Error AI action did not matched bonus Card 1") //TODO sometimes no baby location, why?
         } else if (bonusBaby == null && bonusLocation != null) {
             /*do nothing I guess*/
             println("Error AI action did not matched bonus Card 2")

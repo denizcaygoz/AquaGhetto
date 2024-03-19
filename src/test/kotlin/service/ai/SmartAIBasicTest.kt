@@ -16,7 +16,7 @@ class SmartAIBasicTest {
     fun testForError() {
         val rootService = RootService()
         val players = mutableListOf(
-            Pair("P1", PlayerType.AI),
+            Pair("P1", PlayerType.RANDOM_AI),
             Pair("P2", PlayerType.AI)
         )
 

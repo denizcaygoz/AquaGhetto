@@ -100,7 +100,7 @@ class RandomAICheckValidService(private val rootService: RootService) {
         if (player.coins < 2) return mutableSetOf()
         val hasTileInIsolation = mutableSetOf<Player>()
         for (otherPlayer in game.players) {
-            if (otherPlayer == player) continue
+            if (otherPlayer == player || otherPlayer.name == player.name) continue
             if (otherPlayer.isolation.isNotEmpty()) hasTileInIsolation.add(player)
         }
         return  hasTileInIsolation
@@ -121,6 +121,7 @@ class RandomAICheckValidService(private val rootService: RootService) {
                 if (valid) result.add(Pair(xIterator.key, yIterator.key))
             }
         }
+        result.add(Pair(-100,-100))
         return result
     }
 
@@ -134,6 +135,7 @@ class RandomAICheckValidService(private val rootService: RootService) {
     fun canMoveOwnPrisoner(player: Player): Boolean {
         if (player.takenBus != null) return false
         if (player.isolation.isEmpty()) return false
+        if (player.coins < 1) return false
         return this.validPlaces(player.isolation.peek() , player).isNotEmpty()
     }
 
