@@ -29,9 +29,9 @@ class ScoreboardScene (val rootService : RootService) : MenuScene(1920, 1080) , 
         )
         return playerLabel
     }
-    private fun createPrisonYard(player : Player) : PlayerBoard
+    private fun createPrisonYard(player : Player) : InGameScene.PlayerBoard
     {
-        return PlayerBoard(player, rootService)
+        return InGameScene.PlayerBoard(player, rootService)
     }
 
     val backToMenuButton = Button(
