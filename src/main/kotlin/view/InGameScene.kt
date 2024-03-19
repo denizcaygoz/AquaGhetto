@@ -4,6 +4,8 @@ import entity.Player
 import entity.enums.PlayerType
 import entity.enums.PrisonerTrait
 import entity.enums.PrisonerType
+import entity.tileTypes.PrisonerTile
+import entity.tileTypes.Tile
 import service.RootService
 import tools.aqua.bgw.core.BoardGameApplication
 import tools.aqua.bgw.core.BoardGameScene
@@ -94,19 +96,23 @@ class InGameScene(var rootService: RootService, test: SceneTest) : BoardGameScen
             }
         }
 
+        /*
+        PLAYER POSITIONING FOR ALL PLAYER COUNTS TO BE ADDED
+         */
+
         targetLayout.addAll(prisons)
     }
 }
 
 class PlayerBoard(val player: Player) : GridPane<Button>(rows = 21, columns = 21, layoutFromCenter = true) {
 
-    // Size of the whole grid,
     var currentGridSize = calculateSize()
+    //var isolation = player.
 
     init {
         this.posX = 100.0
         this.posY = 100.0
-        this.spacing = 1.0
+        this.spacing = 1.0*currentGridSize
 
         // Iterator for grid
         val gridIterator = player.board.getPrisonGridIterator()
@@ -119,7 +125,7 @@ class PlayerBoard(val player: Player) : GridPane<Button>(rows = 21, columns = 21
                 if(floor) {
                     val tempX = coordsToView(x,y).first
                     val tempY = coordsToView(x,y).second
-                    this[tempX, tempY] = Button(height = 50*currentGridSize, width = 50*currentGridSize, visual = Visual.EMPTY).apply{
+                    this[tempX, tempY] = Button(height = 50*currentGridSize, width = 50*currentGridSize).apply{
                         this.visual = ImageVisual("tiles/default_tile.png")
                     }
                 }
@@ -136,7 +142,7 @@ class PlayerBoard(val player: Player) : GridPane<Button>(rows = 21, columns = 21
                 val slot = this[coordsToView(x,y).first, coordsToView(x,y).second]
                 checkNotNull(slot) {"There is no Yard at the given coordinates x:$x and y: $y (View cords)"}
                 slot.apply{
-                    this.visual = ImageVisual("tiles/default_tile.png")
+                    this.visual = tileVisual(player.board.getPrisonYard(x,y) as PrisonerTile)
                 }
             }
         }
@@ -205,8 +211,8 @@ class PlayerBoard(val player: Player) : GridPane<Button>(rows = 21, columns = 21
     /**
      * Returns the fitting visual for a tile
      */
-    fun tileType(prisonerType: PrisonerType, prisonerTrait: PrisonerTrait) : ImageVisual {
-        return ImageVisual("tiles/${prisonerType}_${prisonerTrait}_tile.png")
+    fun tileVisual(tile: PrisonerTile) : ImageVisual {
+        return ImageVisual("tiles/${tile.prisonerType}_${tile.prisonerTrait}_tile.png")
     }
 
 }
@@ -231,6 +237,11 @@ class SceneTest : BoardGameApplication("AquaGhetto"), Refreshable {
             Pair("Moin2", PlayerType.PLAYER),
             Pair("Moin3", PlayerType.PLAYER),
             Pair("Moin4", PlayerType.PLAYER)))
+
+        rootService.currentGame?.players?.get(rootService.currentGame!!.currentPlayer)?.apply {
+            this.board.setPrisonGrid(2,2,true)
+            this.board.setPrisonYard(2,2,PrisonerTile(13,PrisonerTrait.MALE,PrisonerType.RED))
+        }
         gameScene.refreshAfterStartGame()
         showGameScene(gameScene)
     }
