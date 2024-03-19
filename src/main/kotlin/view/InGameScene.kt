@@ -114,7 +114,6 @@ class InGameScene(var rootService: RootService, test: SceneTest) : BoardGameScen
         for(i in 0 until playerCount) {
             isolations[i].posX = prisons[i].posX
             isolations[i].posY = prisons[i].posY+180
-
         }
 
         /*
@@ -125,14 +124,12 @@ class InGameScene(var rootService: RootService, test: SceneTest) : BoardGameScen
         targetLayout.addAll(prisonBuses)
         targetLayout.addAll(isolations)
         targetLayout.addAll(drawStack,finalStack)
-        addComponents()
     }
 }
 
 class PlayerBoard(val player: Player) : GridPane<Button>(rows = 21, columns = 21, layoutFromCenter = true) {
 
     var currentGridSize = calculateSize()
-    var isolation = player.isolation
 
     init {
         this.spacing = 1.0*currentGridSize
@@ -169,6 +166,25 @@ class PlayerBoard(val player: Player) : GridPane<Button>(rows = 21, columns = 21
                 }
             }
         }
+        var tempX = coordsToView(0,0).first
+        var tempY = coordsToView(0,0).second
+        this[tempX,tempY] = Button(height = 50*currentGridSize, width = 50*currentGridSize).apply {
+            this.visual = ImageVisual("tiles/no_tile.png")
+            this.isDisabled = true
+        }
+        tempX = coordsToView(1,0).first
+        tempY = coordsToView(1,0).second
+        this[tempX,tempY] = Button(height = 50*currentGridSize, width = 50*currentGridSize).apply {
+            this.visual = ImageVisual("tiles/no_tile.png")
+            this.isDisabled = true
+        }
+        tempX = coordsToView(0,1).first
+        tempY = coordsToView(0,1).second
+        this[tempX,tempY] = Button(height = 50*currentGridSize, width = 50*currentGridSize).apply {
+            this.visual = ImageVisual("tiles/no_tile.png")
+            this.isDisabled = true
+        }
+
 
     }
 
