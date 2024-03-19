@@ -5,8 +5,13 @@ import org.junit.jupiter.api.assertDoesNotThrow
 import service.RootService
 import kotlin.test.Test
 
+/**
+ * Test class for evaluating basic functionalities of Smart AI.
+ */
 class SmartAIBasicTest {
-
+    /**
+     * Test for ensuring no errors occur during AI initialization.
+     */
     @Test
     fun testForError() {
         val rootService = RootService()
