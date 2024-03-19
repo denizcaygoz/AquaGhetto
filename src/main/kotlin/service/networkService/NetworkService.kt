@@ -9,9 +9,8 @@ import service.AbstractRefreshingService
 import service.RootService
 import entity.AquaGhetto
 import entity.enums.PlayerType
-import entity.tileTypes.CoinTile
-import entity.tileTypes.GuardTile
 import java.util.*
+import kotlin.random.Random
 
 /**
  * Service layer class that realizes the necessary logic for sending and receiving messages
@@ -43,6 +42,13 @@ class NetworkService(private val rootService: RootService): AbstractRefreshingSe
     val prisoners: MutableList<Triple<Int, Int, Int>> = mutableListOf()
     val children: MutableList<Triple<Int, Int, PrisonerTile>> = mutableListOf()
     val workers: MutableList<Pair<Int, Int>> = mutableListOf()
+
+    /**
+     * list of players that joined the game and the name of host
+     **/
+    val playersJoined: MutableList<String> = mutableListOf()
+    var hostPlayer: String? = null
+    var createadSessionID: String? = null
 
     /**
      * Connects to server, sets the [NetworkService.client] if successful and returns `true` on success.
@@ -103,26 +109,24 @@ class NetworkService(private val rootService: RootService): AbstractRefreshingSe
      *
      * @throws IllegalStateException if [connectionState] != [ConnectionState.WAITING_FOR_GUEST]
      */
-    fun startNewHostedGame(hostPlayerName: String, guestPlayers: MutableList<String>) {
+    fun startNewHostedGame() {
         check(connectionState == ConnectionState.WAITING_FOR_GUEST)
         { "currently not prepared to start a new hosted game." }
 
         val players: MutableList<Pair<String, PlayerType>> = mutableListOf()
         val messagePlayerList: MutableList<String> = mutableListOf()
         val drawStackList: MutableList<Int> = mutableListOf()
+        val hostPlayerName: String? = hostPlayer
+
+        checkNotNull(hostPlayerName)
 
         /**Add hostPlayer to playersList and to messagePlayerList **/
         players.add(Pair(hostPlayerName, PlayerType.PLAYER))
         messagePlayerList.add(hostPlayerName)
 
         /**Add guestPlayers to players and to messagePlayerList **/
-        guestPlayers.forEach { playerName ->
-            if (playerName == hostPlayerName) {
-                players.add(Pair(playerName, PlayerType.NETWORK))
-            } else {
-                players.add(Pair(playerName, PlayerType.PLAYER))
-            }
-
+        playersJoined.forEach { playerName ->
+            players.add(Pair(playerName, PlayerType.NETWORK))
             messagePlayerList.add(playerName)
         }
 
@@ -140,7 +144,7 @@ class NetworkService(private val rootService: RootService): AbstractRefreshingSe
         drawStack.addAll(game.drawStack)
         drawStack.addAll(game.finalStack)
 
-        drawStack.forEachIndexed { index, tile -> drawStackList.add(tile.id) }
+        drawStack.forEach { tile -> drawStackList.add(tile.id) }
 
         val message = InitGameMessage(
             messagePlayerList.toList(),
@@ -148,8 +152,12 @@ class NetworkService(private val rootService: RootService): AbstractRefreshingSe
         )
 
         when(currentPlayer.name) {
-            hostPlayerName -> updateConnectionState(ConnectionState.PLAYING_MY_TURN)
-            else -> updateConnectionState(ConnectionState.WAITING_FOR_TURN)
+            hostPlayerName -> {
+                updateConnectionState(ConnectionState.PLAYING_MY_TURN)
+            }
+            else -> {
+                updateConnectionState(ConnectionState.WAITING_FOR_TURN)
+            }
         }
 
         client?.sendGameActionMessage(message)
@@ -220,8 +228,12 @@ class NetworkService(private val rootService: RootService): AbstractRefreshingSe
         game.prisonBuses = rootService.boardService.createPrisonBuses(playerList.size)
 
         when(currentPlayer.name) {
-            sender -> updateConnectionState(ConnectionState.PLAYING_MY_TURN)
-            else -> updateConnectionState(ConnectionState.WAITING_FOR_TURN)
+            sender -> {
+                updateConnectionState(ConnectionState.PLAYING_MY_TURN)
+            }
+            else -> {
+                updateConnectionState(ConnectionState.WAITING_FOR_TURN)
+            }
         }
 
         onAllRefreshables {
@@ -250,6 +262,9 @@ class NetworkService(private val rootService: RootService): AbstractRefreshingSe
         updateConnectionState(ConnectionState.WAITING_FOR_JOIN_CONFIRMATION)
     }
 
+    fun createSessionID(): String {
+        return "aquaghetto"+ Random.nextInt(1000)
+    }
 
     /**
      * Connects to server and creates a new game session.
@@ -266,11 +281,16 @@ class NetworkService(private val rootService: RootService): AbstractRefreshingSe
         }
         updateConnectionState(ConnectionState.CONNECTED)
 
+        createadSessionID = createSessionID()
+        val newSessionID: String = createadSessionID as String
+
         if (sessionID.isNullOrBlank()) {
-            client?.createGame(GAME_ID, "Welcome!")
+            client?.createGame(GAME_ID, newSessionID,"Welcome!", )
         } else {
             client?.createGame(GAME_ID, sessionID, "Welcome!")
         }
+
+        hostPlayer = name
         updateConnectionState(ConnectionState.WAITING_FOR_HOST_CONFIRMATION)
     }
 
@@ -618,17 +638,15 @@ class NetworkService(private val rootService: RootService): AbstractRefreshingSe
         val srcWorker: WorkerTriple = message.start
         val destWorker: WorkerTriple = message.destination
 
-        var source: Pair<Int, Int> = Pair(0, 0)
-        var dest: Pair<Int, Int> = Pair(0, 0)
         /** map src jobEnum to our magic numbers **/
-        source = when(srcWorker.jobEnum) {
+        val source = when(srcWorker.jobEnum) {
             JobEnum.MANAGER -> { Pair(-102, -102) }
             JobEnum.CASHIER -> { Pair(-103, -103) }
             JobEnum.KEEPER -> { Pair(-104, -104) }
             JobEnum.TRAINER -> { Pair(srcWorker.x, srcWorker.y) }
         }
         /** map dest jobEnum to our magic numbers **/
-        dest = when(destWorker.jobEnum) {
+        val dest = when(destWorker.jobEnum) {
             JobEnum.MANAGER -> { Pair(-102, -102) }
             JobEnum.CASHIER -> { Pair(-103, -103) }
             JobEnum.KEEPER -> {Pair(-104, -104) }
@@ -800,6 +818,8 @@ class NetworkService(private val rootService: RootService): AbstractRefreshingSe
      * - third -> guard tile
      **/
     fun increaseWorkers(worker: Pair<Int, Int>) { workers.add(worker) }
+
+    fun increasePlayersJoined(player: String) { playersJoined.add(player) }
 
     /**
      * [resetLists] resets all network list.
