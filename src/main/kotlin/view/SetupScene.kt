@@ -33,14 +33,16 @@ class SetupScene (rootService : RootService, test: SceneTest2) : MenuScene(1920 
      * CheckBox changes its state upon click
      *  ToggleButton might be suited better
      */
-    val testCheck = CheckBox(posX = 100, posY = 100,text = "Random order?" ).apply {
+    val testCheck = ToggleButton(posX = ((1920/2)-100), posY = (1080-200),text = "Normal Order", width = 400, ).apply {
         onMouseClicked = {
-            this.isChecked = !this.isChecked
+            //this.isSelected = !this.isSelected
+            if(this.isSelected){ text = "Random Order"}
+            else{ text = "Normal Order" }
         }
     }
 
     /*Grid to Display PlayerCards*/
-    private val playerGrid: GridPane<UIComponent> = GridPane(posX = 600, posY =450, columns = 3, rows = 5)
+    private val playerGrid: GridPane<UIComponent> = GridPane(posX = 600, posY =450, columns = 3, rows = 5, spacing = 25)
 
     /**
      * Creates a TextField were the User can Input a PlayerName
@@ -51,11 +53,10 @@ class SetupScene (rootService : RootService, test: SceneTest2) : MenuScene(1920 
         val textField = TextField(
             posY = 0,
             posX = 100,
-            width = 500,
+            width = 300,
             height = 50,
-            font = Font(40 , Color.WHITE ),
+            font = Font(20 , Color.BLACK ),
             text = textInput,
-            prompt = "PlayaNameHereUwU"
         ).apply {
             /*Check if Startnewgame should be disabled with every Keypress
             * StartNewGameButton is Enabled from the Start so Going with Default Names works*/
@@ -85,10 +86,10 @@ class SetupScene (rootService : RootService, test: SceneTest2) : MenuScene(1920 
             height = 50,
             text = "add",
             alignment = Alignment.CENTER,
-            visual = ImageVisual("Test.png")
+            //visual = ImageVisual("Test.png")
         ).apply {
             onMouseClicked = {
-                playerGrid[ 0 , position ] = createPlayerInputfield("Player$position")
+                playerGrid[ 0 , position ] = createPlayerInputfield("Player${position+1}")
                 playerGrid[ 1 , position ] = createPlayerTypeSelector()
                 playerGrid[ 2 , position ] = createRemovePlayerButton(position)
             }
@@ -103,13 +104,13 @@ class SetupScene (rootService : RootService, test: SceneTest2) : MenuScene(1920 
      */
     private fun createRemovePlayerButton(position: Int): Button {
         val removeButton = Button(
-            posX = 100,
+            posX = 0,
             posY = 0    ,
             width = 50,
             height = 50,
             text = "remove",
             alignment = Alignment.CENTER_LEFT ,
-            visual = ImageVisual("Test.png"),
+            //visual = ImageVisual("Test.png"),
         ).apply {
             onMouseClicked = {
                 //remove
@@ -133,14 +134,14 @@ class SetupScene (rootService : RootService, test: SceneTest2) : MenuScene(1920 
      */
     private fun createPlayerTypeSelector() : Button {
         val typeSelector = Button (
-            posX = 100,
+            posX = 0,
             posY = 0,
             width = 50,
             height = 50,
             text = "PLAYER",
             font = Font(size = 0),
             alignment = Alignment.CENTER,
-            visual = ImageVisual("PLAYER.png"),
+            //visual = ImageVisual("PLAYER.png"),
         ).apply {
             /*Unsure if we should be able to swap a Player to a Network Player
             * Network case can be removed in that case*/
@@ -168,10 +169,10 @@ class SetupScene (rootService : RootService, test: SceneTest2) : MenuScene(1920 
         width = 200,
         text = "Start New Game",
         alignment = Alignment.CENTER,
-        visual = ImageVisual("Test.png"),
+        visual = ColorVisual(Color.YELLOW)
     ).apply {
         onMouseClicked = {
-            rootService.gameService.startNewGame(getPlayerList(testCheck.isChecked))
+            rootService.gameService.startNewGame(getPlayerList(testCheck.isSelected))
         }
     }
 
@@ -242,9 +243,13 @@ class SetupScene (rootService : RootService, test: SceneTest2) : MenuScene(1920 
         addComponents(
             testCheck,
             playerGrid,
+            startNewGameButton,
         )
-        playerGrid.setRowHeights(100)
-        playerGrid.setCenterMode(Alignment.CENTER_LEFT)
+        playerGrid.setColumnWidth(0, 300)
+        playerGrid.setColumnWidth(1, 50)
+        playerGrid.setColumnWidth(2, 50)
+        playerGrid.setCenterMode(Alignment.CENTER)
+
 
         playerGrid[0,0] = createPlayerInputfield("Player1")
         playerGrid[0,1] = createPlayerInputfield("Player2")
