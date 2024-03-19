@@ -40,7 +40,7 @@ class ConnectionTest {
         rootServiceGuest.waitForState(ConnectionState.WAITING_FOR_TURN)
     }
 
-    fun initMultipleConnections() {
+    private fun initMultipleConnections() {
         rootServiceHost = RootService()
         rootServiceGuest = RootService()
         rootServiceAnotherGuest = RootService()
