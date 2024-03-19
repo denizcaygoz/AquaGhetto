@@ -16,7 +16,13 @@ import tools.aqua.bgw.core.MenuScene
  */
 class PauseMenuScene (rootService : RootService) : MenuScene(1920,1080), Refreshable{
 
-    private val pauseGrid = GridPane<ComponentView>( (1920/2)-250 , (1080/2)-300 , 3 , 2)
+    private val pauseGrid = GridPane<ComponentView>(
+        (1920/2)-250 ,
+        (1080/2)-300 ,
+        3 ,
+        2 ,
+        spacing = 100,
+    )
 
     /*Action Handling is currently in AquaGhettoApplication*/
     val resumeGameButton = Button(width = 450, height = 100, text = "Resume Game")
@@ -43,7 +49,7 @@ class PauseMenuScene (rootService : RootService) : MenuScene(1920,1080), Refresh
 
     init {
         pauseGrid.setRowHeights(50)
-        pauseGrid.setCenterMode(Alignment.CENTER_LEFT)
+        pauseGrid.setCenterMode(Alignment.CENTER)
         pauseGrid.setCellCenterMode(0 , 0 ,  Alignment.TOP_CENTER)
 
         /*Not sure if resume Button will span both Rows if not needs to be created outside*/

@@ -1,8 +1,10 @@
 package view
 
+import entity.enums.PlayerType
 import service.RootService
 import tools.aqua.bgw.components.uicomponents.Button
 import tools.aqua.bgw.components.uicomponents.TextField
+import tools.aqua.bgw.core.BoardGameApplication
 import tools.aqua.bgw.core.MenuScene
 
 /**
@@ -13,7 +15,7 @@ import tools.aqua.bgw.core.MenuScene
  * Create goes to the setupScene
  * -> Maybe the Create a Game needs a Specialized Scene that Displays the Lobbycode given by Network?
  */
-class MainMenuScene(rootService : RootService) : MenuScene(), Refreshable {
+class MainMenuScene(rootService : RootService, test:SceneTest3) : MenuScene(), Refreshable {
 
     /**
      * Exits the Game
@@ -32,7 +34,7 @@ class MainMenuScene(rootService : RootService) : MenuScene(), Refreshable {
      */
     val newSinglePlayerGameButton = Button(
         posX = (1920 / 2)-250,
-        posY = 500,
+        posY = 300,
         height = 100,
         width = 500,
         text = "Singleplayer"
@@ -45,7 +47,7 @@ class MainMenuScene(rootService : RootService) : MenuScene(), Refreshable {
      */
     val multiplayerButton = Button(
         posX = (1920 / 2)-250,
-        posY = 700,
+        posY = 450,
         height = 100,
         width = 500,
         text = "Multiplayer"
@@ -55,31 +57,38 @@ class MainMenuScene(rootService : RootService) : MenuScene(), Refreshable {
                 this.isFocusable = false
             val newMultiplayerGameButton = Button(
                 posX = (1920 / 2)-250,
-                posY = 700,
+                posY = 450,
                 height = 100,
-                width = 200,
+                width = 225,
                 text = "Create"
             )
             val joinMultiplayerButton = Button(
-                posX = (1920 / 2)+50,
-                posY = 700,
+                posX = (1920 / 2)+25,
+                posY = 450,
                 height = 100,
-                width = 200,
+                width = 225,
                 text = "Join",
             ).apply {
                 onMouseClicked = {
+                    this.isVisible = false
+                    this.isFocusable = false
+                    newMultiplayerGameButton.width = 100.0
                     val lobbycodeInputfield = TextField(
-                        posX = (1920 / 2)+50,
-                        posY = 800,
+                        posX = (1920 / 2)-100,
+                        posY = 450,
                         height = 100,
-                        width = 150,
+                        width = 250,
                         text = "LobbyCode"
-                    )
+                    ).apply {
+                        onMouseClicked = {
+                            text = ""
+                        }
+                    }
                     val joinButton = Button(
-                        posX = (1920 / 2)+50,
-                        posY = 950,
-                        height = 50,
-                        width = 50,
+                        posX = (1920 / 2)+150,
+                        posY = 450,
+                        height = 100,
+                        width = 100,
                         text = "Go!"
                     )
                     addComponents( lobbycodeInputfield , joinButton )
@@ -95,5 +104,21 @@ class MainMenuScene(rootService : RootService) : MenuScene(), Refreshable {
             newSinglePlayerGameButton,
             multiplayerButton,
             )
+    }
+}
+fun main() {
+    val test = SceneTest3()
+    test.show()
+}
+class SceneTest3 : BoardGameApplication("Test") , Refreshable {
+    private val rootService = RootService()
+
+    private val setupScene = MainMenuScene(rootService, this)
+
+    init {
+        rootService.addRefreshables(this,setupScene)
+        rootService.gameService.startNewGame(
+            mutableListOf(Pair("Moin", PlayerType.PLAYER), Pair("Moin2", PlayerType.PLAYER)))
+        this.showMenuScene(setupScene)
     }
 }
