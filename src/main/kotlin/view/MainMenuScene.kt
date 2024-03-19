@@ -46,6 +46,26 @@ class MainMenuScene(rootService : RootService, test:SceneTest3) : MenuScene(), R
      * [newMultiplayerGameButton] to Create a Game
      * [joinMultiplayerButton] to join a Game
      */
+    val hostButton = Button(
+        posX = (1920 / 2) -250,
+        posY = 750,
+        height = 100,
+        width = 500,
+        text = "Create Game"
+    ).apply {
+        isVisible = false
+        onMouseClicked = {
+            rootService.networkService.startNewHostedGame()
+        }
+    }
+    val joinButton = Button(
+        posX = (1920 / 2) -250,
+        posY = 750,
+        height = 100,
+        width = 500,
+        text = "Go!"
+    ).apply { isVisible = false }
+
     val multiplayerButton = Button(
         posX = (1920 / 2)-250,
         posY = 450,
@@ -97,6 +117,7 @@ class MainMenuScene(rootService : RootService, test:SceneTest3) : MenuScene(), R
                     val sessionID = lobbycodeInputfield.text
                     rootService.networkService.joinGame("aqua24a", guestName, sessionID)
                     newMultiplayerGameButton.isDisabled = true
+
                 }
             }
 
@@ -114,7 +135,7 @@ class MainMenuScene(rootService : RootService, test:SceneTest3) : MenuScene(), R
                 width = 225,
                 text = ""
             ).apply { isVisible = false }
-            val hostButton = Button(
+           /* val hostButton = Button(
                 posX = (1920 / 2) -250,
                 posY = 750,
                 height = 100,
@@ -125,7 +146,7 @@ class MainMenuScene(rootService : RootService, test:SceneTest3) : MenuScene(), R
                 onMouseClicked = {
                     rootService.networkService.startNewHostedGame()
                 }
-            }
+            }*/
             val lobbyButton = Button(
                 posX = (1920 / 2) + 125,
                 posY = 600,
