@@ -24,7 +24,7 @@ interface Refreshable {
 
     fun refreshAfterEndGame() {}
 
-    fun refreshPrisonBus(prisonBus: PrisonBus) {}
+    fun refreshPrisonBus(prisonBus: PrisonBus?) {}
 
     fun refreshTileStack(finalStack: Boolean) {}
 
