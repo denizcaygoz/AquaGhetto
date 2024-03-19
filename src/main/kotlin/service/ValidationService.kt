@@ -21,26 +21,13 @@ class ValidationService(private val rootService: RootService): AbstractRefreshin
      * @param x the x-coordinate to place the tile onto
      * @param y the y-coordinate to place the tile onto
      * @param tile the tile to place
-     * @return if this location is valid
-     * @throws IllegalStateException if there is no running game
-     */
-    fun validateTilePlacement(tile: PrisonerTile, x: Int, y: Int): Boolean {
-        val game = rootService.currentGame
-        checkNotNull(game) { "No running game." }
-        return this.validateTilePlacement(tile, x, y, game)
-    }
-
-    /**
-     * Validates if a card is allowed to be placed at a specific location
-     *
-     * @param x the x-coordinate to place the tile onto
-     * @param y the y-coordinate to place the tile onto
-     * @param tile the tile to place
      * @param game the instance of AquaGhetto
      * @return if this location is valid
      * @throws IllegalStateException if there is no running game
      */
-    fun validateTilePlacement(tile: PrisonerTile, x: Int, y: Int, game: AquaGhetto): Boolean {
+    fun validateTilePlacement(tile: PrisonerTile, x: Int, y: Int,
+                              game: AquaGhetto? = rootService.currentGame): Boolean {
+        checkNotNull(game) { "No running game." }
         val player = game.players[game.currentPlayer]
         val board = player.board
 
@@ -110,8 +97,8 @@ class ValidationService(private val rootService: RootService): AbstractRefreshin
      * @return if this location is valid
      * @throws IllegalStateException if there is no running game
      */
-    fun validateExpandPrisonGrid(isBigExtension: Boolean, x: Int, y: Int , rotation: Int): Boolean {
-        val game = rootService.currentGame
+    fun validateExpandPrisonGrid(isBigExtension: Boolean, x: Int, y: Int , rotation: Int,
+                                 game: AquaGhetto? = rootService.currentGame): Boolean {
         checkNotNull(game) { "No running game." }
 
         val player = game.players[game.currentPlayer]
