@@ -15,6 +15,9 @@ class EvaluateBuyPrisonerService(private val smartAI: SmartAI) {
      * prisoner to get the most score.
      */
     fun getScoreBuyPrisoner(game: AquaGhetto, depth: Int): ActionBuyPrisoner {
+        //TODO
+        return ActionBuyPrisoner(false, 0 , game.players[game.currentPlayer], PlaceCard(Pair(0,0)))
+
         val player = game.players[game.currentPlayer]
 
         val actions = mutableListOf<ActionBuyPrisoner>()

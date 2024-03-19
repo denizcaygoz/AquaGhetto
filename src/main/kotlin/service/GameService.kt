@@ -110,7 +110,7 @@ class GameService(private val rootService: RootService): AbstractRefreshingServi
                 onAllRefreshables {
                     refreshAfterNextTurn(game.players[game.currentPlayer])
                 }
-                this.checkAITurn(game.players[game.currentPlayer], 1000)
+                this.checkAITurn(game.players[game.currentPlayer], 50)
             }
             0 -> { /*all players have taken a buss*/
                 if (game.finalStack.size != 15) { /*reserve stack was taken*/
@@ -134,7 +134,7 @@ class GameService(private val rootService: RootService): AbstractRefreshingServi
                 onAllRefreshables {
                     refreshAfterNextTurn(game.players[game.currentPlayer])
                 }
-                this.checkAITurn(game.players[game.currentPlayer], 1000)
+                this.checkAITurn(game.players[game.currentPlayer], 50)
             }
         }
 
@@ -161,7 +161,7 @@ class GameService(private val rootService: RootService): AbstractRefreshingServi
             refreshPrisonBus(null)
             refreshAfterNextTurn(game.players[game.currentPlayer])
         }
-        this.checkAITurn(game.players[game.currentPlayer], 1500)
+        this.checkAITurn(game.players[game.currentPlayer], 50)
     }
 
     /**

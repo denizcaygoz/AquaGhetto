@@ -2,6 +2,7 @@ package service.aiServices.smart
 
 import entity.AquaGhetto
 import entity.Player
+import entity.PrisonBus
 import entity.aIActions.*
 import entity.enums.PlayerType
 import entity.enums.PrisonerTrait
@@ -24,7 +25,7 @@ import kotlin.concurrent.withLock
  * @param rootService instance of the [RootService] for access to other services
  * @param player refers to the AI that uses this class to determine its moves.
  */
-class SmartAI(val rootService: RootService, val player: Player) {
+class SmartAI(val rootService: RootService, val player: Player, val playerIndex: Int) {
 
     private val evaluateActionFreePrisoner = EvaluateFreePrisonerService(this)
     private val evaluateActionTakeBus = EvaluateTakeBusService(this)
@@ -36,7 +37,7 @@ class SmartAI(val rootService: RootService, val player: Player) {
     val evaluateGamePosition = EvaluateGamePositionService(this)
     val evaluateBestPosition = EvaluateBestPosition(this)
 
-    private val checkLayers = 4
+    private val checkLayers = 5
 
     init {
         require(player.type == PlayerType.AI) {"Player is not an AI"}
@@ -45,20 +46,23 @@ class SmartAI(val rootService: RootService, val player: Player) {
     /**
      * Main function that's called. When AI makes a turn.
      */
-    fun makeTurn(game: AquaGhetto) {
+    fun makeTurn(game: AquaGhetto, delay: Int) {
         val startTime = System.currentTimeMillis()
 
-        val action = this.minMax(game.clone(), checkLayers)
+        val action = this.minMax(game, checkLayers)
+        println("${action.validAction}   ${action.score}")
+        println(count)
 
+        /*wait until delay is over*/
         val endTime = System.currentTimeMillis()
         println("Time: ${endTime - startTime}")
+        Thread.sleep(Integer.max((delay) - (endTime - startTime).toInt() , 0).toLong())
 
         if (!action.validAction) {
             println("Found no valid action?")
         } else {
             this.executeAction(game, action)
         }
-        println(count)
     }
 
     /**
@@ -66,6 +70,7 @@ class SmartAI(val rootService: RootService, val player: Player) {
      * Here the action realized.
      */
     private fun executeAction(game: AquaGhetto, aiAction: AIAction) {
+        println("player: $playerIndex")
         when (aiAction) {
             is ActionAddTileToBus -> {
                 val card = rootService.playerActionService.drawCard()
@@ -185,7 +190,7 @@ class SmartAI(val rootService: RootService, val player: Player) {
         count++
 
         if (depth == 0 || checkGameEnd(game)) {
-            return AIAction(false, evaluateGamePosition.evaluateCurrentPosition(game, player))
+            return AIAction(true, evaluateGamePosition.evaluateCurrentPosition(game, game.players[playerIndex]))
         }
 
         val undoData = this.simulateSetUpNewRound(game)
@@ -197,18 +202,19 @@ class SmartAI(val rootService: RootService, val player: Player) {
         }
         */
 
-        val scoreAddTileToPrisonBus = evaluateAddTileToBus.getScoreAddTileToPrisonBus(game, depth - 1)
         val scoreMoveOwnPrisoner = evaluateMoveOwnPrisoner.getScoreMoveOwnPrisoner(game, depth - 1)
-        val scoreMoveEmployee = evaluateMoveEmployee.getScoreMoveEmployee(game, depth - 1, player)
+        val scoreMoveEmployee = evaluateMoveEmployee.getScoreMoveEmployee(game, depth - 1, game.players[playerIndex])
         val scoreBuyPrisoner = evaluateBuyPrisoner.getScoreBuyPrisoner(game, depth - 1)
         val scoreFreePrisoner = evaluateActionFreePrisoner.freePrisoner(game, depth - 1)
         val scoreExpandPrison = evaluateExpandPrison.getScoreExpandPrisonGrid(game, depth - 1)
         val scoreTakeBus = evaluateActionTakeBus.takeBus(game, depth - 1)
+        val scoreAddTileToPrisonBus = evaluateAddTileToBus.getScoreAddTileToPrisonBus(game, depth - 1)
 
         val scoreList = mutableListOf(scoreAddTileToPrisonBus, scoreMoveOwnPrisoner, scoreMoveEmployee,
             scoreBuyPrisoner, scoreFreePrisoner, scoreExpandPrison, scoreTakeBus)
 
         simulateUndoNewRound(game, undoData)
+
 
         val bestAction = this.getBestAction(scoreList)
 
@@ -272,7 +278,7 @@ class SmartAI(val rootService: RootService, val player: Player) {
 
             while ((startTime + 8 * 1000) > System.currentTimeMillis()) {
                 val timeWait = 8000 - (System.currentTimeMillis() - startTime)
-                println(timeWait)
+                //println(timeWait)
                 condition.await(timeWait, TimeUnit.MILLISECONDS)
 
                 if (scoreAddTileToPrisonBus != null &&
@@ -363,7 +369,7 @@ class SmartAI(val rootService: RootService, val player: Player) {
         if (bonusBaby != null && bonusLocation == null) {
             /*If there is no place in prison area to place the bonus baby,
             * then bonus card goes to isolation.*/
-            rootService.playerActionService.placePrisoner(bonusBaby, -101,-101)
+            rootService.playerActionService.placePrisoner(bonusBaby, -100,-100)
             println("Error AI action did not matched bonus")
         } else if (bonusBaby == null && bonusLocation != null) {
             /*do nothing I guess*/
@@ -492,6 +498,12 @@ class SmartAI(val rootService: RootService, val player: Player) {
      */
     fun simulatePlacement(placeCard: PlaceCard, tile: PrisonerTile, coin: Boolean, player: Player): Pair<PrisonerTile, PrisonerTile>?{
         val board = player.board
+
+        if (placeCard.placePrisoner.first == -100) {
+            player.isolation.add(tile)
+            return null
+        }
+
         val returnValue: Pair<PrisonerTile, PrisonerTile>? = null
 
         val prisoner = placeCard.placePrisoner
@@ -520,10 +532,17 @@ class SmartAI(val rootService: RootService, val player: Player) {
         if (placeCard.placeBonusPrisoner != null) {
             val baby = evaluateBestPosition.checkBabyNotRemove(player)
             if (baby != null) {
-                val babyTile = PrisonerTile(-1, PrisonerTrait.BABY, baby.first.prisonerType)
-                board.setPrisonYard(prisoner.first, prisoner.second, babyTile)
-                baby.first.breedable = false
-                baby.second.breedable = false
+                if (placeCard.placeBonusPrisoner.first == -100) {
+                    val babyTile = PrisonerTile(-1, PrisonerTrait.BABY, baby.first.prisonerType)
+                    player.isolation.add(babyTile)
+                    baby.first.breedable = false
+                    baby.second.breedable = false
+                } else {
+                    val babyTile = PrisonerTile(-1, PrisonerTrait.BABY, baby.first.prisonerType)
+                    board.setPrisonYard(placeCard.placeBonusPrisoner.first, placeCard.placeBonusPrisoner.second, babyTile)
+                    baby.first.breedable = false
+                    baby.second.breedable = false
+                }
             } else {
                 println("This should not happen. Baby pos but no baby?")
             }
@@ -560,6 +579,11 @@ class SmartAI(val rootService: RootService, val player: Player) {
      * Used in evaluation classes.
      */
     fun undoSimulatePlacement(placeCard: PlaceCard, coin: Boolean, player: Player, parentTiles: Pair<PrisonerTile, PrisonerTile>?) {
+        if (placeCard.placePrisoner.first == -100) {
+            player.isolation.pop()
+            return
+        }
+
         val board = player.board
 
         val prisoner = placeCard.placePrisoner
@@ -586,9 +610,15 @@ class SmartAI(val rootService: RootService, val player: Player) {
         }
 
         if (placeCard.placeBonusPrisoner != null && parentTiles != null) {
-            board.setPrisonYard(prisoner.first, prisoner.second, null)
-            parentTiles.first.breedable = true
-            parentTiles.second.breedable = true
+            if (placeCard.placeBonusPrisoner.first == -100) {
+                player.isolation.pop()
+                parentTiles.first.breedable = true
+                parentTiles.second.breedable = true
+            } else {
+                board.setPrisonYard(placeCard.placeBonusPrisoner.first, placeCard.placeBonusPrisoner.second, null)
+                parentTiles.first.breedable = true
+                parentTiles.second.breedable = true
+            }
         }
 
         val bonusSecondEmployee = placeCard.firstTileBonusEmployee
@@ -611,7 +641,7 @@ class SmartAI(val rootService: RootService, val player: Player) {
             }
         }
 
-        if (coin) player.coins++
+        if (coin) player.coins--
     }
 
 

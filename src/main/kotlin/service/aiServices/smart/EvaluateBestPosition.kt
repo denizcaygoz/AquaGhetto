@@ -49,11 +49,11 @@ class EvaluateBestPosition(private val smartAI: SmartAI) {
                 if (getEmployeeTwo.second) {
                     locationSecondEmployee = getBestLocationEmployee(player)
                 }
-                if (getEmployeeOne.first) coin = true
+                if (getEmployeeTwo.first) coin = true
                 player.board.setPrisonYard(bestBabyLocation.first, bestBabyLocation.second, null)
 
             } else {
-                locationBaby = Pair(-101,-101)
+                locationBaby = Pair(-100,-100)
             }
         }
 
@@ -151,7 +151,7 @@ class EvaluateBestPosition(private val smartAI: SmartAI) {
                 val tile = player.board.getPrisonYard(firstIterator.key, secondIterator.key)
                 if (tile != null) continue
                 val xPos = firstIterator.key
-                val yPos = firstIterator.key
+                val yPos = secondIterator.key
                 val validPlacement = smartAI.rootService.validationService.validateTilePlacement(tileToPlace, xPos, yPos, game)
                 if (validPlacement) {
                     val pos = Pair(xPos, yPos)

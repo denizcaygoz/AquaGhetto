@@ -15,6 +15,10 @@ class EvaluateMoveOwnPrisonerService(private val smartAI: SmartAI) {
      * by calling forSimulatePlacePrisoner function.
      */
     fun getScoreMoveOwnPrisoner(game: AquaGhetto, depth: Int): ActionMovePrisoner {
+
+        //TODO
+        return ActionMovePrisoner(false, 0, PlaceCard(Pair(0,0)))
+
         val player = game.players[game.currentPlayer]
 
         val action = this.forSimulatePlacePrisoner(game, depth, player)

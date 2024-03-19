@@ -44,7 +44,7 @@ class EvaluateGamePositionService(private val smartAI: SmartAI) {
         for (prisonerTile in player.isolation) {
             isolationPrisonerTypes.add(prisonerTile.prisonerType)
         }
-        points -= toRemovePointsPer * isolationPrisonerTypes.size * 10
+        points -= toRemovePointsPer * isolationPrisonerTypes.size
         /*end of normal points*/
 
         /*special points for the AI*/
@@ -61,7 +61,7 @@ class EvaluateGamePositionService(private val smartAI: SmartAI) {
         points += player.board.guardPosition.size * 2
 
         /*negative points for isolation*/
-        points -= player.isolation.size
+        points -= player.isolation.size * 5
 
         /*bonus points for prison size*/
         points += countSpace(player.board)

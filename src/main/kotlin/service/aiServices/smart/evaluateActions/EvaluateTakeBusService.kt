@@ -18,12 +18,16 @@ class EvaluateTakeBusService(private val smartAI: SmartAI) {
      * simulateTakeBus return the best action with the most point.
      */
     fun takeBus(game: AquaGhetto, depth: Int): ActionTakeBus {
+        val player = game.players[game.currentPlayer]
 
         val bestActions = mutableListOf<ActionTakeBus>()
         for (busIndex in game.prisonBuses.indices) {
-            val action = simulateTakeBus(game, depth, game.players[game.currentPlayer], busIndex)
-            if (!action.validAction) continue
-            bestActions.add(action)
+            val busTiles = game.prisonBuses[busIndex].tiles
+            if (busTiles.any { it != null }) {
+                val action = simulateTakeBus(game, depth, player, busIndex)
+                if (!action.validAction) continue
+                bestActions.add(action)
+            }
         }
 
         if (bestActions.isEmpty()) return ActionTakeBus(false, 0 , 0, mutableListOf())
@@ -39,13 +43,13 @@ class EvaluateTakeBusService(private val smartAI: SmartAI) {
     private fun simulateTakeBus(game: AquaGhetto, depth: Int, player: Player, busIndex: Int): ActionTakeBus {
 
         val bus = game.prisonBuses.removeAt(busIndex)
-
-        if (!bus.tiles.any { it != null }) {
-            game.prisonBuses.add(busIndex, bus)
-            return ActionTakeBus(false, 0 , 0, mutableListOf())
-        }
-
         player.takenBus = bus
+
+        if (bus.tiles.filterNotNull().size == 3) {
+            if (bus.tiles.filterNotNull().count { it is PrisonerTile && it.id != -10123 } == 3) {
+                //println("ABC")
+            }
+        }
 
         var coins = 0
         val bestPos = mutableListOf<Pair<PrisonerTile, Pair<PlaceCard, Boolean>>>()
