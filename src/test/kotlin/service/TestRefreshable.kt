@@ -74,7 +74,7 @@ class TestRefreshable: Refreshable {
     /**
      * [refreshPrisonBus] sets [refreshPrisonBusCalled] to true.
      */
-    override fun refreshPrisonBus(prisonBus: PrisonBus) {
+    override fun refreshPrisonBus(prisonBus: PrisonBus?) {
         refreshPrisonBusCalled = true
     }
 
