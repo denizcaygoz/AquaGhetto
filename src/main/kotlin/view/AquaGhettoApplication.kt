@@ -1,6 +1,5 @@
 package view
 
-/**
 
 import service.RootService
 import tools.aqua.bgw.core.BoardGameApplication
@@ -35,7 +34,7 @@ class AquaGhettoApplication: BoardGameApplication("AquaGhetto"), Refreshable {
         quitButton.onMouseClicked = { exit() }
 
         //This needs to reference the Name of the Button on the MainMenuScene that starts a new Game
-        newSingleplayerGameButton.onMouseClicked = {
+        newSinglePlayerGameButton.onMouseClicked = {
             this@AquaGhettoApplication.showMenuScene(setupScene)
         }
 
@@ -43,7 +42,7 @@ class AquaGhettoApplication: BoardGameApplication("AquaGhetto"), Refreshable {
         * the newMultiplayerGameButton creates a new Game
         * if need be [setupScene] can be duplicated to display the Lobbycode in there
         */
-        newMultiplayerGameButton.onMouseClicked = {
+        hostButton.onMouseClicked = {
             this@AquaGhettoApplication.showMenuScene(setupScene)
         }
 
@@ -60,9 +59,12 @@ class AquaGhettoApplication: BoardGameApplication("AquaGhetto"), Refreshable {
      */
     private val pauseMenuScene = PauseMenuScene(rootService).apply {
         onKeyPressed = {
-            if (it.keyCode.isEscape) { this@AquaGhettoApplication.hideMenuScene(pauseMenuScene) }
-        onMouseClicked = { this@AquaGhettoApplication.hideMenuScene(pauseMenuScene) }
+            if (it.keyCode == KeyCode.ESCAPE) {
+                this@AquaGhettoApplication.hideMenuScene(500 )
+            }
         }
+        resumeGameButton.onMouseClicked = { this@AquaGhettoApplication.hideMenuScene( 500 ) }
+
         //maybe this needs to be coded in the scene and not here?
         undoButton.onMouseClicked = { rootService.gameStatesService.undo() }
         redoButton.onMouseClicked = { rootService.gameStatesService.redo() }
@@ -83,7 +85,12 @@ class AquaGhettoApplication: BoardGameApplication("AquaGhetto"), Refreshable {
     /**
      * The Scene for setting up a new Game
      */
-    private val setupScene = SetupScene(rootService)
+    private val setupScene = SetupScene(rootService).apply {
+        startNewGameButton.onMouseClicked = {
+            this@AquaGhettoApplication.hideMenuScene(500)
+            this@AquaGhettoApplication.showGameScene(inGameScene)
+        }
+    }
 
     init{
         //we dont have a "addRefreshables" function so everything needs to be added individually
@@ -109,5 +116,3 @@ class AquaGhettoApplication: BoardGameApplication("AquaGhetto"), Refreshable {
         this.showMenuScene(scoreboardScene)
     }
 }
-
- */
