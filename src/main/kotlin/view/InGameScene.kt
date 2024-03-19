@@ -56,7 +56,9 @@ class InGameScene(var rootService: RootService, test: SceneTest) : BoardGameScen
     }
 
     init {
-        background = ImageVisual("Test_BackGround_Ingame.png")
+        rootService.addRefreshables(
+            this
+        )
 
         onKeyPressed = { event ->
             if (event.keyCode == KeyCode.A) {
@@ -174,14 +176,11 @@ class InGameScene(var rootService: RootService, test: SceneTest) : BoardGameScen
                 TokenView(height = 50 * prisons[player].currentGridSize, width = 50 * prisons[player].currentGridSize,
                     visual = ImageVisual("tiles/default_tile.png"))
         }
-        else
-        {
+        else {
             prisons[player][coordsToView(x,y).first, coordsToView(x,y).second] =
                 TokenView(height = 50 * prisons[player].currentGridSize, width = 50 * prisons[player].currentGridSize,
                     visual = prisons[player].tileVisual(tile))
         }
-        // Can not be null
-        prisons[player][coordsToView(x,y).first, coordsToView(x,y).second]?.let { targetLayout.add(it) }
 
     }
 }
@@ -456,7 +455,6 @@ class SceneTest : BoardGameApplication("AquaGhetto"), Refreshable {
                 this.isolation.add(PrisonerTile(13, PrisonerTrait.MALE, PrisonerType.RED))
             }
         }
-        gameScene.refreshAfterStartGame()
         showGameScene(gameScene)
     }
 }
