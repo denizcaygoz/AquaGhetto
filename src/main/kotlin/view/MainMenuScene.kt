@@ -16,7 +16,7 @@ import tools.aqua.bgw.core.MenuScene
  * Create goes to the setupScene
  * -> Maybe the Create a Game needs a Specialized Scene that Displays the Lobbycode given by Network?
  */
-class MainMenuScene(rootService : RootService, test:SceneTest3) : MenuScene(), Refreshable {
+class MainMenuScene(rootService : RootService, test:SceneTest3 = SceneTest3()) : MenuScene(), Refreshable {
 
     /**
      * Exits the Game

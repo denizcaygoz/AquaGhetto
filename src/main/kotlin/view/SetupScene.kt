@@ -27,7 +27,7 @@ import javax.imageio.ImageIO
  * Buttons Should know their Position in the Grid due to Parameter Position
  * if this is not the Case text can be used to save position
  */
-class SetupScene (rootService : RootService, test: SceneTest2) : MenuScene(1920 , 1080 ), Refreshable {
+class SetupScene (rootService : RootService, test: SceneTest2 = SceneTest2()) : MenuScene(1920 , 1080 ), Refreshable {
     /**
      * CheckBox that lets the Player toggle on a Random order for the PlayerList
      * CheckBox changes its state upon click

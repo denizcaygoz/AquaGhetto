@@ -26,7 +26,7 @@ import java.awt.Color
 import java.util.*
 import kotlin.math.absoluteValue
 
-class InGameScene(var rootService: RootService, test: SceneTest) : BoardGameScene(1920,1080), Refreshable {
+class InGameScene(var rootService: RootService, test: SceneTest = SceneTest()) : BoardGameScene(1920,1080), Refreshable {
 
     // Assets on screen
     private val prisons: MutableList<PlayerBoard> = mutableListOf()
@@ -64,7 +64,7 @@ class InGameScene(var rootService: RootService, test: SceneTest) : BoardGameScen
 
     // ownGui elements
     var bigExtension =
-        TokenView(height = 100, width = 100, visual = ImageVisual("tiles/big_expansion_tile.png")).apply {
+        TokenView(posY = 10, height = 100, width = 100, visual = ImageVisual("tiles/big_expansion_tile.png")).apply {
             isDraggable = true
             name = "big_extension"
             isDisabled = false
