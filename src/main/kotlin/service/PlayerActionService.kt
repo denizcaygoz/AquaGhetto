@@ -355,7 +355,10 @@ class PlayerActionService(private val rootService: RootService): AbstractRefresh
             refreshScoreStats()
         }
 
-        rootService.gameService.determineNextPlayer(false)
+        /*determine next player is only allowed to be called if this is not a new employee*/
+        if (!(sourceX == sourceY && sourceX == -101)) {
+            rootService.gameService.determineNextPlayer(false)
+        }
     }
 
     /**
