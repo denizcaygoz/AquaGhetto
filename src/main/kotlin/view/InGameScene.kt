@@ -40,15 +40,20 @@ class InGameScene(var rootService: RootService, test: SceneTest) : BoardGameScen
     }
 
     // Camera Pane stuff
-    private val targetLayout = Pane<ComponentView>(width = 1920, height = 1080, visual = ColorVisual.RED)
+    private val targetLayout = Pane<ComponentView>(width = 1920, height = 1080)
     private val cameraPane = CameraPane(width = 1920, height = 1080, target = targetLayout, visual = ColorVisual.DARK_GRAY).apply {
         isHorizontalLocked = false
         isVerticalLocked = false
         isZoomLocked = false
     }
-    private val ownGui = Pane<ComponentView>(width = 130, height = 1080, visual = ColorVisual.DARK_GRAY)
-    private val statGui = Pane<ComponentView>(posX = 1790, width = 130, height = 1080, visual = ColorVisual.DARK_GRAY)
+    private val ownGui = Pane<ComponentView>(width = 130, height = 1080, visual = ColorVisual.LIGHT_GRAY)
+    private val statGui = Pane<ComponentView>(posX = 1790, width = 130, height = 1080, visual = ColorVisual.LIGHT_GRAY)
 
+    // Hud elements
+    val bigExtension = TokenView(height = 100, width = 100, visual = ImageVisual("tiles/big_expansion_tile.png")).apply{
+        isDraggable = true
+        name = "big_extension"
+    }
 
     init {
         background = ImageVisual("Test_BackGround_Ingame.png")
@@ -69,15 +74,16 @@ class InGameScene(var rootService: RootService, test: SceneTest) : BoardGameScen
             }
         }
 
-        drawStack.onMouseClicked = {
-            prisons[0].toggleExpansionSlots()
-        }
-
         // Add the cameraPane to the scene
         addComponents(
             cameraPane,
             ownGui,
             statGui
+        )
+
+        // Add Hug to the scene
+        ownGui.addAll(
+            bigExtension
         )
     }
 
@@ -132,6 +138,14 @@ class InGameScene(var rootService: RootService, test: SceneTest) : BoardGameScen
         targetLayout.addAll(prisonBuses)
         targetLayout.addAll(isolations)
         targetLayout.addAll(drawStack,finalStack)
+
+
+        bigExtension.onMousePressed = {
+            prisons[game.currentPlayer].toggleExpansionSlots()
+        }
+        bigExtension.onMouseReleased = {
+            prisons[game.currentPlayer].toggleExpansionSlots()
+        }
     }
 }
 
@@ -139,12 +153,12 @@ class PlayerBoard(val player: Player) : GridPane<Button>(rows = 21, columns = 21
 
     // Both get patched by calculateSize()
     var currentGridSize = calculateSize()
-    var currentExpansionSlots : MutableList<Int> = mutableListOf()
+    var currentExpansionSlots: MutableList<Int> = mutableListOf()
 
     var expansionSlotsShowed = false
 
     init {
-        this.spacing = 1.0*currentGridSize
+        this.spacing = 1.0 * currentGridSize
 
         // Iterator for grid
         val gridIterator = player.board.getPrisonGridIterator()
@@ -154,10 +168,10 @@ class PlayerBoard(val player: Player) : GridPane<Button>(rows = 21, columns = 21
             val yMap = entry.value
 
             for ((y, floor) in yMap) {
-                if(floor) {
-                    val tempX = coordsToView(x,y).first
-                    val tempY = coordsToView(x,y).second
-                    this[tempX, tempY] = Button(height = 50*currentGridSize, width = 50*currentGridSize).apply{
+                if (floor) {
+                    val tempX = coordsToView(x, y).first
+                    val tempY = coordsToView(x, y).second
+                    this[tempX, tempY] = Button(height = 50 * currentGridSize, width = 50 * currentGridSize).apply {
                         this.visual = ImageVisual("tiles/default_tile.png")
                     }
                 }
@@ -171,28 +185,28 @@ class PlayerBoard(val player: Player) : GridPane<Button>(rows = 21, columns = 21
             val yMap = entry.value
 
             for ((y) in yMap) {
-                val slot = this[coordsToView(x,y).first, coordsToView(x,y).second]
-                checkNotNull(slot) {"There is no Yard at the given coordinates x:$x and y: $y (View cords)"}
-                slot.apply{
-                    this.visual = tileVisual(player.board.getPrisonYard(x,y) as PrisonerTile)
+                val slot = this[coordsToView(x, y).first, coordsToView(x, y).second]
+                checkNotNull(slot) { "There is no Yard at the given coordinates x:$x and y: $y (View cords)" }
+                slot.apply {
+                    this.visual = tileVisual(player.board.getPrisonYard(x, y) as PrisonerTile)
                 }
             }
         }
-        var tempX = coordsToView(0,0).first
-        var tempY = coordsToView(0,0).second
-        this[tempX,tempY] = Button(height = 50*currentGridSize, width = 50*currentGridSize).apply {
+        var tempX = coordsToView(0, 0).first
+        var tempY = coordsToView(0, 0).second
+        this[tempX, tempY] = Button(height = 50 * currentGridSize, width = 50 * currentGridSize).apply {
             this.visual = ImageVisual("tiles/no_tile.png")
             this.isDisabled = true
         }
-        tempX = coordsToView(1,0).first
-        tempY = coordsToView(1,0).second
-        this[tempX,tempY] = Button(height = 50*currentGridSize, width = 50*currentGridSize).apply {
+        tempX = coordsToView(1, 0).first
+        tempY = coordsToView(1, 0).second
+        this[tempX, tempY] = Button(height = 50 * currentGridSize, width = 50 * currentGridSize).apply {
             this.visual = ImageVisual("tiles/no_tile.png")
             this.isDisabled = true
         }
-        tempX = coordsToView(0,1).first
-        tempY = coordsToView(0,1).second
-        this[tempX,tempY] = Button(height = 50*currentGridSize, width = 50*currentGridSize).apply {
+        tempX = coordsToView(0, 1).first
+        tempY = coordsToView(0, 1).second
+        this[tempX, tempY] = Button(height = 50 * currentGridSize, width = 50 * currentGridSize).apply {
             this.visual = ImageVisual("tiles/no_tile.png")
             this.isDisabled = true
         }
@@ -204,16 +218,16 @@ class PlayerBoard(val player: Player) : GridPane<Button>(rows = 21, columns = 21
      * Transforms coordinates from the service layer
      * to view coordinates
      */
-    fun coordsToView(serviceX : Int, serviceY : Int) : Pair<Int,Int>{
-        return Pair(serviceX+10 , -serviceY+10)
+    fun coordsToView(serviceX: Int, serviceY: Int): Pair<Int, Int> {
+        return Pair(serviceX + 10, -serviceY + 10)
     }
 
     /**
      * Transforms coordinates from the view layer
      * to service layer coordinates
      */
-    fun coordsToService(viewX : Int, viewY : Int) : Pair<Int,Int>{
-        return Pair(viewX-10 , -viewY+10)
+    fun coordsToService(viewX: Int, viewY: Int): Pair<Int, Int> {
+        return Pair(viewX - 10, -viewY + 10)
     }
 
     /**
@@ -223,7 +237,7 @@ class PlayerBoard(val player: Player) : GridPane<Button>(rows = 21, columns = 21
      *
      * And adjusts the expansion slots
      */
-    fun calculateSize() : Double {
+    fun calculateSize(): Double {
         // Save the span of the grid first
         var maxX = -20
         var minX = 20
@@ -240,61 +254,85 @@ class PlayerBoard(val player: Player) : GridPane<Button>(rows = 21, columns = 21
             }
         }
         val importantNumber =
-        if ((maxX.absoluteValue-minX.absoluteValue) >= (maxY.absoluteValue-minY.absoluteValue)) {
-            (maxX.absoluteValue-minX.absoluteValue)
-        } else (maxY.absoluteValue-minY.absoluteValue)
+            if ((maxX.absoluteValue - minX.absoluteValue) >= (maxY.absoluteValue - minY.absoluteValue)) {
+                (maxX.absoluteValue - minX.absoluteValue)
+            } else (maxY.absoluteValue - minY.absoluteValue)
 
         // Numbers are not final, just to test
-        if(importantNumber <= 7) {
+        if (importantNumber <= 7) {
             currentGridSize = 1.0
-        }
-        else if(importantNumber <= 9) {
+        } else if (importantNumber <= 9) {
             currentGridSize = 0.8
-        }
-        else {
+        } else {
             currentGridSize = 0.6
         }
 
         // Calculating the border of the new Tile placements
         // minX, maxX, minY, maxY
         currentExpansionSlots = mutableListOf(
-            if(minX-2 >= -10) { minX-2 } else -10,
-            if(maxX+2 <= 10){ maxX+2 } else 10,
-            if(minY-2 >= -10) { minY-2 } else -10,
-            if(maxY+2 <= 10){ maxY+2 } else 10
+            if (minX - 2 >= -10) {
+                minX - 2
+            } else -10,
+            if (maxX + 2 <= 10) {
+                maxX + 2
+            } else 10,
+            if (minY - 2 >= -10) {
+                minY - 2
+            } else -10,
+            if (maxY + 2 <= 10) {
+                maxY + 2
+            } else 10
         )
 
-        minX = if(minX-2 >= -10) { minX-2 } else -10
-        maxX = if(maxX+2 <= 10){ maxX+2 } else 10
-        minY = if(minY-2 >= -10) { minY-2 } else -10
-        maxY = if(maxY+2 <= 10){ maxY+2 } else 10
+        minX = if (minX - 2 >= -10) {
+            minX - 2
+        } else -10
+        maxX = if (maxX + 2 <= 10) {
+            maxX + 2
+        } else 10
+        minY = if (minY - 2 >= -10) {
+            minY - 2
+        } else -10
+        maxY = if (maxY + 2 <= 10) {
+            maxY + 2
+        } else 10
 
-        for(x in minX .. maxX) {
-            for(y in minY .. maxY) {
+        for (x in minX..maxX) {
+            for (y in minY..maxY) {
                 if (!player.board.getPrisonGrid(x, y)) {
-                    this[coordsToView(x,y).first, coordsToView(x,y).second] = Button(height = 50 * currentGridSize, width = 50 * currentGridSize).apply {
-                        this.visual = ImageVisual("tiles/expansion_tile.png")
-                        this.isVisible = false
-                        this.name = "expansion"
-                    }
+                    this[coordsToView(x, y).first, coordsToView(x, y).second] =
+                        Button(height = 50 * currentGridSize, width = 50 * currentGridSize).apply {
+                            this.visual = ImageVisual("tiles/expansion_tile.png")
+                            this.isVisible = false
+                            this.name = "expansion"
+                            this.dropAcceptor = { dragEvent ->
+                                if (dragEvent.draggedComponent.name == "big_extension") {
+                                    is "big_extension" ->
+                                }
+
+
+                            }
                 }
             }
         }
-        return currentGridSize
+    }
+    return currentGridSize
+
     }
 
     fun toggleExpansionSlots() {
         for(x in 0..20) {
-            for(y in 0..20) {
-                val currentButton = this[x,y]
-                if(currentButton != null)
-                if (currentButton.name == "expansion") {
-                    currentButton.apply{
-                        if(this.isVisible) this.isVisible = false
-                        else this.isVisible = true
+            for (y in 0..20) {
+                val currentButton = this[x, y]
+                if (currentButton != null)
+                    if (currentButton.name == "expansion") {
+                        currentButton.apply {
+                            if (this.isVisible) this.isVisible = false
+                            else this.isVisible = true
+                        }
                     }
-                }
             }
+
         }
     }
 
