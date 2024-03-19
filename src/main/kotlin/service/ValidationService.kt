@@ -15,6 +15,12 @@ class ValidationService(private val rootService: RootService): AbstractRefreshin
 
     private val toCheckSurrounding = mutableListOf(Pair(1,0),Pair(-1,0),Pair(0,1),Pair(0,-1))
 
+    fun validateTilePlacement(tile: PrisonerTile, x: Int, y: Int): Boolean {
+        val game = rootService.currentGame
+        checkNotNull(game) { "No running game." }
+        return this.validateTilePlacement(tile, x, y, game)
+    }
+
     /**
      * Validates if a card is allowed to be placed at a specific location
      *
@@ -25,9 +31,7 @@ class ValidationService(private val rootService: RootService): AbstractRefreshin
      * @return if this location is valid
      * @throws IllegalStateException if there is no running game
      */
-    fun validateTilePlacement(tile: PrisonerTile, x: Int, y: Int,
-                              game: AquaGhetto? = rootService.currentGame): Boolean {
-        checkNotNull(game) { "No running game." }
+    fun validateTilePlacement(tile: PrisonerTile, x: Int, y: Int,game: AquaGhetto): Boolean {
         val player = game.players[game.currentPlayer]
         val board = player.board
 
@@ -80,10 +84,12 @@ class ValidationService(private val rootService: RootService): AbstractRefreshin
         }
 
         /*if the player does not own a prisoner of the type, he increases his type count by one*/
-        if (prisonerTypeCount[prisonerType] == 0) {
-            amount++
-        }
+        val amountOfType = prisonerTypeCount[prisonerType] ?: 0
 
+        if (amountOfType > 0) return true /*no new prisoner type*/
+
+        /*new prisoner*/
+        amount++
         return amount <= player.maxPrisonerTypes
     }
 

@@ -173,6 +173,7 @@ class GameService(private val rootService: RootService): AbstractRefreshingServi
      * @see AIService
      */
     private fun checkAITurn(player: Player, delay: Int) {
+        require(player.takenBus == null)
         if (player.type == PlayerType.AI || player.type == PlayerType.RANDOM_AI) {
             rootService.aiService.makeTurn(player , delay)
         }

@@ -53,7 +53,7 @@ class AIService(private val rootService: RootService): AbstractRefreshingService
             }
 
             /*make turn*/
-            serviceAI.makeTurn(game, delay)
+            serviceAI.makeTurn(game, player, delay)
         }
 
     }

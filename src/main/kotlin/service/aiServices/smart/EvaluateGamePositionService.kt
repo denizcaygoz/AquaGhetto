@@ -47,8 +47,9 @@ class EvaluateGamePositionService(private val smartAI: SmartAI) {
         points -= toRemovePointsPer * isolationPrisonerTypes.size
         /*end of normal points*/
 
-        /*special points for the AI*/
 
+        /*special points for the AI*/
+        /*
         /*bonus for coins*/
         if (game.drawStack.size > 2) {
             points += player.coins * 2
@@ -65,6 +66,7 @@ class EvaluateGamePositionService(private val smartAI: SmartAI) {
 
         /*bonus points for prison size*/
         points += countSpace(player.board)
+        */
 
         return points
     }

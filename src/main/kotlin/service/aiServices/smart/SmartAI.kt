@@ -25,7 +25,7 @@ import kotlin.concurrent.withLock
  * @param rootService instance of the [RootService] for access to other services
  * @param player refers to the AI that uses this class to determine its moves.
  */
-class SmartAI(val rootService: RootService, val player: Player, val playerIndex: Int) {
+class SmartAI(val rootService: RootService, var player: Player, val playerIndex: Int) {
 
     private val evaluateActionFreePrisoner = EvaluateFreePrisonerService(this)
     private val evaluateActionTakeBus = EvaluateTakeBusService(this)
@@ -37,7 +37,7 @@ class SmartAI(val rootService: RootService, val player: Player, val playerIndex:
     val evaluateGamePosition = EvaluateGamePositionService(this)
     val evaluateBestPosition = EvaluateBestPosition(this)
 
-    private val checkLayers = 5
+    private val checkLayers = 3
 
     init {
         require(player.type == PlayerType.AI) {"Player is not an AI"}
@@ -46,10 +46,13 @@ class SmartAI(val rootService: RootService, val player: Player, val playerIndex:
     /**
      * Main function that's called. When AI makes a turn.
      */
-    fun makeTurn(game: AquaGhetto, delay: Int) {
+    fun makeTurn(game: AquaGhetto, player: Player, delay: Int) {
+        this.player = player
+        require(player == game.players[game.currentPlayer])
+        require(player.takenBus == null)
         val startTime = System.currentTimeMillis()
 
-        val action = this.minMax(game, checkLayers)
+        val action = this.minMax(game.clone(), checkLayers)
         println("${action.validAction}   ${action.score}")
         println(count)
 
@@ -70,6 +73,11 @@ class SmartAI(val rootService: RootService, val player: Player, val playerIndex:
      * Here the action realized.
      */
     private fun executeAction(game: AquaGhetto, aiAction: AIAction) {
+
+        if (player.takenBus != null) {
+            println("Error")
+        }
+
         println("player: $playerIndex")
         when (aiAction) {
             is ActionAddTileToBus -> {
@@ -370,10 +378,10 @@ class SmartAI(val rootService: RootService, val player: Player, val playerIndex:
             /*If there is no place in prison area to place the bonus baby,
             * then bonus card goes to isolation.*/
             rootService.playerActionService.placePrisoner(bonusBaby, -100,-100)
-            println("Error AI action did not matched bonus")
+            println("Error AI action did not matched bonus Card 1")
         } else if (bonusBaby == null && bonusLocation != null) {
             /*do nothing I guess*/
-            println("Error AI action did not matched bonus")
+            println("Error AI action did not matched bonus Card 2")
         } else if (bonusBaby != null && bonusLocation != null) {
             secondBonus = rootService.playerActionService.placePrisoner(bonusBaby,
                 bonusLocation.first, bonusLocation.second)
