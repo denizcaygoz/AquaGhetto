@@ -35,7 +35,7 @@ class InGameScene(var rootService: RootService, test: SceneTest) : BoardGameScen
     private val drawStack = TokenView(posX = 845, posY = 505,height = 70, width = 70, visual = ImageVisual("tiles/default_drawStack.png")).apply{
         isDraggable = true
     }
-    private val finalStack = Button(posX = 785, posY = 515,height = 50, width = 50, visual = ImageVisual("tiles/default_finalStack.png")).apply{
+    private val finalStack = TokenView(posX = 785, posY = 515,height = 50, width = 50, visual = ImageVisual("tiles/default_finalStack.png")).apply{
         isDisabled = true
     }
 
@@ -87,6 +87,22 @@ class InGameScene(var rootService: RootService, test: SceneTest) : BoardGameScen
         )
     }
 
+    /**
+     * Transforms coordinates from the service layer
+     * to view coordinates
+     */
+    fun coordsToView(serviceX: Int, serviceY: Int): Pair<Int, Int> {
+        return Pair(serviceX + 10, -serviceY + 10)
+    }
+
+    /**
+     * Transforms coordinates from the view layer
+     * to service layer coordinates
+     */
+    fun coordsToService(viewX: Int, viewY: Int): Pair<Int, Int> {
+        return Pair(viewX - 10, -viewY + 10)
+    }
+
     override fun refreshAfterStartGame() {
         val game = rootService.currentGame
         checkNotNull(game) {"There is no game running"}
@@ -94,7 +110,7 @@ class InGameScene(var rootService: RootService, test: SceneTest) : BoardGameScen
 
         // Prison Grids and Isolations
         for(i in 0 until playerCount) {
-            prisons.add(PlayerBoard(game.players[i]))
+            prisons.add(PlayerBoard(game.players[i],rootService))
             isolations.add(BoardIsolation(game.players[i].isolation))
         }
         // Prison Busses in Middle
@@ -147,9 +163,30 @@ class InGameScene(var rootService: RootService, test: SceneTest) : BoardGameScen
             prisons[game.currentPlayer].toggleExpansionSlots()
         }
     }
+
+    override fun refreshPrison(tile: PrisonerTile?, x: Int, y: Int) {
+        val game = rootService.currentGame
+        checkNotNull(game) {"There is no game running"}
+        val player = game.currentPlayer
+
+        if (tile == null) {
+            prisons[player][coordsToView(x,y).first, coordsToView(x,y).second] =
+                TokenView(height = 50 * prisons[player].currentGridSize, width = 50 * prisons[player].currentGridSize,
+                    visual = ImageVisual("tiles/default_tile.png"))
+        }
+        else
+        {
+            prisons[player][coordsToView(x,y).first, coordsToView(x,y).second] =
+                TokenView(height = 50 * prisons[player].currentGridSize, width = 50 * prisons[player].currentGridSize,
+                    visual = prisons[player].tileVisual(tile))
+        }
+        // Can not be null
+        prisons[player][coordsToView(x,y).first, coordsToView(x,y).second]?.let { targetLayout.add(it) }
+
+    }
 }
 
-class PlayerBoard(val player: Player) : GridPane<Button>(rows = 21, columns = 21, layoutFromCenter = true) {
+class PlayerBoard(val player: Player, val rootService : RootService) : GridPane<TokenView>(rows = 21, columns = 21, layoutFromCenter = true) {
 
     // Both get patched by calculateSize()
     var currentGridSize = calculateSize()
@@ -171,9 +208,7 @@ class PlayerBoard(val player: Player) : GridPane<Button>(rows = 21, columns = 21
                 if (floor) {
                     val tempX = coordsToView(x, y).first
                     val tempY = coordsToView(x, y).second
-                    this[tempX, tempY] = Button(height = 50 * currentGridSize, width = 50 * currentGridSize).apply {
-                        this.visual = ImageVisual("tiles/default_tile.png")
-                    }
+                    this[tempX, tempY] = TokenView(height = 50 * currentGridSize, width = 50 * currentGridSize, visual = ImageVisual("tiles/default_tile.png"))
                 }
             }
         }
@@ -194,20 +229,17 @@ class PlayerBoard(val player: Player) : GridPane<Button>(rows = 21, columns = 21
         }
         var tempX = coordsToView(0, 0).first
         var tempY = coordsToView(0, 0).second
-        this[tempX, tempY] = Button(height = 50 * currentGridSize, width = 50 * currentGridSize).apply {
-            this.visual = ImageVisual("tiles/no_tile.png")
+        this[tempX, tempY] = TokenView(height = 50 * currentGridSize, width = 50 * currentGridSize, visual = ImageVisual("tiles/no_tile.png")).apply {
             this.isDisabled = true
         }
         tempX = coordsToView(1, 0).first
         tempY = coordsToView(1, 0).second
-        this[tempX, tempY] = Button(height = 50 * currentGridSize, width = 50 * currentGridSize).apply {
-            this.visual = ImageVisual("tiles/no_tile.png")
+        this[tempX, tempY] = TokenView(height = 50 * currentGridSize, width = 50 * currentGridSize, visual = ImageVisual("tiles/no_tile.png")).apply {
             this.isDisabled = true
         }
         tempX = coordsToView(0, 1).first
         tempY = coordsToView(0, 1).second
-        this[tempX, tempY] = Button(height = 50 * currentGridSize, width = 50 * currentGridSize).apply {
-            this.visual = ImageVisual("tiles/no_tile.png")
+        this[tempX, tempY] = TokenView(height = 50 * currentGridSize, width = 50 * currentGridSize, visual = ImageVisual("tiles/no_tile.png")).apply {
             this.isDisabled = true
         }
     }
@@ -301,21 +333,22 @@ class PlayerBoard(val player: Player) : GridPane<Button>(rows = 21, columns = 21
             for (y in minY..maxY) {
                 if (!player.board.getPrisonGrid(x, y)) {
                     this[coordsToView(x, y).first, coordsToView(x, y).second] =
-                        Button(height = 50 * currentGridSize, width = 50 * currentGridSize).apply {
-                            this.visual = ImageVisual("tiles/expansion_tile.png")
+                        TokenView(height = 50 * currentGridSize, width = 50 * currentGridSize, visual = ImageVisual("tiles/expansion_tile.png")).apply {
                             this.isVisible = false
                             this.name = "expansion"
                             this.dropAcceptor = { dragEvent ->
-                                if (dragEvent.draggedComponent.name == "big_extension") {
-                                    is "big_extension" ->
+                                when (dragEvent.draggedComponent.name) {
+                                    "big_extension" -> {true}
+                                    else -> {false}
                                 }
-
-
                             }
+                            this.onDragDropped = {
+                                rootService.playerActionService.expandPrisonGrid(true, x, y, 0)
+                            }
+                        }
                 }
             }
         }
-    }
     return currentGridSize
 
     }
@@ -346,7 +379,7 @@ class PlayerBoard(val player: Player) : GridPane<Button>(rows = 21, columns = 21
 
 }
 
-class BoardPrisonBus(val bus : PrisonBus) : GridPane<Button>(rows = 3, columns = 1, layoutFromCenter = true) {
+class BoardPrisonBus(val bus : PrisonBus) : GridPane<TokenView>(rows = 3, columns = 1, layoutFromCenter = true) {
 
     /**
      * Fills the bus with tiles
@@ -355,12 +388,12 @@ class BoardPrisonBus(val bus : PrisonBus) : GridPane<Button>(rows = 3, columns =
         this.spacing = 1.0
         for(i in 0 until bus.tiles.size) {
             if(bus.tiles[i] == null) {
-                this[0,i] = Button(height = 50, width = 50, visual = ImageVisual("tiles/default_tile.png"))
+                this[0,i] = TokenView(height = 50, width = 50, visual = ImageVisual("tiles/default_tile.png"))
             }
             else if(bus.tiles[i] is GuardTile) {
-                this[0,i] = Button(height = 50, width = 50, visual = ImageVisual("tiles/default_guard.png"))
+                this[0,i] = TokenView(height = 50, width = 50, visual = ImageVisual("tiles/default_guard.png"))
             }
-            else this[0,i] = Button(height = 50, width = 50, visual = tileVisual(bus.tiles[i] as PrisonerTile))
+            else this[0,i] = TokenView(height = 50, width = 50, visual = tileVisual(bus.tiles[i] as PrisonerTile))
         }
     }
 
@@ -372,17 +405,17 @@ class BoardPrisonBus(val bus : PrisonBus) : GridPane<Button>(rows = 3, columns =
     }
 }
 
-class BoardIsolation(val isolation : Stack<PrisonerTile>) : GridPane<Button> (rows = 1, columns = 120, layoutFromCenter = true) {
+class BoardIsolation(val isolation : Stack<PrisonerTile>) : GridPane<TokenView> (rows = 1, columns = 120, layoutFromCenter = true) {
 
     init {
         this.spacing = 0.5
         if (isolation.isNotEmpty()) {
             for (i in 0 until isolation.size) {
                 if(i == 0) {
-                    this[i, 0] = Button(height = 40, width = 40, visual = tileVisual(isolation[i]))
+                    this[i, 0] = TokenView(height = 40, width = 40, visual = tileVisual(isolation[i]))
                 }
                 else {
-                    this[i, 0] = Button(height = 25, width = 25, visual = tileVisual(isolation[i])).apply {
+                    this[i, 0] = TokenView(height = 25, width = 25, visual = tileVisual(isolation[i])).apply {
                         isDisabled = true
                     }
                 }
@@ -416,6 +449,7 @@ class SceneTest : BoardGameApplication("AquaGhetto"), Refreshable {
             Pair("Moin4", PlayerType.PLAYER)))
 
         rootService.currentGame?.players?.get(rootService.currentGame!!.currentPlayer)?.apply {
+            this.coins = 5
             this.board.setPrisonGrid(2,2,true)
             this.board.setPrisonYard(2,2,PrisonerTile(13,PrisonerTrait.MALE,PrisonerType.RED))
             for(i in 0..4) {
