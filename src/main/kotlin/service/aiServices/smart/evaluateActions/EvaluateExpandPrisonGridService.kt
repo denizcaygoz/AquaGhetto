@@ -21,8 +21,7 @@ class EvaluateExpandPrisonGridService(private val smartAI: SmartAI) {
     )
 
     fun getScoreExpandPrisonGrid(game: AquaGhetto, depth: Int): ActionExpandPrison {
-        //TODO currently bugged
-        return ActionExpandPrison(false, 0, false, Pair(0,0) , 0)
+        //return ActionExpandPrison(false, 0, false, Pair(0,0) , 0)
 
         val player = game.players[game.currentPlayer]
 
@@ -58,16 +57,17 @@ class EvaluateExpandPrisonGridService(private val smartAI: SmartAI) {
         player.remainingBigExtensions -= 1
         player.coins -= 2
 
+        val undoData = simulatePlaceExtension(bestPos, true, player)
+
         val nextPlayer = smartAI.getNextAndOldPlayer(game,false)
         game.currentPlayer = nextPlayer.second
 
-        val undoData = simulatePlaceExtension(bestPos, true, player)
-
         val bestAction = smartAI.minMax(game, depth)
+
+        game.currentPlayer = nextPlayer.first
 
         undoSimulatePlaceExtension(player, undoData)
 
-        game.currentPlayer = nextPlayer.first
         player.coins += 2
         player.remainingBigExtensions += 1
 
@@ -84,16 +84,17 @@ class EvaluateExpandPrisonGridService(private val smartAI: SmartAI) {
         player.remainingSmallExtensions -= 1
         player.coins -= 1
 
+        val undoData = simulatePlaceExtension(bestPos, false, player)
+
         val nextPlayer = smartAI.getNextAndOldPlayer(game,false)
         game.currentPlayer = nextPlayer.second
 
-        val undoData = simulatePlaceExtension(bestPos, false, player)
-
         val bestAction = smartAI.minMax(game, depth)
+
+        game.currentPlayer = nextPlayer.first
 
         undoSimulatePlaceExtension(player, undoData)
 
-        game.currentPlayer = nextPlayer.first
         player.coins += 1
         player.remainingSmallExtensions += 1
 
@@ -132,6 +133,10 @@ class EvaluateExpandPrisonGridService(private val smartAI: SmartAI) {
                 borderTiles.add(Pair(firstIterator.key - 1, secondIterator.key - 1))
                 borderTiles.add(Pair(firstIterator.key + 1, secondIterator.key - 1))
                 borderTiles.add(Pair(firstIterator.key - 1, secondIterator.key + 1))
+
+                borderTiles.add(Pair(firstIterator.key + 2, secondIterator.key + 0))
+                borderTiles.add(Pair(firstIterator.key + 2, secondIterator.key + 1))
+                borderTiles.add(Pair(firstIterator.key + 2, secondIterator.key - 1))
             }
         }
 
@@ -161,17 +166,18 @@ class EvaluateExpandPrisonGridService(private val smartAI: SmartAI) {
 
     private fun addExtensionPlacesToList(list: MutableList<Triple<Int,Int,Int>>
                                          , x: Int, y: Int, isBig: Boolean) {
+
+        /*basic pre-check*/
+        if (x == 0 && y == 0) return
+        if (x == 1 && y == 0) return
+        if (x == 0 && y == 1) return
+
         if (isBig) {
             if (smartAI.rootService.validationService.validateExpandPrisonGrid(true, x , y , 0)) {
                 list.add(Triple(x,y,0))
             }
             return
         }
-
-        /*basic pre-check*/
-        if (x == 0 && y == 0) return
-        if (x == 1 && y == 0) return
-        if (x == 0 && y == 1) return
 
         /*all possible rotations*/
         val validRotations = mutableListOf(0,90,180,270)
@@ -243,7 +249,7 @@ class EvaluateExpandPrisonGridService(private val smartAI: SmartAI) {
                 val mostNeeded = getMostNeededExtensionForType(playerCards, cardsInGame, player, true) ?: return -10
 
                 /*location is not good if not next to the needed type*/
-                if (!isNextToSpecifiedType(player, placementCoordinates, mostNeeded)) return 0
+                if (!isNextToSpecifiedType(player, placementCoordinates, mostNeeded)) return -10
             } else {
                 /*big because more types place far away from other types*/
                 var averageDistance = 0.0

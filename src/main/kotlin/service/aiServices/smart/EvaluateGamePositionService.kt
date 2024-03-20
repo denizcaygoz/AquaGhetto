@@ -68,6 +68,11 @@ class EvaluateGamePositionService(private val smartAI: SmartAI) {
         points += countSpace(player.board)
         */
 
+        /*forces the AI to spend the coins on getting prisoners out of the isolation*/
+        if ((game.drawStack.size + game.finalStack.size) < 17 || player.coins > 0) {
+            points -= player.isolation.size * 10
+        }
+
         return points
     }
 

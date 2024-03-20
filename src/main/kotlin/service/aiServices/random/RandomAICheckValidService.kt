@@ -101,7 +101,7 @@ class RandomAICheckValidService(private val rootService: RootService) {
         val hasTileInIsolation = mutableSetOf<Player>()
         for (otherPlayer in game.players) {
             if (otherPlayer == player || otherPlayer.name == player.name) continue
-            if (otherPlayer.isolation.isNotEmpty()) hasTileInIsolation.add(player)
+            if (otherPlayer.isolation.isNotEmpty()) hasTileInIsolation.add(otherPlayer)
         }
         return  hasTileInIsolation
     }
@@ -148,6 +148,7 @@ class RandomAICheckValidService(private val rootService: RootService) {
      */
     fun canMoveEmployee(player: Player): Boolean {
         if (player.takenBus != null) return false
+        if (player.coins < 1) return false
         val validPlacesGuard = this.validPlacesGuard(player)
         var employees = player.lawyerCount + player.secretaryCount + player.board.guardPosition.size
         if (player.hasJanitor) employees++

@@ -95,7 +95,7 @@ class SmartAI(val rootService: RootService, var player: Player, val playerIndex:
                 val placeCard = aiAction.placeCard
                 val prisoner = placeCard.placePrisoner
                 val bonus = rootService.playerActionService.movePrisonerToPrisonYard(prisoner.first, prisoner.second)
-                this.placeCardBonus(aiAction.placeCard, bonus)
+                this.placeCardBonus(aiAction.placeCard, bonus, game)
                 println("execute action move prisoner from own isolation to ${prisoner.first}  ${prisoner.second}")
             }
             is ActionMoveEmployee -> {
@@ -111,7 +111,7 @@ class SmartAI(val rootService: RootService, var player: Player, val playerIndex:
                 val prisoner = placeCard.placePrisoner
                 val bonus = rootService.playerActionService.buyPrisonerFromOtherIsolation(boughtFrom,
                     prisoner.first, prisoner.second)
-                this.placeCardBonus(aiAction.placeCard, bonus)
+                this.placeCardBonus(aiAction.placeCard, bonus, game)
                 println("execute action buy prisoner from ${boughtFrom.name} and place ${prisoner.first}  ${prisoner.second}")
             }
             is ActionFreePrisoner -> {
@@ -175,8 +175,15 @@ class SmartAI(val rootService: RootService, var player: Player, val playerIndex:
 
             println("place card ${tile.id} at (${placeCard.placePrisoner.first}, ${placeCard.placePrisoner.second})")
 
-            val bonus = rootService.playerActionService.placePrisoner(tile, prisoner.first, prisoner.second)
-            this.placeCardBonus(placeCard, bonus)
+            try {
+                val bonus = rootService.playerActionService.placePrisoner(tile, prisoner.first, prisoner.second)
+                this.placeCardBonus(placeCard, bonus, game)
+            } catch (e: IllegalStateException) {
+                /*sometimes wrong location is calculated*/
+                /*emergency location*/
+                rootService.playerActionService.placePrisoner(tile, -100, -100)
+                println("Wrong location calculated! (${prisoner.first} ${prisoner.second})")
+            }
         }
     }
 
@@ -366,7 +373,7 @@ class SmartAI(val rootService: RootService, var player: Player, val playerIndex:
      * @param placeCard info about the location, where to place a tile
      * @param bonus the bonus obtained by placing a card
      */
-    private fun placeCardBonus(placeCard: PlaceCard , bonus: Pair<Boolean,PrisonerTile?>) {
+    private fun placeCardBonus(placeCard: PlaceCard , bonus: Pair<Boolean,PrisonerTile?>, game: AquaGhetto) {
         /*place possible employee if valid*/
         placeEmployee(bonus.first, placeCard.firstTileBonusEmployee)
 
@@ -377,7 +384,17 @@ class SmartAI(val rootService: RootService, var player: Player, val playerIndex:
         if (bonusBaby != null && bonusLocation == null) {
             /*If there is no place in prison area to place the bonus baby,
             * then bonus card goes to isolation.*/
-            rootService.playerActionService.placePrisoner(bonusBaby, -100,-100)
+            val bestEmergency = evaluateBestPosition.getBestPositions(bonusBaby, player, game)
+            if (bestEmergency != null) {
+                val loc = bestEmergency.first
+                val b = rootService.playerActionService.placePrisoner(bonusBaby, loc.placePrisoner.first, loc.placePrisoner.second)
+                if (b.first) {
+                    val emergencyEmployee = evaluateBestPosition.getBestLocationEmployee(player)
+                    rootService.playerActionService.moveEmployee(-101,-101,emergencyEmployee.first,emergencyEmployee.second)
+                }
+            } else {
+                rootService.playerActionService.placePrisoner(bonusBaby, -100,-100)
+            }
             println("Error AI action did not matched bonus Card 1") //TODO sometimes no baby location, why?
         } else if (bonusBaby == null && bonusLocation != null) {
             /*do nothing I guess*/

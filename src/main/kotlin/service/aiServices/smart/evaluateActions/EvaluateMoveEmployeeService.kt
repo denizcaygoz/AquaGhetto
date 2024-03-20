@@ -17,8 +17,7 @@ class EvaluateMoveEmployeeService(private val smartAI: SmartAI) {
      * And we get the action with the highest score.
      */
     fun getScoreMoveEmployee(game: AquaGhetto, depth: Int, evalPlayer: Player): ActionMoveEmployee {
-        //TODO maybe bugged?, validate after merge with correct place prisoner implementation
-        return ActionMoveEmployee(false, 0, Pair(0,0), Pair(0,0))
+        //return ActionMoveEmployee(false, 0, Pair(0,0), Pair(0,0))
 
         val player = game.players[game.currentPlayer]
 
@@ -27,7 +26,7 @@ class EvaluateMoveEmployeeService(private val smartAI: SmartAI) {
         /*score advantage, source, destination*/
         val moves = mutableListOf<Triple<Int,Pair<Int,Int>,Pair<Int,Int>>>()
 
-        val validPos = mutableListOf(Pair(-102,-102), Pair(-103,-103), Pair(-104,-104))
+        val validPos = this.createSpecialPosList(player)
         validPos.addAll(player.board.guardPosition)
         for (pos in validPos) {
             val result = this.checkEmployee(game, depth, pos, player, evalPlayer) ?: continue
@@ -38,6 +37,24 @@ class EvaluateMoveEmployeeService(private val smartAI: SmartAI) {
 
         val best = moves.maxBy { it.first }
         return ActionMoveEmployee(true, best.first, best.second, best.third)
+    }
+
+    private fun createSpecialPosList(player: Player): MutableList<Pair<Int,Int>> {
+        val validPos = mutableListOf<Pair<Int,Int>>()
+
+        if (player.hasJanitor) {
+            validPos.add(Pair(-102,-102))
+        }
+
+        for (i in 0 until player.secretaryCount) {
+            validPos.add(Pair(-103,-103))
+        }
+
+        for (i in 0 until player.lawyerCount) {
+            validPos.add(Pair(-104,-104))
+        }
+
+        return validPos
     }
 
     /**
@@ -72,7 +89,7 @@ class EvaluateMoveEmployeeService(private val smartAI: SmartAI) {
 
 
         /*should not randomly move employees*/
-        return if ((bestAction.score - 5) > oldScore) {
+        return if ((bestAction.score - 19) > oldScore && (game.drawStack.size + game.finalStack.size < 30)) {
             Triple(bestAction.score, pos, betterPos)
         } else {
             null
