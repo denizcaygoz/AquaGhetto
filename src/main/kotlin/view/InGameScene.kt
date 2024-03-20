@@ -584,6 +584,14 @@ class InGameScene(var rootService: RootService, test: SceneTest = SceneTest()) :
                                                 break
                                             }
                                         }
+                                        if (tile == null) {
+                                            for (t in game.allTiles) {
+                                                if (t.id == indexCard && t is PrisonerTile) {
+                                                    tile = t
+                                                    break
+                                                }
+                                            }
+                                        }
                                         if (tile == null) throw IllegalStateException("found no bonus card to check")
                                         result = rootService.validationService.validateTilePlacement(tile, x, y)
                                     }
