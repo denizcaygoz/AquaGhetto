@@ -61,7 +61,13 @@ class SetupScene (rootService : RootService, test: SceneTest2 = SceneTest2()) : 
         height = 50,
         width = 50,
         text = "5",
-    )
+    ).apply {
+        onKeyTyped = {
+            if(it.keyCode.isLetter()){
+                this.text = ""
+            }
+        }
+    }
     private fun determineAIPlayer(): Unit {
         var shouldDelayInputbeVisible : Boolean = false
         for (i in 0 until playerGrid.rows) {
@@ -233,6 +239,9 @@ class SetupScene (rootService : RootService, test: SceneTest2 = SceneTest2()) : 
         ).apply {
             onMouseClicked = {
                 rootService.gameService.startNewGame(getPlayerList(testCheck.isSelected))
+                val game = rootService.currentGame
+                checkNotNull(game)
+                game.delayTime = delayInputPlayer1.text.toInt()
             }
         }
 
