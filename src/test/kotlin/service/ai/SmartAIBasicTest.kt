@@ -27,7 +27,7 @@ class SmartAIBasicTest {
         require(game != null)
 
         val firstPlayer = game.players[game.currentPlayer]
-        rootService.gameService.checkAITurn(firstPlayer,1000)
+        rootService.gameService.checkAITurn(firstPlayer)
 
         println("Last DrawStack: ${game.drawStack.size}    FinalStack: ${game.finalStack.size}")
     }
