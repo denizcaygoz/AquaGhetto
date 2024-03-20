@@ -565,7 +565,7 @@ class InGameScene(var rootService: RootService, test: SceneTest = SceneTest()) :
                                     if (playerIndex != game.currentPlayer) {
                                         result = false /*moved to other grid*/
                                     } else {
-                                        result = (player.board.getPrisonGrid(x,y) && player.board.getPrisonYard(x,x) == null)
+                                        result = (player.board.getPrisonGrid(x,y) && player.board.getPrisonYard(x,y) == null)
                                     }
                                 } else if (it.draggedComponent.name.contains("newPrisoner_")) {
                                     println("prisoner")
