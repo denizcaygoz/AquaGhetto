@@ -30,6 +30,7 @@ import java.util.*
  * @property remainingSmallExtensions the amount of small extensions the player could place
  * @property maxPrisonerTypes the maximum amount of prisoners with different types
  * @property currentScore the current score of a player
+ * @property delayTime amount of time the AI needs to wait before making a Turn
  */
 
 class Player(val name: String, val type: PlayerType): Serializable, Cloneable {
@@ -48,6 +49,7 @@ class Player(val name: String, val type: PlayerType): Serializable, Cloneable {
     var remainingSmallExtensions: Int = 2
     var maxPrisonerTypes = 3
     var currentScore = 0
+    var delayTime = 0
 
     @Suppress("UNCHECKED_CAST")
     public override fun clone(): Player {
@@ -63,6 +65,7 @@ class Player(val name: String, val type: PlayerType): Serializable, Cloneable {
             remainingBigExtensions = this@Player.remainingBigExtensions
             maxPrisonerTypes = this@Player.maxPrisonerTypes
             currentScore = this@Player.currentScore
+            delayTime = this@Player.delayTime
         }
     }
 
