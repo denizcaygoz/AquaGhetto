@@ -49,7 +49,6 @@ class Player(val name: String, val type: PlayerType): Serializable, Cloneable {
     var remainingSmallExtensions: Int = 2
     var maxPrisonerTypes = 3
     var currentScore = 0
-    var delayTime = 0
 
     @Suppress("UNCHECKED_CAST")
     public override fun clone(): Player {
@@ -65,7 +64,6 @@ class Player(val name: String, val type: PlayerType): Serializable, Cloneable {
             remainingBigExtensions = this@Player.remainingBigExtensions
             maxPrisonerTypes = this@Player.maxPrisonerTypes
             currentScore = this@Player.currentScore
-            delayTime = this@Player.delayTime
         }
     }
 
