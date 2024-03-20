@@ -153,14 +153,7 @@ class NetworkService(private val rootService: RootService): AbstractRefreshingSe
             drawStackList.toList()
         )
 
-        when(currentPlayer.name) {
-            hostPlayerName -> {
-                updateConnectionState(ConnectionState.PLAYING_MY_TURN)
-            }
-            else -> {
-                updateConnectionState(ConnectionState.WAITING_FOR_TURN)
-            }
-        }
+        determineNextPlayer()
 
         client?.sendGameActionMessage(message)
     }
@@ -230,14 +223,7 @@ class NetworkService(private val rootService: RootService): AbstractRefreshingSe
         /*Create prisonBusses*/
         game.prisonBuses = rootService.boardService.createPrisonBuses(playerList.size)
 
-        when(currentPlayer.name) {
-            sender -> {
-                updateConnectionState(ConnectionState.PLAYING_MY_TURN)
-            }
-            else -> {
-                updateConnectionState(ConnectionState.WAITING_FOR_TURN)
-            }
-        }
+        determineNextPlayer()
 
         onAllRefreshables {
             refreshAfterStartGame()
