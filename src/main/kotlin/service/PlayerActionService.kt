@@ -274,7 +274,9 @@ class PlayerActionService(private val rootService: RootService): AbstractRefresh
         checkNotNull(game) { "No game is running right now."}
 
         val currentPlayer = game.players[game.currentPlayer]
-        check(currentPlayer.coins >= 1) { "${currentPlayer.name} has only ${currentPlayer.coins} coins" }
+        if (!(sourceX == sourceY && sourceX == -101)) {
+            check(currentPlayer.coins >= 1) { "${currentPlayer.name} has only ${currentPlayer.coins} coins" }
+        }
         val employeeToMove: Tile = GuardTile()
         var hasSetJanitorHere = false
 
