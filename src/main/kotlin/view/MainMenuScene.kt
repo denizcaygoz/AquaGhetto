@@ -7,6 +7,8 @@ import tools.aqua.bgw.components.uicomponents.Label
 import tools.aqua.bgw.components.uicomponents.TextField
 import tools.aqua.bgw.core.BoardGameApplication
 import tools.aqua.bgw.core.MenuScene
+import tools.aqua.bgw.visual.ImageVisual
+import java.awt.Image
 
 /**
  * Sceen for Selecting a Gameplay mode
@@ -17,7 +19,8 @@ import tools.aqua.bgw.core.MenuScene
  * -> Maybe the Create a Game needs a Specialized Scene that Displays the Lobbycode given by Network?
  */
 class MainMenuScene(rootService : RootService, test:SceneTest3 = SceneTest3()) : MenuScene(), Refreshable {
-
+    private val backgroundLabel = Label(
+        posY = 0, posX = 0, width = 1920, height = 1080, visual = ImageVisual("background/SetupBackground.png") )
     /**
      * Exits the Game
      * Logic of the Button is in [AquaGhettoApplication]
@@ -218,7 +221,7 @@ class MainMenuScene(rootService : RootService, test:SceneTest3 = SceneTest3()) :
             newSinglePlayerGameButton,
             multiplayerButton,
             )
-    }
+        background = ImageVisual("background/MainBackground.png")    }
 }
 fun main() {
     val test = SceneTest3()
