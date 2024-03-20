@@ -170,9 +170,6 @@ class NetworkServiceTest {
         guestGame.players[0].board.setPrisonYard(3,3, anotherTileRed)
 
         rootServiceHost.playerActionService.takePrisonBus(hostGame.prisonBuses[0])
-        //Weil DetermineNextPlayer falsch implementiert
-        rootServiceHost.currentGame?.currentPlayer = 0
-        //-----------------------------------------------
 
         /** place tile from bus**/
         val takenBus: PrisonBus? = hostGame.players[0].takenBus
@@ -202,7 +199,6 @@ class NetworkServiceTest {
         }
         /** place tile from bus and get worker **/
         rootServiceHost.playerActionService.placePrisoner(tileThree,3,2)
-        //-----------------------------------------------
         rootServiceHost.networkService.increasePrisoners(Triple(3,2, 2))
         rootServiceHost.playerActionService.moveEmployee(-101,-101, 2,2)
         /** send message to other player **/

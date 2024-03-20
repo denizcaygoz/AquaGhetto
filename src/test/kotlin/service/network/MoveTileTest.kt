@@ -134,8 +134,6 @@ class MoveTileTest {
         assertTrue { gameAfterSafeHost.players[1].board.getPrisonYard(2,1)?.id == parentFemaleGuest.id }
         assertTrue { gameAfterSafeHost.players[1].board.getPrisonYard(3,2)?.id == tileRed.id }
         assertTrue { gameAfterSafeHost.players[1].board.getPrisonYard(3,3)?.id == anotherTileRed.id }
-        // game changes parents to not breadable
-        //assertTrue { hostGame.players[1].board.getPrisonYard(1,2)?.id == childToPlace?.id }
     }
 
     /**

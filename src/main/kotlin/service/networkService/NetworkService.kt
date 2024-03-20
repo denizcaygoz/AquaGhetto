@@ -106,10 +106,12 @@ class NetworkService(private val rootService: RootService): AbstractRefreshingSe
      * This method should be called from the [AqueghettoNetworkClient] when the guest joined notification
      * arrived. See [AqueghettoNetworkClient.onPlayerJoined].
      *
-     * @param hostPlayerName player name of the host player
-     * @param guestPlayerName player name of the guest player
+     * @param playerType type of player that is creating the game
      *
      * @throws IllegalStateException if [connectionState] != [ConnectionState.WAITING_FOR_GUEST]
+     * @throws IllegalStateException if host player does not exist
+     * @throws IllegalStateException if game does not exist
+     * @throws IllegalStateException if draw stack were not created
      */
     fun startNewHostedGame(playerType: PlayerType = PlayerType.PLAYER) {
         check(connectionState == ConnectionState.WAITING_FOR_GUEST)
@@ -141,7 +143,6 @@ class NetworkService(private val rootService: RootService): AbstractRefreshingSe
         check(game.finalStack.size > 0) { "the game was not initialized properly." }
 
         /**Combine both stack to one**/
-        val currentPlayer = game.players[game.currentPlayer]
         val drawStack: Stack<Tile> = Stack()
         drawStack.addAll(game.drawStack)
         drawStack.addAll(game.finalStack)
@@ -164,9 +165,12 @@ class NetworkService(private val rootService: RootService): AbstractRefreshingSe
      * This method should be called from the [AqueghettoNetworkClient] when the host sends the init message.
      * See [AqueghettoNetworkClient.onInitReceived].
      *
+     * @param message the [InitGameMasse] received
+     * @param sender the name of the player who has joined another game
+     *
      * @throws IllegalStateException if not currently waiting for an init message
      */
-    fun startNewJoinedGame(message: InitGameMessage, sender: String, host: String) {
+    fun startNewJoinedGame(message: InitGameMessage, sender: String) {
         check(connectionState == ConnectionState.WAITING_FOR_INIT)
         { "not waiting for game init message." }
 
@@ -191,18 +195,9 @@ class NetworkService(private val rootService: RootService): AbstractRefreshingSe
             } else {
                 Player(playerName, PlayerType.NETWORK)
             }
-
             playerList.add(player)
-            for (x in 1..4) {
-                for (y in 1..4) {
-                    if (x == 4 && y == 4) continue
-                    player.board.setPrisonGrid(x, y, true)
-                }
-            }
-            player.board.setPrisonGrid(0, 2, true)
-            player.board.setPrisonGrid(0, 3, true)
-            player.board.setPrisonGrid(2, 0, true)
-            player.board.setPrisonGrid(3, 0, true)
+
+            rootService.gameService.initializeBoard(player.board)
         }
 
         game.players = playerList
@@ -237,6 +232,7 @@ class NetworkService(private val rootService: RootService): AbstractRefreshingSe
      * @param secret Server secret.
      * @param name Player name.
      * @param sessionID identifier of the joined session (as defined by host on create)
+     * @param playerType type of player that joins the game
      *
      * @throws IllegalStateException if already connected to another game or connection attempt fails
      */
@@ -252,7 +248,11 @@ class NetworkService(private val rootService: RootService): AbstractRefreshingSe
 
         updateConnectionState(ConnectionState.WAITING_FOR_JOIN_CONFIRMATION)
     }
-
+    /**
+     * creates a session id for the current game.
+     *
+     * @return the sessionId
+     **/
     fun createSessionID(): String {
         return "aquaghetto"+ Random.nextInt(1000)
     }
@@ -366,8 +366,11 @@ class NetworkService(private val rootService: RootService): AbstractRefreshingSe
         /**send message **/
         client?.sendGameActionMessage(message)
         resetLists()
-        // Nur weil determineNextPlayer nicht implementiert wurde
-        updateConnectionState(ConnectionState.WAITING_FOR_TURN)
+
+        if (serviceType == PlayerType.PLAYER)
+            rootService.gameService.determineNextPlayer(true)
+
+        determineNextPlayer()
     }
 
     /**
@@ -397,9 +400,6 @@ class NetworkService(private val rootService: RootService): AbstractRefreshingSe
 
         rootService.playerActionService.takePrisonBus(prisonBus)
 
-        //Weil DetermineNextPlayer nicht richtig funktioniert
-        game.currentPlayer = 0
-
         val takenBus: PrisonBus? = currentPlayer.takenBus
 
         requireNotNull(takenBus) { "the player has a wrong bus" }
@@ -423,14 +423,14 @@ class NetworkService(private val rootService: RootService): AbstractRefreshingSe
                     possibleChildren.add(child)
                 }
             }
-            //Weil DetermineNextPlayer nicht richtig funktioniert
-            game.currentPlayer = 0
         }
 
         placeChildren(message.offspringList, possibleChildren)
         placeWorker(message.workerList)
-        // Nur weil determineNextPlayer nicht implementiert wurde
-        updateConnectionState(ConnectionState.PLAYING_MY_TURN)
+
+        rootService.gameService.determineNextPlayer(true)
+
+        determineNextPlayer()
     }
 
     /**
@@ -958,12 +958,9 @@ class NetworkService(private val rootService: RootService): AbstractRefreshingSe
      * after a service action in the network
      * **/
     private fun determineNextPlayer() {
-        println("DetermineNextPlayer: ${rootService.currentGame?.currentPlayer}")
         val gameAfterSave = rootService.currentGame
         checkNotNull(gameAfterSave) { "game was quit" }
         val currentPlayer = gameAfterSave.players[gameAfterSave.currentPlayer]
-
-        println("DetermineNextPlayer: current ${rootService.currentGame?.currentPlayer}")
 
         if (hostPlayer == null) {
             when(currentPlayer.name) {
