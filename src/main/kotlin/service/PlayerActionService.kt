@@ -356,6 +356,9 @@ class PlayerActionService(private val rootService: RootService): AbstractRefresh
 
         onAllRefreshables {
             refreshEmployee(currentPlayer) // aktualisiert refreshEmployee auch die GuardTiles?
+            if (game.players[game.currentPlayer].board.getPrisonYard(destinationX,destinationY) is GuardTile) {
+                refreshPrison(null, destinationX , destinationY)
+            }
             if (hasSetJanitorHere) {
                 refreshIsolation(currentPlayer)
             }

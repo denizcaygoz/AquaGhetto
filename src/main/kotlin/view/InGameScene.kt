@@ -375,6 +375,16 @@ class InGameScene(var rootService: RootService, test: SceneTest = SceneTest()) :
         checkNotNull(game) { "There is no game running" }
         val player = game.currentPlayer
 
+        val tileGuard = game.players[player].board.getPrisonYard(x,y)
+        if (tileGuard is GuardTile) {
+            prisons[player][coordsToView(x, y).first, coordsToView(x, y).second] =
+                TokenView(
+                    height = 50 * prisons[player].currentGridSize, width = 50 * prisons[player].currentGridSize,
+                    visual = ImageVisual("tiles/default_guard.png")
+                )
+            return
+        }
+
         if (tile == null) {
             prisons[player][coordsToView(x, y).first, coordsToView(x, y).second] =
                 TokenView(
