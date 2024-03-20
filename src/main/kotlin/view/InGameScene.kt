@@ -5,6 +5,7 @@ import entity.PrisonBus
 import entity.enums.PlayerType
 import entity.enums.PrisonerTrait
 import entity.enums.PrisonerType
+import entity.tileTypes.CoinTile
 import entity.tileTypes.GuardTile
 import entity.tileTypes.PrisonerTile
 import entity.tileTypes.Tile
@@ -29,24 +30,55 @@ import kotlin.math.absoluteValue
 
 class InGameScene(var rootService: RootService, test: SceneTest = SceneTest()) : BoardGameScene(1920,1080), Refreshable {
 
+    private var tileDrawn = false
+
     // Assets on screen
     private val prisons: MutableList<PlayerBoard> = mutableListOf()
-    private val prisonBuses: MutableList<BoardPrisonBus> = mutableListOf()
+    private var prisonBuses: MutableList<BoardPrisonBus> = mutableListOf()
     private val isolations: MutableList<BoardIsolation> = mutableListOf()
     private val names: MutableList<Label> = mutableListOf()
-    private val freePrisonerButton : Button = Button(1640,950,150,50,text = "Free Prisoner!").apply {
+    private var ownGui = Pane<ComponentView>(width = 130, height = 1080, visual = ColorVisual.LIGHT_GRAY)
+    private var statGui = Pane<ComponentView>(posX = 1790, width = 130, height = 1080, visual = ColorVisual.LIGHT_GRAY)
+    private val freePrisonerButton : Button = Button(1640,950,150,50,text = "Free Prisoner!"
+    ).apply {
         onMouseClicked = {
             rootService.playerActionService.freePrisoner()
         }
     }
-    private val drawStack = TokenView(
-        posX = 845,
-        posY = 505,
-        height = 70,
-        width = 70,
-        visual = ImageVisual("tiles/default_drawStack.png")
+    private var drawnServiceTile : Tile? = null
+    private val drawnTile = TokenView(posX = 785, posY = 465, height = 150, width = 150, visual = ImageVisual("tiles/default_tile.png")).apply {
+        isDisabled = true; isVisible = false;
+    }
+    private val drawStack = TokenView(posX = 855, posY = 500, height = 80, width = 80, visual = ImageVisual("tiles/default_drawStack.png")
     ).apply {
-        isDraggable = true
+        onMouseClicked = {
+            if(!tileDrawn) {
+                tileDrawn = true
+                drawnTile.isDisabled = false
+                drawnTile.isVisible = true
+                ownGui.isDisabled = true
+                for (i in hideLabels) {
+                    i.apply {
+                        i.isDisabled = false
+                        i.isVisible = true
+                    }
+                }
+
+                if(rootService.currentGame!!.drawStack.isNotEmpty())
+                {
+                    drawnServiceTile = rootService.currentGame!!.drawStack.pop()
+                    if (drawnServiceTile is CoinTile) {
+                        drawnTile.visual = ImageVisual("tiles/default_coin.png")
+                    }
+                    if (drawnServiceTile is GuardTile) {
+                        drawnTile.visual = ImageVisual("tiles/default_guard.png")
+                    }
+                    if (drawnServiceTile is PrisonerTile) {
+                        drawnTile.visual = tileVisual(drawnServiceTile as PrisonerTile)
+                    }
+                }
+            }
+        }
     }
     private val finalStack = TokenView(
         posX = 785,
@@ -57,6 +89,20 @@ class InGameScene(var rootService: RootService, test: SceneTest = SceneTest()) :
     ).apply {
         isDisabled = true
     }
+    // Stuff to hide other stuff
+    val hideLabels : List<Label> = listOf(
+        Label(height=460, width = 1920, visual = ColorVisual.BLACK).apply {
+        opacity = 0.5; isVisible = false
+    } ,
+        Label(posY = 620, height=460, width = 1920, visual = ColorVisual.BLACK).apply {
+        opacity = 0.5; isVisible = false
+    },
+        Label(posY = 460, height=160, width = 710, visual = ColorVisual.BLACK).apply {
+        opacity = 0.5; isVisible = false
+    },
+        Label(posY = 460, posX = 1210 ,height=160, width = 1920, visual = ColorVisual.BLACK).apply {
+        opacity = 0.5; isVisible = false
+    })
 
     // Camera Pane stuff
     private val targetLayout = Pane<ComponentView>(width = 1920, height = 1080)
@@ -93,7 +139,9 @@ class InGameScene(var rootService: RootService, test: SceneTest = SceneTest()) :
         // Add the cameraPane to the scene
         addComponents(
             cameraPane,
-            freePrisonerButton
+            freePrisonerButton,
+            statGui,
+            hideLabels[0], hideLabels[1], hideLabels[2], hideLabels[3]
         )
     }
 
@@ -113,6 +161,7 @@ class InGameScene(var rootService: RootService, test: SceneTest = SceneTest()) :
         return Pair(viewX - 10, -viewY + 10)
     }
 
+    /*
     fun replacePrison(player : Player) {
         for (i in 0 until prisons.size) {
             if (player.name == prisons[i].player.name) {
@@ -125,6 +174,12 @@ class InGameScene(var rootService: RootService, test: SceneTest = SceneTest()) :
                 }
             }
         }
+    }*/
+
+    fun placePrisoner(target : TokenView, visual : ImageVisual) : ImageVisual {
+        val oldTarget : ImageVisual = target.visual as ImageVisual
+        target.visual = visual
+        return oldTarget
     }
 
     fun tileVisual(tile: PrisonerTile): ImageVisual {
@@ -140,10 +195,50 @@ class InGameScene(var rootService: RootService, test: SceneTest = SceneTest()) :
         return null
     }
 
-    override fun refreshScoreStats() {
-        var statGui = Pane<ComponentView>(posX = 1790, width = 130, height = 1080, visual = ColorVisual.LIGHT_GRAY)
+    override fun refreshPrisonBus(prisonBus: PrisonBus?) {
+        if (prisonBus == null) {
+            prisonBuses = mutableListOf()
+            for (i in 0 until rootService.currentGame!!.prisonBuses.size) {
+                prisonBuses[i].posX = (1000 + i * 60).toDouble()
+                prisonBuses[i].posY = 540.0
+                prisonBuses[i].apply {
+                    for (j in 0 until this.bus.tiles.size) {
+                        if (bus.tiles[i] == null) {
+                            this[0, i] = TokenView(height = 50, width = 50, visual = ImageVisual("tiles/default_tile.png")) }
+                        if (bus.tiles[i] is CoinTile) {
+                            this[0, i] = TokenView(height = 50, width = 50, visual = ImageVisual("tiles/default_coin.png")) }
+                        if (bus.tiles[i] is GuardTile) {
+                            this[0, i] = TokenView(height = 50, width = 50, visual = ImageVisual("tiles/default_guard.png")) }
+                        if (bus.tiles[i] is PrisonerTile) {
+                            this[0, i] = TokenView(height = 50, width = 50, visual = tileVisual(bus.tiles[i] as PrisonerTile)) }
+                    }
+                }
+            }
+        }
+        else {
+            for(i in 0 until rootService.currentGame!!.prisonBuses.size) {
+                if(prisonBuses[i].bus == prisonBus) {
+                    prisonBuses[i].apply {
+                        for (j in 0 until this.bus.tiles.size) {
+                            if (bus.tiles[i] == null) {
+                                this[0, i] = TokenView(height = 50, width = 50, visual = ImageVisual("tiles/default_tile.png")) }
+                            if (bus.tiles[i] is CoinTile) {
+                                this[0, i] = TokenView(height = 50, width = 50, visual = ImageVisual("tiles/default_coin.png")) }
+                            if (bus.tiles[i] is GuardTile) {
+                                this[0, i] = TokenView(height = 50, width = 50, visual = ImageVisual("tiles/default_guard.png")) }
+                            if (bus.tiles[i] is PrisonerTile) {
+                                this[0, i] = TokenView(height = 50, width = 50, visual = tileVisual(bus.tiles[i] as PrisonerTile)) }
+                        }
+                    }
+                }
+            }
+        }
+    }
 
-        var playerLabels : MutableList<Label> = mutableListOf()
+    override fun refreshScoreStats() {
+        statGui = Pane<ComponentView>(posX = 1790, width = 130, height = 1080, visual = ColorVisual.LIGHT_GRAY)
+
+        val playerLabels : MutableList<Label> = mutableListOf()
         for(i in 0 until prisons.size) {
             playerLabels.add(Label(posY = i*200, height = 400, font = Font(color = Color.WHITE)).apply {
                 text =  "${prisons[i].player.name}:\n\n" +
@@ -152,6 +247,7 @@ class InGameScene(var rootService: RootService, test: SceneTest = SceneTest()) :
                         "Lawyer Count: \n ${prisons[i].player.lawyerCount}"
             } )
         }
+        removeComponents(statGui)
         statGui.addAll(playerLabels)
         addComponents(statGui)
     }
@@ -253,7 +349,7 @@ class InGameScene(var rootService: RootService, test: SceneTest = SceneTest()) :
         targetLayout.addAll(prisonBuses)
         targetLayout.addAll(isolations)
         targetLayout.addAll(names)
-        targetLayout.addAll(drawStack, finalStack)
+        targetLayout.addAll(drawStack, finalStack, drawnTile)
 
         refreshScoreStats()
     }
@@ -282,15 +378,10 @@ class InGameScene(var rootService: RootService, test: SceneTest = SceneTest()) :
 
     override fun refreshAfterNextTurn(player: Player) {
 
-        val ownGui = Pane<ComponentView>(width = 130, height = 1080, visual = ColorVisual.LIGHT_GRAY)
+        ownGui = Pane<ComponentView>(width = 130, height = 1080, visual = ColorVisual.LIGHT_GRAY)
 
         val bigExtension =
-            TokenView(
-                posY = 10,
-                posX = 10,
-                height = 100,
-                width = 100,
-                visual = ImageVisual("tiles/big_expansion_tile.png")
+            TokenView(posY = 10, posX = 10, height = 100, width = 100, visual = ImageVisual("tiles/big_expansion_tile.png")
             ).apply {
                 isDraggable = true
                 name = "big_extension"
@@ -298,20 +389,12 @@ class InGameScene(var rootService: RootService, test: SceneTest = SceneTest()) :
             }
 
         val smallExtension =
-            TokenView(
-                posY = 120,
-                posX = 10,
-                height = 100,
-                width = 100,
-                visual = ImageVisual("tiles/small_expansion_tile.png")
+            TokenView( posY = 120, posX = 10, height = 100, width = 100, visual = ImageVisual("tiles/small_expansion_tile.png")
             ).apply {
                 isDraggable = true
                 name = "small_extension"
                 isDisabled = false
             }
-
-
-        ownGui.addAll(bigExtension, smallExtension)
 
         onKeyPressed = { event ->
             if (event.keyCode == KeyCode.R) {
@@ -356,6 +439,8 @@ class InGameScene(var rootService: RootService, test: SceneTest = SceneTest()) :
             prisons[rootService.currentGame!!.currentPlayer].toggleExpansionSlots()
         }
 
+        removeComponents(ownGui)
+        ownGui.addAll(bigExtension, smallExtension)
         addComponents(ownGui)
     }
 
@@ -532,7 +617,6 @@ class InGameScene(var rootService: RootService, test: SceneTest = SceneTest()) :
                                             //calculateSize()
                                         }
 
-
                                         "small_extension" -> {
                                             rootService.playerActionService.expandPrisonGrid( false, x, y, smallExtensionRotation)
                                             //calculateSize()
@@ -582,12 +666,35 @@ class InGameScene(var rootService: RootService, test: SceneTest = SceneTest()) :
         init {
             this.spacing = 1.0
             for (i in 0 until bus.tiles.size) {
-                if (bus.tiles[i] == null) {
-                    this[0, i] = TokenView(height = 50, width = 50, visual = ImageVisual("tiles/default_tile.png"))
-                } else if (bus.tiles[i] is GuardTile) {
-                    this[0, i] = TokenView(height = 50, width = 50, visual = ImageVisual("tiles/default_guard.png"))
-                } else this[0, i] =
-                    TokenView(height = 50, width = 50, visual = tileVisual(bus.tiles[i] as PrisonerTile))
+                for (j in 0 until this.bus.tiles.size) {
+                    if (bus.tiles[i] == null) {
+                        this[0, i] = TokenView(height = 50, width = 50, visual = ImageVisual("tiles/default_tile.png")) }
+                    if (bus.tiles[i] is CoinTile) {
+                        this[0, i] = TokenView(height = 50, width = 50, visual = ImageVisual("tiles/default_coin.png")) }
+                    if (bus.tiles[i] is GuardTile) {
+                        this[0, i] = TokenView(height = 50, width = 50, visual = ImageVisual("tiles/default_guard.png")) }
+                    if (bus.tiles[i] is PrisonerTile) {
+                        this[0, i] = TokenView(height = 50, width = 50, visual = tileVisual(bus.tiles[i] as PrisonerTile)) }
+                }
+                this.apply{
+                    this.onMouseClicked = {
+                        if(tileDrawn) {
+                            if(drawnServiceTile != null) {
+                                rootService.playerActionService.addTileToPrisonBus(drawnServiceTile!!,bus)
+                            }
+                            tileDrawn = false
+                            drawnTile.isDisabled = true
+                            drawnTile.isVisible = false
+                            ownGui.isDisabled = false
+                            for (j in hideLabels) {
+                                j.apply {
+                                    j.isDisabled = false
+                                    j.isVisible = true
+                                }
+                            }
+                        }
+                    }
+                }
             }
         }
 
@@ -632,8 +739,8 @@ class SceneTest : BoardGameApplication("AquaGhetto"), Refreshable {
     init {
         rootService.gameService.startNewGame(mutableListOf(
             Pair("Moin0", PlayerType.PLAYER),
-            Pair("Moin1", PlayerType.PLAYER)))/*
-            Pair("Moin2", PlayerType.PLAYER)))
+            Pair("Moin1", PlayerType.PLAYER),
+            Pair("Moin2", PlayerType.PLAYER)))/*
             Pair("Moin3", PlayerType.PLAYER))),
             Pair("Moin4", PlayerType.PLAYER)))*/
 
@@ -646,9 +753,9 @@ class SceneTest : BoardGameApplication("AquaGhetto"), Refreshable {
             }
         }
         rootService.currentGame?.players?.get(1)?.apply {
-            this.coins = 6 }/*
+            this.coins = 6 }
         rootService.currentGame?.players?.get(2)?.apply {
-            this.coins = 5 }
+            this.coins = 5 }/*
         rootService.currentGame?.players?.get(3)?.apply {
             this.coins = 5 }*/
         /*rootService.currentGame?.players?.get(4)?.apply {
