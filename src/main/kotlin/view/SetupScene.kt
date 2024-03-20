@@ -9,6 +9,7 @@ import tools.aqua.bgw.components.uicomponents.*
 import tools.aqua.bgw.core.Alignment
 import tools.aqua.bgw.core.BoardGameApplication
 import tools.aqua.bgw.core.MenuScene
+import tools.aqua.bgw.event.KeyCode
 import tools.aqua.bgw.util.Font
 import tools.aqua.bgw.visual.ColorVisual
 import tools.aqua.bgw.visual.ImageVisual
@@ -21,7 +22,7 @@ import javax.imageio.ImageIO
 /**
  * Our Setup side that generates a game based on user input
  * uses a Grid [playerGrid] to Organise the Labels and Buttons
- * Grid gets filled with Elemts
+ * Grid gets filled with Elements
  * First Colum is for TextInput field
  * Second Colum is for PlayerType Switcher
  * Third Colum is to delete that Colum
@@ -50,6 +51,10 @@ class SetupScene (rootService : RootService, test: SceneTest2 = SceneTest2()) : 
     private val playerGrid: GridPane<UIComponent> =
         GridPane(posX = 600, posY = 450, columns = 3, rows = 5, spacing = 25)
 
+    /**
+     * User can Set the Delay in s
+     * Default is 5s
+     */
     val delayInputPlayer1: TextField = TextField(
         posX = ((1920 / 2) - 100),
         posY = (1080 - 250),
@@ -57,11 +62,18 @@ class SetupScene (rootService : RootService, test: SceneTest2 = SceneTest2()) : 
         width = 50,
         text = "5",
     )
-    private fun toggleDelayInputVisibility(visibility: Boolean): Unit {
+    private fun determineAIPlayer(): Unit {
+        var shouldDelayInputbeVisible : Boolean = false
+        for (i in 0 until playerGrid.rows) {
 
+            if(getPlayerType(playerGrid[1, i]) == PlayerType.RANDOM_AI ||
+                getPlayerType(playerGrid[1, i]) == PlayerType.AI)
+            {
+                shouldDelayInputbeVisible = true;
+            }
+        }
+        delayInputPlayer1.apply { isVisible = shouldDelayInputbeVisible}
     }
-
-
         /**
          * Creates a TextField were the User can Input a PlayerName
          * Length of the input is unrestricted
@@ -168,30 +180,36 @@ class SetupScene (rootService : RootService, test: SceneTest2 = SceneTest2()) : 
                         "PLAYER" -> {
                             text = "AI";
                             //visual = ImageVisual("AI.png");
+                            determineAIPlayer()
                             //delayInputPlayer1.apply { delayInputPlayer1.isVisible = true }
                         }
 
                         "AI" -> {
                             text = "RANDOM";
                             //visual = ImageVisual("RANDOM.png");
+                            determineAIPlayer()
                             //delayInputPlayer1.apply { delayInputPlayer1.isVisible = true }
                         }
 
                         "RANDOM" -> {
                             text = "NETWORK";
                             //visual = ImageVisual("NETWORK.png");
+                            determineAIPlayer()
+
                             //delayInputPlayer1.apply { delayInputPlayer1.isVisible = false }
                         }
 
                         "NETWORK" -> {
                             text = "PLAYER";
-                            //visual = ImageVisual("PLAYER.png")
+                            //visual = ImageVisual("PLAYER.png");
+                            determineAIPlayer()
                             //delayInputPlayer1.apply { delayInputPlayer1.isVisible = false }
                         }
 
                         else -> {
                             text = "PLAYER";
                             //visual = ImageVisual("PLAYER.png")
+                            determineAIPlayer()
                             //delayInputPlayer1.apply { delayInputPlayer1.isVisible = false }
                         }
                     }

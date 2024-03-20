@@ -334,7 +334,7 @@ class PlayerActionService(private val rootService: RootService): AbstractRefresh
             currentPlayer.board.guardPosition.add(Pair(destinationX, destinationY))
         }
 
-        if (isNetworkGame && sender == PlayerType.PLAYER) {
+        if (isNetworkGame && sender != PlayerType.NETWORK) {
             if (sourceX == sourceY && sourceX != -101) {
                 rootService.networkService.sendPlaceWorker(
                     sourceX,
@@ -349,17 +349,17 @@ class PlayerActionService(private val rootService: RootService): AbstractRefresh
             }
         }
 
+        if (!isNetworkGame && !(sourceX == sourceY && sourceX == -101)) {
+            /*determine next player is only allowed to be called if this is not a new employee*/
+            rootService.gameService.determineNextPlayer(false)
+        }
+
         onAllRefreshables {
             refreshEmployee(currentPlayer) // aktualisiert refreshEmployee auch die GuardTiles?
             if (hasSetJanitorHere) {
                 refreshIsolation(currentPlayer)
             }
             refreshScoreStats()
-        }
-
-        /*determine next player is only allowed to be called if this is not a new employee*/
-        if (!(sourceX == sourceY && sourceX == -101)) {
-            rootService.gameService.determineNextPlayer(false)
         }
     }
 
@@ -422,16 +422,16 @@ class PlayerActionService(private val rootService: RootService): AbstractRefresh
 
         rootService.evaluationService.evaluatePlayer(currentPlayer)
 
-        if (isNetworkGame && sender == PlayerType.PLAYER) {
-            rootService.networkService.sendDiscard()
-        }
-
         onAllRefreshables {
             refreshScoreStats()
             refreshIsolation(currentPlayer)
         }
 
         rootService.gameService.determineNextPlayer(false)
+
+        if (isNetworkGame && sender == PlayerType.PLAYER) {
+            rootService.networkService.sendDiscard()
+        }
     }
 
     /**
@@ -515,11 +515,6 @@ class PlayerActionService(private val rootService: RootService): AbstractRefresh
             currentPlayer.remainingSmallExtensions -= 1
         }
 
-        if (isNetworkGame && sender == PlayerType.PLAYER) {
-            rootService.networkService.sendBuyExpansion(isBigExtension, x, y, rotation)
-        }
-
-
         for (location in placementCoordinates) {
             onAllRefreshables {
                 refreshPrison(null, location.first, location.second)
@@ -529,6 +524,9 @@ class PlayerActionService(private val rootService: RootService): AbstractRefresh
         if (changePlayer)
             rootService.gameService.determineNextPlayer(false)
 
+        if (isNetworkGame && sender == PlayerType.PLAYER) {
+            rootService.networkService.sendBuyExpansion(isBigExtension, x, y, rotation)
+        }
     }
 
     /**
