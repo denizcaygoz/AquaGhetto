@@ -34,6 +34,11 @@ class InGameScene(var rootService: RootService, test: SceneTest = SceneTest()) :
     private val prisonBuses: MutableList<BoardPrisonBus> = mutableListOf()
     private val isolations: MutableList<BoardIsolation> = mutableListOf()
     private val names: MutableList<Label> = mutableListOf()
+    private val freePrisonerButton : Button = Button(1640,950,150,50,text = "Free Prisoner!").apply {
+        onMouseClicked = {
+            rootService.playerActionService.freePrisoner()
+        }
+    }
     private val drawStack = TokenView(
         posX = 845,
         posY = 505,
@@ -87,7 +92,8 @@ class InGameScene(var rootService: RootService, test: SceneTest = SceneTest()) :
 
         // Add the cameraPane to the scene
         addComponents(
-            cameraPane
+            cameraPane,
+            freePrisonerButton
         )
     }
 
@@ -185,6 +191,48 @@ class InGameScene(var rootService: RootService, test: SceneTest = SceneTest()) :
                 posY = 230.0
             }
             prisons[4].apply {
+                posX = 1540.0
+                posY = 600.0
+            }
+        }
+        if (playerCount == 4) {
+            prisons[0].apply {
+                posX = 1240.0
+                posY = 850.0
+            }
+            prisons[1].apply {
+                posX = 680.0
+                posY = 850.0
+            }
+            prisons[2].apply {
+                posX = 680.0
+                posY = 230.0
+            }
+            prisons[3].apply {
+                posX = 1240.0
+                posY = 230.0
+            }
+        }
+        if (playerCount == 3) {
+            prisons[0].apply {
+                posX = 960.0
+                posY = 850.0
+            }
+            prisons[1].apply {
+                posX = 680.0
+                posY = 230.0
+            }
+            prisons[2].apply {
+                posX = 1240.0
+                posY = 230.0
+            }
+        }
+        if (playerCount == 2) {
+            prisons[0].apply {
+                posX = 380.0
+                posY = 600.0
+            }
+            prisons[1].apply {
                 posX = 1540.0
                 posY = 600.0
             }
@@ -584,10 +632,10 @@ class SceneTest : BoardGameApplication("AquaGhetto"), Refreshable {
     init {
         rootService.gameService.startNewGame(mutableListOf(
             Pair("Moin0", PlayerType.PLAYER),
-            Pair("Moin1", PlayerType.PLAYER),
-            Pair("Moin2", PlayerType.PLAYER),
-            Pair("Moin3", PlayerType.PLAYER),
-            Pair("Moin4", PlayerType.PLAYER)))
+            Pair("Moin1", PlayerType.PLAYER)))/*
+            Pair("Moin2", PlayerType.PLAYER)))
+            Pair("Moin3", PlayerType.PLAYER))),
+            Pair("Moin4", PlayerType.PLAYER)))*/
 
         rootService.currentGame?.players?.get(0)?.apply {
             this.coins = 6
@@ -598,13 +646,13 @@ class SceneTest : BoardGameApplication("AquaGhetto"), Refreshable {
             }
         }
         rootService.currentGame?.players?.get(1)?.apply {
-            this.coins = 6 }
+            this.coins = 6 }/*
         rootService.currentGame?.players?.get(2)?.apply {
             this.coins = 5 }
         rootService.currentGame?.players?.get(3)?.apply {
-            this.coins = 5 }
-        rootService.currentGame?.players?.get(4)?.apply {
-            this.coins = 5 }
+            this.coins = 5 }*/
+        /*rootService.currentGame?.players?.get(4)?.apply {
+            this.coins = 5 }*/
         showGameScene(gameScene)
     }
 }
