@@ -109,7 +109,7 @@ class GameService(private val rootService: RootService): AbstractRefreshingServi
                 onAllRefreshables {
                     refreshAfterNextTurn(game.players[game.currentPlayer])
                 }
-                this.checkAITurn(game.players[game.currentPlayer], 50)
+                this.checkAITurn(game.players[game.currentPlayer])
             }
             0 -> { /*all players have taken a buss*/
                 if (game.finalStack.size != 15) { /*reserve stack was taken*/
@@ -133,7 +133,7 @@ class GameService(private val rootService: RootService): AbstractRefreshingServi
                 onAllRefreshables {
                     refreshAfterNextTurn(game.players[game.currentPlayer])
                 }
-                this.checkAITurn(game.players[game.currentPlayer], 50)
+                this.checkAITurn(game.players[game.currentPlayer])
             }
         }
 
@@ -160,21 +160,20 @@ class GameService(private val rootService: RootService): AbstractRefreshingServi
             refreshPrisonBus(null)
             refreshAfterNextTurn(game.players[game.currentPlayer])
         }
-        this.checkAITurn(game.players[game.currentPlayer], 50)
+        this.checkAITurn(game.players[game.currentPlayer])
     }
 
     /**
      * If the provided player is an AI calls makeTurn in AIService
      *
      * @param player the player in whose name the action is performed
-     * @param delay the total delay of this action, if the computing of the turn already takes longer than delay
-     * there is no additional delay. Delay is measured in milliseconds
+     * @param delay not used anymore, still there to not break anything
      * @see AIService
      */
-    fun checkAITurn(player: Player, delay: Int) {
+    fun checkAITurn(player: Player) {
         if (player.type == PlayerType.AI || player.type == PlayerType.RANDOM_AI) {
             require(player.takenBus == null)
-            rootService.aiService.makeTurn(player , delay)
+            rootService.aiService.makeTurn(player)
         }
     }
 

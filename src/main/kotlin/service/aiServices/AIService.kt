@@ -32,10 +32,12 @@ class AIService(private val rootService: RootService): AbstractRefreshingService
      * @throws IllegalArgumentException if the provided player is not an AI or a RandomAI
      * @throws IllegalArgumentException if the provided player is not the current player
      */
-    fun makeTurn(player: Player, delay: Int) {
+    fun makeTurn(player: Player) {
         val game = rootService.currentGame
         checkNotNull(game) { "No running game." }
+        val delay = game.delayTime
 
+        require(delay <= 0) {"Delay is smaller than 0"}
         require(player.type == PlayerType.AI || player.type == PlayerType.RANDOM_AI) {"player need to be an ai"}
         require(player == game.players[game.currentPlayer]) {"provided player has to be the current player"}
 
