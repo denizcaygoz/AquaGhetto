@@ -115,7 +115,7 @@ class MainMenuScene(rootService : RootService, test:SceneTest3 = SceneTest3()) :
                 onMouseClicked = {
                     val guestName = nameGuestInputField.text
                     val sessionID = lobbycodeInputfield.text
-                    rootService.networkService.joinGame("aqua24a", guestName, sessionID)
+                    rootService.networkService.joinGame("aqua24a", guestName, sessionID, PlayerType.RANDOM_AI)
                     newMultiplayerGameButton.isDisabled = true
 
                 }
@@ -135,7 +135,7 @@ class MainMenuScene(rootService : RootService, test:SceneTest3 = SceneTest3()) :
                 width = 225,
                 text = ""
             ).apply { isVisible = false }
-           /* val hostButton = Button(
+           val hostButton = Button(
                 posX = (1920 / 2) -250,
                 posY = 750,
                 height = 100,
@@ -144,9 +144,9 @@ class MainMenuScene(rootService : RootService, test:SceneTest3 = SceneTest3()) :
             ).apply {
                 isVisible = false
                 onMouseClicked = {
-                    rootService.networkService.startNewHostedGame()
+                    rootService.networkService.startNewHostedGame(PlayerType.RANDOM_AI)
                 }
-            }*/
+            }
             val lobbyButton = Button(
                 posX = (1920 / 2) + 125,
                 posY = 600,

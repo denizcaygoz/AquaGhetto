@@ -56,16 +56,16 @@ class PlayerActionService(private val rootService: RootService): AbstractRefresh
         // Add the tile to the prison bus
         prisonBus.tiles[emptyAndUnblockedIndex] = tile
 
-        if (isNetworkGame && sender == PlayerType.PLAYER) {
-            rootService.networkService.sendAddTileToTruck(prisonBus)
-        }
-
         onAllRefreshables {
             refreshPrisonBus(prisonBus)
         }
 
         if (changePlayer)
             rootService.gameService.determineNextPlayer(false)
+
+        if (isNetworkGame && sender == PlayerType.PLAYER) {
+            rootService.networkService.sendAddTileToTruck(prisonBus)
+        }
 
     }
 

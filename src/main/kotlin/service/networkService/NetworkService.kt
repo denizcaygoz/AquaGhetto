@@ -50,6 +50,7 @@ class NetworkService(private val rootService: RootService): AbstractRefreshingSe
     var hostPlayer: String? = null
     var createadSessionID: String? = null
     var servicePlayer: String = ""
+    var serviceType: PlayerType = PlayerType.PLAYER
 
     /**
      * Connects to server, sets the [NetworkService.client] if successful and returns `true` on success.
@@ -193,7 +194,7 @@ class NetworkService(private val rootService: RootService): AbstractRefreshingSe
 
         players.forEach { playerName ->
             val player = if(playerName == sender) {
-                Player(playerName, PlayerType.PLAYER)
+                Player(playerName, serviceType)
             } else {
                 Player(playerName, PlayerType.NETWORK)
             }
@@ -253,13 +254,15 @@ class NetworkService(private val rootService: RootService): AbstractRefreshingSe
      *
      * @throws IllegalStateException if already connected to another game or connection attempt fails
      */
-    fun joinGame(secret: String, name: String, sessionID: String) {
+    fun joinGame(secret: String, name: String, sessionID: String, playerType: PlayerType = PlayerType.PLAYER) {
         if (!connect(secret, name)) {
             error("Connection failed")
         }
         updateConnectionState(ConnectionState.CONNECTED)
 
         client?.joinGame(sessionID, "Hello!")
+
+        serviceType = playerType
 
         updateConnectionState(ConnectionState.WAITING_FOR_JOIN_CONFIRMATION)
     }
