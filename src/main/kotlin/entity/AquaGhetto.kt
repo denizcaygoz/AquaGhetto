@@ -37,6 +37,7 @@ class AquaGhetto: Serializable, Cloneable {
     var previousState: AquaGhetto? = null
     var nextState: AquaGhetto? = null
     var allTiles: MutableList<Tile> = mutableListOf()
+    var delayTime : Int = 0
 
     @Suppress("UNCHECKED_CAST")
     public override fun clone(): AquaGhetto {
@@ -53,6 +54,8 @@ class AquaGhetto: Serializable, Cloneable {
             allTiles = this@AquaGhetto.allTiles.map {
                 if (it is PrisonerTile) PrisonerTile(it.id, it.prisonerTrait, it.prisonerType) else it
             }.toMutableList()
+
+            delayTime = this@AquaGhetto.delayTime
 
 
         }

@@ -101,6 +101,7 @@ class EvaluationService(private val rootService: RootService): AbstractRefreshin
         checkNotNull(game) { "No running game." }
         for (player in game.players) {
             player.currentScore = this.evaluatePlayer(player)
+            println("${player.name}: ${player.currentScore}")
         }
         onAllRefreshables {
             refreshAfterEndGame()

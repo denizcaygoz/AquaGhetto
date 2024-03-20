@@ -35,7 +35,7 @@ class AqueghettoNetworkClient(
     /**
      * Handle a [CreateGameResponse] sent by the server. Will await the guest player when its
      * status is [CreateGameResponseStatus.SUCCESS]. As recovery from network problems is not
-     * implemented in NetWar, the method disconnects from the server and throws an
+     * implemented, the method disconnects from the server and throws an
      * [IllegalStateException] otherwise.
      *
      * @throws IllegalStateException if status != success or currently not waiting for a game creation response.
@@ -58,7 +58,7 @@ class AqueghettoNetworkClient(
     /**
      * Handle a [JoinGameResponse] sent by the server. Will await the init message when its
      * status is [JoinGameResponseStatus.SUCCESS]. As recovery from network problems is not
-     * implemented in NetWar, the method disconnects from the server and throws an
+     * implemented, the method disconnects from the server and throws an
      * [IllegalStateException] otherwise.
      *
      * @throws IllegalStateException if status != success or currently not waiting for a join game response.
@@ -110,7 +110,7 @@ class AqueghettoNetworkClient(
     /**
      * Handle a [GameActionResponse] sent by the server. Does nothing when its
      * status is [GameActionResponseStatus.SUCCESS]. As recovery from network problems is not
-     * implemented in NetWar, the method disconnects from the server and throws an
+     * implemented, the method disconnects from the server and throws an
      * [IllegalStateException] otherwise.
      */
     override fun onGameActionResponse(response: GameActionResponse) {
@@ -133,7 +133,7 @@ class AqueghettoNetworkClient(
     @GameActionReceiver
     fun onInitReceived(message: InitGameMessage, sender: String) {
         BoardGameApplication.runOnGUIThread {
-            networkService.startNewJoinedGame(message, playerName, sender)
+            networkService.startNewJoinedGame(message, playerName)
         }
     }
 

@@ -26,7 +26,6 @@ class GameService(private val rootService: RootService): AbstractRefreshingServi
      * refreshAfterStartGame and refreshAfterNextTurn with the current player is called
      */
     fun startNewGame(players: MutableList<Pair<String, PlayerType>>) {
-
         /*checks for a valid player count*/
         require(players.size >= 2) { "minimum 2 players" }
         require(players.size <= 5) { "maximum 5 players" }
@@ -72,7 +71,7 @@ class GameService(private val rootService: RootService): AbstractRefreshingServi
         }
 
         /*if the first player is an AI call the AI service*/
-        this.checkAITurn(game.players[game.currentPlayer], 1500)
+        //this.checkAITurn(game.players[game.currentPlayer], 1500)
     }
 
     /**
@@ -110,7 +109,7 @@ class GameService(private val rootService: RootService): AbstractRefreshingServi
                 onAllRefreshables {
                     refreshAfterNextTurn(game.players[game.currentPlayer])
                 }
-                this.checkAITurn(game.players[game.currentPlayer], 50)
+                this.checkAITurn(game.players[game.currentPlayer])
             }
             0 -> { /*all players have taken a buss*/
                 if (game.finalStack.size != 15) { /*reserve stack was taken*/
@@ -134,7 +133,7 @@ class GameService(private val rootService: RootService): AbstractRefreshingServi
                 onAllRefreshables {
                     refreshAfterNextTurn(game.players[game.currentPlayer])
                 }
-                this.checkAITurn(game.players[game.currentPlayer], 50)
+                this.checkAITurn(game.players[game.currentPlayer])
             }
         }
 
@@ -161,21 +160,20 @@ class GameService(private val rootService: RootService): AbstractRefreshingServi
             refreshPrisonBus(null)
             refreshAfterNextTurn(game.players[game.currentPlayer])
         }
-        this.checkAITurn(game.players[game.currentPlayer], 50)
+        this.checkAITurn(game.players[game.currentPlayer])
     }
 
     /**
      * If the provided player is an AI calls makeTurn in AIService
      *
      * @param player the player in whose name the action is performed
-     * @param delay the total delay of this action, if the computing of the turn already takes longer than delay
-     * there is no additional delay. Delay is measured in milliseconds
+     * @param delay not used anymore, still there to not break anything
      * @see AIService
      */
-    private fun checkAITurn(player: Player, delay: Int) {
-        require(player.takenBus == null)
+    fun checkAITurn(player: Player) {
         if (player.type == PlayerType.AI || player.type == PlayerType.RANDOM_AI) {
-            rootService.aiService.makeTurn(player , delay)
+            require(player.takenBus == null)
+            rootService.aiService.makeTurn(player)
         }
     }
 
@@ -183,7 +181,7 @@ class GameService(private val rootService: RootService): AbstractRefreshingServi
      * Initializes the board by adding the "default" 19 spaces
      * @param board the board to initialize
      */
-    private fun initializeBoard(board: Board) {
+    fun initializeBoard(board: Board) {
         for (x in 1..4) {
             for (y in 1..4) {
                 if (x == 4 && y == 4) continue

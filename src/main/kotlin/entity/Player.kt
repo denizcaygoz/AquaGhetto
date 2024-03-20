@@ -30,6 +30,7 @@ import java.util.*
  * @property remainingSmallExtensions the amount of small extensions the player could place
  * @property maxPrisonerTypes the maximum amount of prisoners with different types
  * @property currentScore the current score of a player
+ * @property delayTime amount of time the AI needs to wait before making a Turn
  */
 
 class Player(val name: String, val type: PlayerType): Serializable, Cloneable {

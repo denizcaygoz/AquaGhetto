@@ -63,7 +63,7 @@ class PlayerActionService(private val rootService: RootService): AbstractRefresh
         if (changePlayer)
             rootService.gameService.determineNextPlayer(false)
 
-        if (isNetworkGame && sender == PlayerType.PLAYER) {
+        if (isNetworkGame && sender != PlayerType.NETWORK) {
             rootService.networkService.sendAddTileToTruck(prisonBus)
         }
 
@@ -429,7 +429,7 @@ class PlayerActionService(private val rootService: RootService): AbstractRefresh
 
         rootService.gameService.determineNextPlayer(false)
 
-        if (isNetworkGame && sender == PlayerType.PLAYER) {
+        if (isNetworkGame && sender != PlayerType.NETWORK) {
             rootService.networkService.sendDiscard()
         }
     }
@@ -524,7 +524,7 @@ class PlayerActionService(private val rootService: RootService): AbstractRefresh
         if (changePlayer)
             rootService.gameService.determineNextPlayer(false)
 
-        if (isNetworkGame && sender == PlayerType.PLAYER) {
+        if (isNetworkGame && sender != PlayerType.NETWORK) {
             rootService.networkService.sendBuyExpansion(isBigExtension, x, y, rotation)
         }
     }

@@ -17,12 +17,18 @@ class SmartAIBasicTest {
         val rootService = RootService()
         val players = mutableListOf(
             Pair("P1", PlayerType.RANDOM_AI),
-            Pair("P2", PlayerType.AI)
+            //Pair("P2", PlayerType.RANDOM_AI),
+            //Pair("P3", PlayerType.RANDOM_AI),
+            Pair("P4", PlayerType.AI)
         )
 
         assertDoesNotThrow { rootService.gameService.startNewGame(players) }
         val game = rootService.currentGame
         require(game != null)
+
+        val firstPlayer = game.players[game.currentPlayer]
+        rootService.gameService.checkAITurn(firstPlayer,1000)
+
         println("Last DrawStack: ${game.drawStack.size}    FinalStack: ${game.finalStack.size}")
     }
 
