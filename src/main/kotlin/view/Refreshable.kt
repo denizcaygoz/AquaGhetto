@@ -40,8 +40,16 @@ interface Refreshable {
 
     fun refreshEmployee(player: Player) {}
 
+    /**
+     * refreshes the network connection status with the given information
+     *
+     * @param state the information to show
+     **/
     fun refreshConnectionState(state: ConnectionState) {}
 
-
+    /**
+     * [refreshAfterPlayerJoined] performs refreshes so the MainMenu Scene can show joined players
+     **/
+    fun refreshAfterPlayerJoined(player: Player) {}
 
 }

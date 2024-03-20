@@ -133,7 +133,7 @@ class AqueghettoNetworkClient(
     @GameActionReceiver
     fun onInitReceived(message: InitGameMessage, sender: String) {
         BoardGameApplication.runOnGUIThread {
-            networkService.startNewJoinedGame(message, playerName)
+            networkService.startNewJoinedGame(message, playerName, sender)
         }
     }
 
