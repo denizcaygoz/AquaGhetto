@@ -84,6 +84,7 @@ class MoveEmployeeTest {
         guestCurrentPlayer.hasJanitor = true
 
         rootServiceHost.playerActionService.moveEmployee(-102, -102, -103,-103)
+
         rootServiceHost.waitForState(ConnectionState.WAITING_FOR_TURN)
         rootServiceGuest.waitForState(ConnectionState.PLAYING_MY_TURN)
 

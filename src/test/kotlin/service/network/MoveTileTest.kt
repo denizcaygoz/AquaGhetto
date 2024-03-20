@@ -76,8 +76,10 @@ class MoveTileTest {
         assertNotNull(hostGame)
         assertNotNull(guestGame)
 
-        val isolationTile = PrisonerTile(26, PrisonerTrait.MALE, PrisonerType.BLUE)
-        val parentFemale = PrisonerTile(25, PrisonerTrait.FEMALE, PrisonerType.BLUE)
+        val isolationTileHost = PrisonerTile(26, PrisonerTrait.MALE, PrisonerType.BLUE)
+        val isolationTileGuest = PrisonerTile(26, PrisonerTrait.MALE, PrisonerType.BLUE)
+        val parentFemaleHost = PrisonerTile(25, PrisonerTrait.FEMALE, PrisonerType.BLUE)
+        val parentFemaleGuest = PrisonerTile(25, PrisonerTrait.FEMALE, PrisonerType.BLUE)
         val tileRed = PrisonerTile(13, PrisonerTrait.MALE, PrisonerType.RED)
         val anotherTileRed = PrisonerTile(14, PrisonerTrait.MALE, PrisonerType.RED)
 
@@ -86,10 +88,10 @@ class MoveTileTest {
 
         hostGame.players[1].coins = 20
         guestGame.players[1].coins = 20
-        hostGame.players[1].isolation.add(parentFemale)
-        guestGame.players[1].isolation.add(parentFemale)
-        hostGame.players[1].isolation.add(isolationTile)
-        guestGame.players[1].isolation.add(isolationTile)
+        hostGame.players[1].isolation.add(parentFemaleHost)
+        guestGame.players[1].isolation.add(parentFemaleGuest)
+        hostGame.players[1].isolation.add(isolationTileHost)
+        guestGame.players[1].isolation.add(isolationTileGuest)
 
         rootServiceHost.playerActionService.buyPrisonerFromOtherIsolation( hostGame.players[1], 1,1)
 
@@ -98,27 +100,23 @@ class MoveTileTest {
         rootServiceHost.waitForState(ConnectionState.WAITING_FOR_TURN)
         rootServiceGuest.waitForState(ConnectionState.PLAYING_MY_TURN)
 
-        assertTrue { hostGame.players[0].board.getPrisonYard(1,1)?.id == isolationTile.id }
-        assertTrue { guestGame.players[0].board.getPrisonYard(1,1)?.id == isolationTile.id }
-        /*change current player*/
-        hostGame.currentPlayer = 1
-        guestGame.currentPlayer = 1
+        assertTrue { hostGame.players[0].board.getPrisonYard(1,1)?.id == isolationTileHost.id }
+        assertTrue { guestGame.players[0].board.getPrisonYard(1,1)?.id == isolationTileHost.id }
+
+        val gameAfterSafeHost = rootServiceHost.currentGame
+        val gameAfterSafeGuest = rootServiceGuest.currentGame
         /*prepare yard of player two*/
-        hostGame.players[1].board.setPrisonYard(1,1,isolationTile)
-        guestGame.players[1].board.setPrisonYard(1,1,isolationTile)
-        hostGame.players[1].board.setPrisonYard(3,2,tileRed)
-        guestGame.players[1].board.setPrisonYard(3,2,tileRed)
-        hostGame.players[1].board.setPrisonYard(3,3,anotherTileRed)
-        guestGame.players[1].board.setPrisonYard(3,3,anotherTileRed)
+        assertNotNull(gameAfterSafeGuest)
+        assertNotNull(gameAfterSafeHost)
+        gameAfterSafeHost.players[1].board.setPrisonYard(1,1,isolationTileHost)
+        gameAfterSafeGuest.players[1].board.setPrisonYard(1,1,isolationTileGuest)
+        gameAfterSafeHost.players[1].board.setPrisonYard(3,2,tileRed)
+        gameAfterSafeGuest.players[1].board.setPrisonYard(3,2,tileRed)
+        gameAfterSafeHost.players[1].board.setPrisonYard(3,3,anotherTileRed)
+        gameAfterSafeGuest.players[1].board.setPrisonYard(3,3,anotherTileRed)
 
-        rootServiceHost.currentGame = hostGame
-        rootServiceGuest.currentGame = guestGame
-
-        /** Setzt bei rootServiceHost komischer weiße die Eltern elemente auf not breedable **/
         val successSecond = rootServiceGuest.playerActionService.movePrisonerToPrisonYard(
             2,1)
-        // Weil determineNextPlayer nicht richtig läuft
-        rootServiceGuest.currentGame?.currentPlayer = 1
 
         val childToPlace: PrisonerTile? = successSecond.second
         if (childToPlace!= null) {
@@ -126,17 +124,17 @@ class MoveTileTest {
             /*must be done by the gui*/
             rootServiceGuest.playerActionService.moveEmployee(-101,-101, 2,2)
             /*send message to player one*/
-            /*must be sent by the gui*/
             rootServiceGuest.networkService.sendMoveTile(hostGame.players[1].name, 2,1)
         }
 
-        rootServiceHost.waitForState(ConnectionState.PLAYING_MY_TURN)
         rootServiceGuest.waitForState(ConnectionState.WAITING_FOR_TURN)
+        rootServiceHost.waitForState(ConnectionState.PLAYING_MY_TURN)
 
-        assertTrue { hostGame.players[1].board.getPrisonYard(1,1)?.id == isolationTile.id }
-        assertTrue { hostGame.players[1].board.getPrisonYard(2,1)?.id == parentFemale.id }
-        assertTrue { hostGame.players[1].board.getPrisonYard(3,2)?.id == tileRed.id }
-        assertTrue { hostGame.players[1].board.getPrisonYard(3,3)?.id == anotherTileRed.id }
+        assertTrue { gameAfterSafeHost.players[1].board.getPrisonYard(1,1)?.id == isolationTileGuest.id }
+        assertTrue { gameAfterSafeHost.players[1].board.getPrisonYard(2,1)?.id == parentFemaleGuest.id }
+        assertTrue { gameAfterSafeHost.players[1].board.getPrisonYard(3,2)?.id == tileRed.id }
+        assertTrue { gameAfterSafeHost.players[1].board.getPrisonYard(3,3)?.id == anotherTileRed.id }
+        // game changes parents to not breadable
         //assertTrue { hostGame.players[1].board.getPrisonYard(1,2)?.id == childToPlace?.id }
     }
 
