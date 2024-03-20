@@ -20,6 +20,7 @@ import tools.aqua.bgw.components.layoutviews.CameraPane
 import tools.aqua.bgw.components.layoutviews.GridPane
 import tools.aqua.bgw.components.layoutviews.Pane
 import tools.aqua.bgw.components.uicomponents.*
+import tools.aqua.bgw.event.DropEvent
 import tools.aqua.bgw.util.Font
 import tools.aqua.bgw.visual.ColorVisual
 import tools.aqua.bgw.visual.CompoundVisual
@@ -43,7 +44,12 @@ class InGameScene(var rootService: RootService, test: SceneTest = SceneTest()) :
     private val freePrisonerButton : Button = Button(1640,950,150,50,text = "Free Prisoner!"
     ).apply {
         onMouseClicked = {
-            rootService.playerActionService.freePrisoner()
+            val game = rootService.currentGame
+            requireNotNull(game) {"no game"}
+            val player = game.players[game.currentPlayer]
+            if (player.isolation.isNotEmpty() && player.coins >= 2) { /*button does nothing if action is not valid*/
+                rootService.playerActionService.freePrisoner()
+            }
         }
     }
     private var drawnServiceTile : Tile? = null
@@ -272,7 +278,7 @@ class InGameScene(var rootService: RootService, test: SceneTest = SceneTest()) :
         // Prison Grids and Isolations
         for (i in 0 until playerCount) {
             prisons.add(PlayerBoard(game.players[i], rootService))
-            isolations.add(BoardIsolation(game.players[i].isolation))
+            isolations.add(BoardIsolation(game.players[i].isolation, i))
             names.add(Label(text = game.players[i].name, font = Font(size = 20, color = Color.WHITE)))
         }
         // Prison Busses in Middle
@@ -376,7 +382,7 @@ class InGameScene(var rootService: RootService, test: SceneTest = SceneTest()) :
                 TokenView(
                     height = 50 * prisons[player].currentGridSize, width = 50 * prisons[player].currentGridSize,
                     visual = ImageVisual("tiles/default_tile.png")
-                ).apply {name = "takenBusTileTarget"}
+                ).apply {name = "takenBusTileTarget"} //TODO add drop for isolation tiles here
         } else {
             prisons[player][coordsToView(x, y).first, coordsToView(x, y).second] =
                 TokenView(
@@ -464,6 +470,17 @@ class InGameScene(var rootService: RootService, test: SceneTest = SceneTest()) :
         addComponents(ownGui)
     }
 
+    //TODO
+    override fun refreshIsolation(player: Player) {
+        val game = rootService.currentGame
+        requireNotNull(game) {"game null"}
+        val indexPlayer = game.players.indexOf(player)
+
+        val isolation = isolations[indexPlayer]
+
+        isolation.refreshIsolation()
+    }
+
     inner class PlayerBoard(val player: Player, val rootService: RootService) :
         GridPane<TokenView>(rows = 21, columns = 21, layoutFromCenter = true) {
 
@@ -490,7 +507,51 @@ class InGameScene(var rootService: RootService, test: SceneTest = SceneTest()) :
                             height = 50 * currentGridSize,
                             width = 50 * currentGridSize,
                             visual = ImageVisual("tiles/default_tile.png")
-                        )
+                        ).apply {
+                            val game = rootService.currentGame
+                            requireNotNull(game)
+                            name = "dropTile_${game.players.indexOf(player)}_${tempX}_${tempY}"
+
+                            //TODO
+                            /*important merge this loop with other drag events on the prison*/
+                            //coordsToView(x, y)
+                            dropAcceptor = {
+                                var result = false
+                                val fromIsolation = it.draggedComponent.name.contains("isolation_")
+                                println(fromIsolation)
+                                if (fromIsolation) {
+                                    val textSplit = it.draggedComponent.name.split("_")
+                                    val playerIsolation = Integer.parseInt(textSplit[1])
+                                    val card = textSplit[2]
+                                    val game = rootService.currentGame
+                                    requireNotNull(game)
+                                    val currentPlayer = game.currentPlayer
+                                    result = if (currentPlayer == playerIsolation) {
+                                        /*from own isolation*/
+                                        /*player needs one coin*/
+                                        game.players[game.currentPlayer].coins >= 1
+                                    } else {
+                                        /*from other isolation*/
+                                        /*player needs 2 coins*/
+                                        game.players[game.currentPlayer].coins >= 2
+                                    }
+                                }
+
+
+
+                                result
+                            }
+
+                            /*
+                            onDragDropped = {
+                                println(it.draggedComponent.name)
+                            }
+                            */
+
+
+
+
+                        }
                     }
                 }
             }
@@ -536,6 +597,7 @@ class InGameScene(var rootService: RootService, test: SceneTest = SceneTest()) :
             ).apply {
                 this.isDisabled = true
             }
+
         }
 
         // Assisting methods from here on
@@ -646,7 +708,6 @@ class InGameScene(var rootService: RootService, test: SceneTest = SceneTest()) :
                     }
                 }
             }
-
             return currentGridSize
         }
 
@@ -721,20 +782,97 @@ class InGameScene(var rootService: RootService, test: SceneTest = SceneTest()) :
 
     }
 
-    inner class BoardIsolation(val isolation: Stack<PrisonerTile>) :
+    inner class BoardIsolation(val isolation: Stack<PrisonerTile>, val playerIndex: Int) :
         GridPane<TokenView>(rows = 1, columns = 120, layoutFromCenter = true) {
 
         init {
+            this.refreshIsolation()
+        }
+
+        private fun doGestureEndStuff(dropEvent: DropEvent, name: String) {
+            val targetList = dropEvent.dragTargets
+            for (element in targetList) {
+                val name = element.name
+                if (!name.contains("dropTile_")) continue
+                val splitInfo = name.split("_")
+                val playerIndexLocation = Integer.parseInt(splitInfo[1])
+                val locXVisual = Integer.parseInt(splitInfo[2])
+                val locYVisual = Integer.parseInt(splitInfo[3])
+
+                val loc = coordsToService(locXVisual, locYVisual)
+
+                println("place tile info $playerIndexLocation    ${loc.first}    ${loc.second}")
+
+                val game = rootService.currentGame
+                requireNotNull(game)
+                val currentPlayerIndex = game.currentPlayer
+
+                if (currentPlayerIndex == playerIndexLocation) {
+                    /*player moving on own grid*/
+                    if (!rootService.validationService.validateTilePlacement(isolation.peek(), loc.first, loc.second)) {
+                        /*no valid location, refreshIsolation*/
+                        refreshIsolation()
+                        return
+                    }
+
+                    val nameSplit = name.split("_")
+                    val sourcePlacerIndex = Integer.parseInt(nameSplit[1])
+
+                    val currentPlayer = game.players[currentPlayerIndex]
+                    val sourcePlayer = game.players[sourcePlacerIndex]
+                    if (sourcePlacerIndex == playerIndexLocation) {
+                        /*from own isolation*/
+                        if (currentPlayer.coins < 1) {
+                            refreshIsolation()
+                            return
+                        }
+                        val bonus = rootService.playerActionService.movePrisonerToPrisonYard(loc.first, loc.second)
+                    } else {
+                        /*from other isolation*/
+                        if (currentPlayer.coins < 2) {
+                            refreshIsolation()
+                            return
+                        }
+                        val bonus = rootService.playerActionService.buyPrisonerFromOtherIsolation(sourcePlayer, loc.first, loc.second)
+                    }
+
+                } else {
+                    /*player tries to place prisoner on other grid, this is not allowed*/
+                    refreshIsolation()
+                    return
+                }
+
+                println("Element: " + element.name)
+            }
+        }
+
+        fun refreshIsolation() {
             this.spacing = 0.5
+            for (i in 0 until columns) {
+                this[i,0] = null
+            }
             if (isolation.isNotEmpty()) {
                 for (i in 0 until isolation.size) {
                     if (i == 0) {
-                        this[i, 0] = TokenView(height = 40, width = 40, visual = tileVisual(isolation[i]))
+                        this[i, 0] = TokenView(height = 40, width = 40, visual = tileVisual(isolation[isolation.size - i - 1])).apply {
+                            val tile = isolation[i]
+                            isDraggable = true
+                            name = "isolation_${playerIndex}_${tile.id}"
+                            isDisabled = false
+                            onDragGestureEnded = { event, success ->
+                                println("success: $success")
+                                doGestureEndStuff(event, name)
+                            }
+                        }
                     } else {
-                        this[i, 0] = TokenView(height = 25, width = 25, visual = tileVisual(isolation[i])).apply {
+                        this[i, 0] = TokenView(height = 25, width = 25, visual = tileVisual(isolation[isolation.size - i - 1])).apply {
                             isDisabled = true
                         }
                     }
+                }
+            } else {
+                this[0, 0] = TokenView(height = 40, width = 40, visual = ImageVisual("tiles/no_tile.png")).apply {
+                    isDisabled = true
                 }
             }
         }
@@ -770,9 +908,13 @@ class SceneTest : BoardGameApplication("AquaGhetto"), Refreshable {
             this.board.setPrisonGrid(2,2,true)
             this.board.setPrisonYard(2,2,PrisonerTile(13,PrisonerTrait.MALE,PrisonerType.RED))
             for(i in 0..4) {
-                this.isolation.add(PrisonerTile(13, PrisonerTrait.MALE, PrisonerType.RED))
+                //this.isolation.add(PrisonerTile(13, PrisonerTrait.MALE, PrisonerType.RED))
             }
         }
+
+        rootService.playerActionService.placePrisoner(PrisonerTile(13, PrisonerTrait.MALE, PrisonerType.BLUE), -100,-100)
+        rootService.playerActionService.placePrisoner(PrisonerTile(14, PrisonerTrait.MALE, PrisonerType.GREEN), -100,-100)
+
         rootService.currentGame?.players?.get(1)?.apply {
             this.coins = 6 }
         rootService.currentGame?.players?.get(2)?.apply {

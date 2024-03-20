@@ -26,6 +26,7 @@ class GameService(private val rootService: RootService): AbstractRefreshingServi
      * refreshAfterStartGame and refreshAfterNextTurn with the current player is called
      */
     fun startNewGame(players: MutableList<Pair<String, PlayerType>>) {
+
         /*checks for a valid player count*/
         require(players.size >= 2) { "minimum 2 players" }
         require(players.size <= 5) { "maximum 5 players" }
@@ -170,9 +171,9 @@ class GameService(private val rootService: RootService): AbstractRefreshingServi
      * @param delay not used anymore, still there to not break anything
      * @see AIService
      */
-    fun checkAITurn(player: Player) {
+    fun checkAITurn(player: Player, delay: Int = 0) {
+        require(player.takenBus == null)
         if (player.type == PlayerType.AI || player.type == PlayerType.RANDOM_AI) {
-            require(player.takenBus == null)
             rootService.aiService.makeTurn(player)
         }
     }
