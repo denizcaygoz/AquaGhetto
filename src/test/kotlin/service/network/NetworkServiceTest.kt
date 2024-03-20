@@ -73,10 +73,14 @@ class NetworkServiceTest {
         val wrongMessage = AddTileToTruckMessage(4)
         assertThrows<IllegalStateException> { rootServiceGuest.networkService.receiveAddTileToTruck(wrongMessage) }
 
+        assertTrue { rootServiceHost.currentGame?.currentPlayer == rootServiceGuest.currentGame?.currentPlayer }
+
         rootServiceHost.playerActionService.addTileToPrisonBus(hostTileToPlace, hostBusToPlaceOn)
 
         rootServiceHost.waitForState(ConnectionState.WAITING_FOR_TURN)
         rootServiceGuest.waitForState(ConnectionState.PLAYING_MY_TURN)
+
+        assertTrue { rootServiceHost.currentGame?.currentPlayer == rootServiceGuest.currentGame?.currentPlayer }
 
         val guestBusToPlaceOn: PrisonBus = guestGame.prisonBuses[0]
 
@@ -123,6 +127,7 @@ class NetworkServiceTest {
         assertTrue { hostCurrentPlayer.isolation.peek().id == guestCurrentPlayer.isolation.peek().id}
 
         rootServiceHost.playerActionService.freePrisoner()
+
         rootServiceHost.waitForState(ConnectionState.WAITING_FOR_TURN)
         rootServiceGuest.waitForState(ConnectionState.PLAYING_MY_TURN)
 
