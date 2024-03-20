@@ -182,7 +182,7 @@ class GameService(private val rootService: RootService): AbstractRefreshingServi
      * Initializes the board by adding the "default" 19 spaces
      * @param board the board to initialize
      */
-    private fun initializeBoard(board: Board) {
+    fun initializeBoard(board: Board) {
         for (x in 1..4) {
             for (y in 1..4) {
                 if (x == 4 && y == 4) continue

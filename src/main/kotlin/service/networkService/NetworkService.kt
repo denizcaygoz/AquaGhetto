@@ -197,16 +197,7 @@ class NetworkService(private val rootService: RootService): AbstractRefreshingSe
             }
             playerList.add(player)
 
-            for (x in 1..4) {
-                for (y in 1..4) {
-                    if (x == 4 && y == 4) continue
-                    player.board.setPrisonGrid(x, y, true)
-                }
-            }
-            player.board.setPrisonGrid(0, 2, true)
-            player.board.setPrisonGrid(0, 3, true)
-            player.board.setPrisonGrid(2, 0, true)
-            player.board.setPrisonGrid(3, 0, true)
+            rootService.gameService.initializeBoard(player.board)
         }
 
         game.players = playerList
