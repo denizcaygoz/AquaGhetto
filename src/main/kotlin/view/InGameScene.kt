@@ -477,6 +477,7 @@ class InGameScene(var rootService: RootService, test: SceneTest = SceneTest()) :
         val indexPlayer = game.players.indexOf(player)
 
         val isolation = isolations[indexPlayer]
+        println("isolation to refresh $indexPlayer")
 
         isolation.refreshIsolation()
     }
@@ -789,7 +790,7 @@ class InGameScene(var rootService: RootService, test: SceneTest = SceneTest()) :
             this.refreshIsolation()
         }
 
-        private fun doGestureEndStuff(dropEvent: DropEvent, name: String) {
+        private fun doGestureEndStuff(dropEvent: DropEvent, nameDropped: String) {
             val targetList = dropEvent.dragTargets
             for (element in targetList) {
                 val name = element.name
@@ -810,12 +811,13 @@ class InGameScene(var rootService: RootService, test: SceneTest = SceneTest()) :
                 if (currentPlayerIndex == playerIndexLocation) {
                     /*player moving on own grid*/
                     if (!rootService.validationService.validateTilePlacement(isolation.peek(), loc.first, loc.second)) {
+                        println("invalid placemente")
                         /*no valid location, refreshIsolation*/
                         refreshIsolation()
                         return
                     }
 
-                    val nameSplit = name.split("_")
+                    val nameSplit = nameDropped.split("_")
                     val sourcePlacerIndex = Integer.parseInt(nameSplit[1])
 
                     val currentPlayer = game.players[currentPlayerIndex]
@@ -827,6 +829,7 @@ class InGameScene(var rootService: RootService, test: SceneTest = SceneTest()) :
                             return
                         }
                         val bonus = rootService.playerActionService.movePrisonerToPrisonYard(loc.first, loc.second)
+                        refreshIsolation()
                     } else {
                         /*from other isolation*/
                         if (currentPlayer.coins < 2) {
@@ -834,6 +837,7 @@ class InGameScene(var rootService: RootService, test: SceneTest = SceneTest()) :
                             return
                         }
                         val bonus = rootService.playerActionService.buyPrisonerFromOtherIsolation(sourcePlayer, loc.first, loc.second)
+                        refreshIsolation()
                     }
 
                 } else {
@@ -906,7 +910,7 @@ class SceneTest : BoardGameApplication("AquaGhetto"), Refreshable {
         rootService.currentGame?.players?.get(0)?.apply {
             this.coins = 6
             this.board.setPrisonGrid(2,2,true)
-            this.board.setPrisonYard(2,2,PrisonerTile(13,PrisonerTrait.MALE,PrisonerType.RED))
+            //this.board.setPrisonYard(2,2,PrisonerTile(13,PrisonerTrait.MALE,PrisonerType.RED))
             for(i in 0..4) {
                 //this.isolation.add(PrisonerTile(13, PrisonerTrait.MALE, PrisonerType.RED))
             }
