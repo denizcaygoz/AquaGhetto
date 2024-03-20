@@ -64,7 +64,7 @@ tasks.jacocoTestReport {
 
     classDirectories.setFrom(files(classDirectories.files.map {
         fileTree(it) {
-            exclude(listOf("view/**", "entity/**",  "Main*.*"))
+            exclude(listOf("view/**", "entity/**",  "Main*.*", "service/aiServices/**"))
         }
     }))
 }
