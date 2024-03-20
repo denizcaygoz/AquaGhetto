@@ -61,7 +61,6 @@ class InGameScene(var rootService: RootService, test: SceneTest = SceneTest()) :
             isVerticalLocked = false
             isZoomLocked = false
         }
-    var statGui = Pane<ComponentView>(posX = 1790, width = 130, height = 1080, visual = ColorVisual.LIGHT_GRAY)
 
 
     init {
@@ -88,8 +87,7 @@ class InGameScene(var rootService: RootService, test: SceneTest = SceneTest()) :
 
         // Add the cameraPane to the scene
         addComponents(
-            cameraPane,
-            statGui
+            cameraPane
         )
     }
 
@@ -134,6 +132,22 @@ class InGameScene(var rootService: RootService, test: SceneTest = SceneTest()) :
             }
         }
         return null
+    }
+
+    override fun refreshScoreStats() {
+        var statGui = Pane<ComponentView>(posX = 1790, width = 130, height = 1080, visual = ColorVisual.LIGHT_GRAY)
+
+        var playerLabels : MutableList<Label> = mutableListOf()
+        for(i in 0 until prisons.size) {
+            playerLabels.add(Label(posY = i*200, height = 400, font = Font(color = Color.WHITE)).apply {
+                text =  "${prisons[i].player.name}:\n\n" +
+                        "Has Janitor: \n ${prisons[i].player.hasJanitor} \n" +
+                        "Secretary Count: \n ${prisons[i].player.secretaryCount} \n" +
+                        "Lawyer Count: \n ${prisons[i].player.lawyerCount}"
+            } )
+        }
+        statGui.addAll(playerLabels)
+        addComponents(statGui)
     }
 
     override fun refreshAfterStartGame() {
@@ -193,7 +207,7 @@ class InGameScene(var rootService: RootService, test: SceneTest = SceneTest()) :
         targetLayout.addAll(names)
         targetLayout.addAll(drawStack, finalStack)
 
-
+        refreshScoreStats()
     }
 
     override fun refreshPrison(tile: PrisonerTile?, x: Int, y: Int) {
@@ -477,7 +491,6 @@ class InGameScene(var rootService: RootService, test: SceneTest = SceneTest()) :
                                         }
                                     }
                                 }
-                                this.onDragGestureEnded
                             }
                     }
                 }
