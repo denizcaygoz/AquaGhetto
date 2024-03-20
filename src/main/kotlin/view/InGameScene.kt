@@ -198,6 +198,9 @@ class InGameScene(var rootService: RootService, test: SceneTest = SceneTest()) :
                             this[0, j] = TokenView(height = 50, width = 50, visual = ImageVisual("tiles/default_guard.png")).apply { name = ""} }
                         if (bus.tiles[j] is PrisonerTile) {
                             this[0, j] = TokenView(height = 50, width = 50, visual = tileVisual(bus.tiles[j] as PrisonerTile)).apply { name = ""} }
+
+                        this.name = "bus_${j}_board"
+                        this[0,j]!!.name = "busTile_${j}_false"
                     }
                 }
             }
@@ -216,6 +219,9 @@ class InGameScene(var rootService: RootService, test: SceneTest = SceneTest()) :
                                 this[0, j] = TokenView(height = 50, width = 50, visual = ImageVisual("tiles/default_guard.png")).apply { name = ""; isDraggable = false}}
                             if (bus.tiles[j] is PrisonerTile) {
                                 this[0, j] = TokenView(height = 50, width = 50, visual = tileVisual(bus.tiles[j] as PrisonerTile)).apply { name = ""; isDraggable = false}}
+
+                            this.name = "bus_${j}_board"
+                            this[0,j]!!.name = "busTile_${j}_false"
                         }
                     }
                 }
@@ -229,16 +235,8 @@ class InGameScene(var rootService: RootService, test: SceneTest = SceneTest()) :
                             posX = getPlayerBoard(rootService.currentGame!!.players[i])!!.posX - 200
                             posY = getPlayerBoard(rootService.currentGame!!.players[i])!!.posY
                             for (k in 0 until this.bus.tiles.size) {
-                                if(this[0,k] != null)
-                                {
-                                    this[0,k]!!.apply {
-                                        name = "takenBusTile"
-                                        isDraggable = true
-                                    }
-                                    this.apply {
-                                        name = "takenBus"
-                                    }
-                                }
+                                this.name = "bus_${j}_player"
+                                this[0,j]!!.name = "busTile_${j}_true"
                             }
                         }
                     }
@@ -413,6 +411,21 @@ class InGameScene(var rootService: RootService, test: SceneTest = SceneTest()) :
                 isDraggable = true
                 name = "small_extension"
                 isDisabled = false
+                this.dropAcceptor = { dragEvent ->
+                    when (dragEvent.draggedComponent.name) {
+                        "big_extension" -> true
+                        "small_extension" -> true
+                        else -> {
+                            false
+                        }
+                    }
+                }
+
+                this.onDragDropped = { dragEvent ->
+                    when (dragEvent.draggedComponent.name) {
+                        
+                    }
+                }
             }
 
         onKeyPressed = { event ->
@@ -519,7 +532,8 @@ class InGameScene(var rootService: RootService, test: SceneTest = SceneTest()) :
                             dropAcceptor = {
                                 var result = false
                                 val fromIsolation = it.draggedComponent.name.contains("isolation_")
-                                println(fromIsolation)
+                                val fromTakenBus = it.draggedComponent.name.contains("busTile") && it.draggedComponent.name.contains("true")
+                                        println(fromIsolation)
                                 if (fromIsolation) {
                                     val textSplit = it.draggedComponent.name.split("_")
                                     val playerIsolation = Integer.parseInt(textSplit[1])
@@ -755,6 +769,9 @@ class InGameScene(var rootService: RootService, test: SceneTest = SceneTest()) :
                         this[0, j] = TokenView(height = 50, width = 50, visual = ImageVisual("tiles/default_guard.png")) }
                     if (bus.tiles[j] is PrisonerTile) {
                         this[0, j] = TokenView(height = 50, width = 50, visual = tileVisual(bus.tiles[i] as PrisonerTile)) }
+
+                    this.name = "bus_${j}_board"
+                    this[0,j]!!.name = "busTile_${j}_false"
                 }
                 this.apply{
                     this.onMouseClicked = {
@@ -773,7 +790,7 @@ class InGameScene(var rootService: RootService, test: SceneTest = SceneTest()) :
                                 }
                             }
                         }
-                        else if (this.name != "takenBus"){
+                        else if (this.name.contains("bus_") && this.name.contains("board")){
                             rootService.playerActionService.takePrisonBus(this.bus)
                         }
                     }
