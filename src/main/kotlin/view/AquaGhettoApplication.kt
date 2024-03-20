@@ -75,7 +75,7 @@ class AquaGhettoApplication: BoardGameApplication("AquaGhetto"), Refreshable {
     /**
      * The Final Scene After the Game that shows the Scoreboard of Players
      */
-    private val scoreboardScene = ScoreboardScene(rootService).apply {
+    private val scoreboardScene = ScoreboardScene(rootService, inGameScene).apply {
         backToMenuButton.onMouseClicked = {
             this@AquaGhettoApplication.hideMenuScene()
             this@AquaGhettoApplication.showMenuScene(mainMenuScene)

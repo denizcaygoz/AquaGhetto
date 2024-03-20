@@ -14,7 +14,7 @@ import tools.aqua.bgw.visual.ColorVisual
 import java.awt.Color
 import java.util.concurrent.Delayed
 
-class ScoreboardScene (val rootService : RootService) : MenuScene(1920, 1080) , Refreshable {
+class ScoreboardScene (val rootService : RootService, val inGameScene: InGameScene) : MenuScene(1920, 1080) , Refreshable {
 
     val root = rootService
     private fun createTextLabel( text : String ) : Label {
@@ -29,9 +29,9 @@ class ScoreboardScene (val rootService : RootService) : MenuScene(1920, 1080) , 
         )
         return playerLabel
     }
-    private fun createPrisonYard(player : Player) : InGameScene.PlayerBoard
+    private fun createPrisonYard(player : Player) : InGameScene.PlayerBoard?
     {
-        return InGameScene.PlayerBoard(player, rootService)
+        return inGameScene.getPlayerBoard(player)
     }
 
     val backToMenuButton = Button(

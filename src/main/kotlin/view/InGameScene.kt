@@ -18,7 +18,8 @@ import tools.aqua.bgw.event.KeyCode
 import tools.aqua.bgw.components.layoutviews.CameraPane
 import tools.aqua.bgw.components.layoutviews.GridPane
 import tools.aqua.bgw.components.layoutviews.Pane
-import tools.aqua.bgw.components.uicomponents.Button
+import tools.aqua.bgw.components.uicomponents.*
+import tools.aqua.bgw.util.Font
 import tools.aqua.bgw.visual.ColorVisual
 import tools.aqua.bgw.visual.CompoundVisual
 import tools.aqua.bgw.visual.Visual
@@ -32,6 +33,7 @@ class InGameScene(var rootService: RootService, test: SceneTest = SceneTest()) :
     private val prisons: MutableList<PlayerBoard> = mutableListOf()
     private val prisonBuses: MutableList<BoardPrisonBus> = mutableListOf()
     private val isolations: MutableList<BoardIsolation> = mutableListOf()
+    private val names: MutableList<Label> = mutableListOf()
     private val drawStack = TokenView(
         posX = 845,
         posY = 505,
@@ -107,6 +109,33 @@ class InGameScene(var rootService: RootService, test: SceneTest = SceneTest()) :
         return Pair(viewX - 10, -viewY + 10)
     }
 
+    fun replacePrison(player : Player) {
+        for (i in 0 until prisons.size) {
+            if (player.name == prisons[i].player.name) {
+                val tempX = prisons[i].posX
+                val tempY = prisons[i].posY
+                prisons[i] = PlayerBoard(player, rootService)
+                prisons[i].apply{
+                    posX = tempX
+                    posY = tempY
+                }
+            }
+        }
+    }
+
+    fun tileVisual(tile: PrisonerTile): ImageVisual {
+        return ImageVisual("tiles/${tile.prisonerType}_${tile.prisonerTrait}_tile.png")
+    }
+
+    fun getPlayerBoard(player : Player) : PlayerBoard? {
+        for (i in 0..prisons.size) {
+            if (player == prisons[i].player) {
+                return prisons[i]
+            }
+        }
+        return null
+    }
+
     override fun refreshAfterStartGame() {
         val game = rootService.currentGame
         checkNotNull(game) { "There is no game running" }
@@ -116,6 +145,7 @@ class InGameScene(var rootService: RootService, test: SceneTest = SceneTest()) :
         for (i in 0 until playerCount) {
             prisons.add(PlayerBoard(game.players[i], rootService))
             isolations.add(BoardIsolation(game.players[i].isolation))
+            names.add(Label(text = game.players[i].name, font = Font(size = 20, color = Color.WHITE)))
         }
         // Prison Busses in Middle
         for (i in 0 until game.prisonBuses.size) {
@@ -148,6 +178,9 @@ class InGameScene(var rootService: RootService, test: SceneTest = SceneTest()) :
         for (i in 0 until playerCount) {
             isolations[i].posX = prisons[i].posX
             isolations[i].posY = prisons[i].posY + 180
+
+            names[i].posX = prisons[i].posX
+            names[i].posY = prisons[i].posY - 180
         }
 
         /*
@@ -157,11 +190,10 @@ class InGameScene(var rootService: RootService, test: SceneTest = SceneTest()) :
         targetLayout.addAll(prisons)
         targetLayout.addAll(prisonBuses)
         targetLayout.addAll(isolations)
+        targetLayout.addAll(names)
         targetLayout.addAll(drawStack, finalStack)
 
 
-
-        //refreshAfterNextTurn(game.players[game.currentPlayer])
     }
 
     override fun refreshPrison(tile: PrisonerTile?, x: Int, y: Int) {
@@ -183,48 +215,41 @@ class InGameScene(var rootService: RootService, test: SceneTest = SceneTest()) :
                 )
         }
 
+
     }
 
     override fun refreshAfterNextTurn(player: Player) {
+
         val ownGui = Pane<ComponentView>(width = 130, height = 1080, visual = ColorVisual.LIGHT_GRAY)
+
         val bigExtension =
-            if (player.remainingBigExtensions > 1) {
-                TokenView(posY = 10, posX = 10, height = 100, width = 100, visual = ImageVisual("tiles/big_expansion_tile.png")).apply {
-                    isDraggable = true
-                    name = "big_extension"
-                    isDisabled = false
-                }
-            } else {
-                TokenView(posY = 10, posX = 10, height = 100, width = 100, visual = ImageVisual("tiles/big_expansion_tile.png")).apply {
-                    isDraggable = false
-                    name = "big_extension"
-                    isDisabled = true
-                    isVisible = false
-                }
+            TokenView(
+                posY = 10,
+                posX = 10,
+                height = 100,
+                width = 100,
+                visual = ImageVisual("tiles/big_expansion_tile.png")
+            ).apply {
+                isDraggable = true
+                name = "big_extension"
+                isDisabled = false
             }
 
         val smallExtension =
-            if (player.remainingSmallExtensions > 1) {
-                TokenView(posY = 120, posX = 10, height = 100, width = 100, visual = ImageVisual("tiles/small_expansion_tile.png")).apply {
-                    isDraggable = true
-                    name = "small_extension"
-                    isDisabled = false
-                }
-            } else {
-                TokenView(posY = 120, posX = 10, height = 100, width = 100, visual = ImageVisual("tiles/small_expansion_tile.png")).apply {
-                    isDraggable = false
-                    name = "small_extension"
-                    isDisabled = true
-                    isVisible = false
-                }
+            TokenView(
+                posY = 120,
+                posX = 10,
+                height = 100,
+                width = 100,
+                visual = ImageVisual("tiles/small_expansion_tile.png")
+            ).apply {
+                isDraggable = true
+                name = "small_extension"
+                isDisabled = false
             }
 
-        if(player.remainingBigExtensions > 1) {
-            ownGui.add(bigExtension)
-        }
-        if(player.remainingSmallExtensions > 1) {
-            ownGui.add(smallExtension)
-        }
+
+        ownGui.addAll(bigExtension, smallExtension)
 
         onKeyPressed = { event ->
             if (event.keyCode == KeyCode.R) {
@@ -273,12 +298,11 @@ class InGameScene(var rootService: RootService, test: SceneTest = SceneTest()) :
     }
 
 
-    class PlayerBoard(val player: Player, val rootService: RootService) :
+    inner class PlayerBoard(val player: Player, val rootService: RootService) :
         GridPane<TokenView>(rows = 21, columns = 21, layoutFromCenter = true) {
 
         // Both get patched by calculateSize()
         var currentGridSize = calculateSize()
-        var currentExpansionSlots: MutableList<Int> = mutableListOf()
 
         var smallExtensionRotation = 0
 
@@ -351,34 +375,33 @@ class InGameScene(var rootService: RootService, test: SceneTest = SceneTest()) :
         // Assisting methods from here on
 
         /**
-         * Transforms coordinates from the service layer
-         * to view coordinates
-         */
-        fun coordsToView(serviceX: Int, serviceY: Int): Pair<Int, Int> {
-            return Pair(serviceX + 10, -serviceY + 10)
-        }
-
-        /**
-         * Transforms coordinates from the view layer
-         * to service layer coordinates
-         */
-        fun coordsToService(viewX: Int, viewY: Int): Pair<Int, Int> {
-            return Pair(viewX - 10, -viewY + 10)
-        }
-
-        /**
          * Returns the size, which the prison has to have on screen.
          * 1.0 is full size
          * 0.5 is half size and so on
          *
          * And adjusts the expansion slots
          */
+        fun changeSize() {
+            for(x in 0.. 20) {
+                for(y in 0.. 20) {
+                    if(this[x,y] != null) {
+                        if(this[x,y]!!.height == 50.0) {
+                            this[x,y].apply{
+                                height = 20.0
+                                width = 20.0
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
         fun calculateSize(): Double {
             // Save the span of the grid first
-            var maxX = -20
-            var minX = 20
-            var maxY = -20
-            var minY = 20
+            var maxX = -10
+            var minX = 10
+            var maxY = -10
+            var minY = 10
             for ((x, innerMap) in player.board.getPrisonGridIterator()) {
                 for ((y, value) in innerMap) {
                     if (value) { // If the grid exists
@@ -395,9 +418,9 @@ class InGameScene(var rootService: RootService, test: SceneTest = SceneTest()) :
                 } else (maxY.absoluteValue - minY.absoluteValue)
 
             // Numbers are not final, just to test
-            if (importantNumber <= 7) {
+            if (importantNumber <= 4) {
                 currentGridSize = 1.0
-            } else if (importantNumber <= 9) {
+            } else if (importantNumber <= 6) {
                 currentGridSize = 0.8
             } else {
                 currentGridSize = 0.6
@@ -405,20 +428,6 @@ class InGameScene(var rootService: RootService, test: SceneTest = SceneTest()) :
 
             // Calculating the border of the new Tile placements
             // minX, maxX, minY, maxY
-            currentExpansionSlots = mutableListOf(
-                if (minX - 2 >= -10) {
-                    minX - 2
-                } else -10,
-                if (maxX + 2 <= 10) {
-                    maxX + 2
-                } else 10,
-                if (minY - 2 >= -10) {
-                    minY - 2
-                } else -10,
-                if (maxY + 2 <= 10) {
-                    maxY + 2
-                } else 10
-            )
 
             minX = if (minX - 2 >= -10) {
                 minX - 2
@@ -453,24 +462,27 @@ class InGameScene(var rootService: RootService, test: SceneTest = SceneTest()) :
                                         }
                                     }
                                 }
+
                                 this.onDragDropped = { dragEvent ->
                                     when (dragEvent.draggedComponent.name) {
                                         "big_extension" -> {
                                             rootService.playerActionService.expandPrisonGrid(true, x, y, 0)
+                                            //calculateSize()
                                         }
 
 
                                         "small_extension" -> {
-                                            rootService.playerActionService.expandPrisonGrid(false, x, y, smallExtensionRotation)
+                                            rootService.playerActionService.expandPrisonGrid( false, x, y, smallExtensionRotation)
+                                            //calculateSize()
                                         }
                                     }
-
-
                                 }
+                                this.onDragGestureEnded
                             }
                     }
                 }
             }
+
             return currentGridSize
         }
 
@@ -499,54 +511,48 @@ class InGameScene(var rootService: RootService, test: SceneTest = SceneTest()) :
         }
 
     }
-}
 
-class BoardPrisonBus(val bus : PrisonBus) : GridPane<TokenView>(rows = 3, columns = 1, layoutFromCenter = true) {
 
-    /**
-     * Fills the bus with tiles
-     */
-    init {
-        this.spacing = 1.0
-        for(i in 0 until bus.tiles.size) {
-            if(bus.tiles[i] == null) {
-                this[0,i] = TokenView(height = 50, width = 50, visual = ImageVisual("tiles/default_tile.png"))
+    inner class BoardPrisonBus(val bus: PrisonBus) : GridPane<TokenView>(rows = 3, columns = 1, layoutFromCenter = true) {
+
+        /**
+         * Fills the bus with tiles
+         */
+        init {
+            this.spacing = 1.0
+            for (i in 0 until bus.tiles.size) {
+                if (bus.tiles[i] == null) {
+                    this[0, i] = TokenView(height = 50, width = 50, visual = ImageVisual("tiles/default_tile.png"))
+                } else if (bus.tiles[i] is GuardTile) {
+                    this[0, i] = TokenView(height = 50, width = 50, visual = ImageVisual("tiles/default_guard.png"))
+                } else this[0, i] =
+                    TokenView(height = 50, width = 50, visual = tileVisual(bus.tiles[i] as PrisonerTile))
             }
-            else if(bus.tiles[i] is GuardTile) {
-                this[0,i] = TokenView(height = 50, width = 50, visual = ImageVisual("tiles/default_guard.png"))
-            }
-            else this[0,i] = TokenView(height = 50, width = 50, visual = tileVisual(bus.tiles[i] as PrisonerTile))
         }
+
     }
 
-    /**
-     * Returns the fitting visual for a prison tile
-     */
-    fun tileVisual(tile: PrisonerTile) : ImageVisual {
-        return ImageVisual("tiles/${tile.prisonerType}_${tile.prisonerTrait}_tile.png")
-    }
-}
+    inner class BoardIsolation(val isolation: Stack<PrisonerTile>) :
+        GridPane<TokenView>(rows = 1, columns = 120, layoutFromCenter = true) {
 
-class BoardIsolation(val isolation : Stack<PrisonerTile>) : GridPane<TokenView> (rows = 1, columns = 120, layoutFromCenter = true) {
-
-    init {
-        this.spacing = 0.5
-        if (isolation.isNotEmpty()) {
-            for (i in 0 until isolation.size) {
-                if(i == 0) {
-                    this[i, 0] = TokenView(height = 40, width = 40, visual = tileVisual(isolation[i]))
-                }
-                else {
-                    this[i, 0] = TokenView(height = 25, width = 25, visual = tileVisual(isolation[i])).apply {
-                        isDisabled = true
+        init {
+            this.spacing = 0.5
+            if (isolation.isNotEmpty()) {
+                for (i in 0 until isolation.size) {
+                    if (i == 0) {
+                        this[i, 0] = TokenView(height = 40, width = 40, visual = tileVisual(isolation[i]))
+                    } else {
+                        this[i, 0] = TokenView(height = 25, width = 25, visual = tileVisual(isolation[i])).apply {
+                            isDisabled = true
+                        }
                     }
                 }
             }
         }
-    }
 
-    fun tileVisual(tile: PrisonerTile) : ImageVisual {
-        return ImageVisual("tiles/${tile.prisonerType}_${tile.prisonerTrait}_tile.png")
+        fun tileVisual(tile: PrisonerTile): ImageVisual {
+            return ImageVisual("tiles/${tile.prisonerType}_${tile.prisonerTrait}_tile.png")
+        }
     }
 }
 /**
