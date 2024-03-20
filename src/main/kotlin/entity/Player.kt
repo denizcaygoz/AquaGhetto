@@ -59,7 +59,7 @@ class Player(val name: String, val type: PlayerType): Serializable, Cloneable {
             hasJanitor = this@Player.hasJanitor
             secretaryCount = this@Player.secretaryCount
             lawyerCount = this@Player.lawyerCount
-            remainingSmallExtensions = this@Player.remainingBigExtensions
+            remainingSmallExtensions = this@Player.remainingSmallExtensions
             remainingBigExtensions = this@Player.remainingBigExtensions
             maxPrisonerTypes = this@Player.maxPrisonerTypes
             currentScore = this@Player.currentScore
