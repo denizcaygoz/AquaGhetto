@@ -15,9 +15,7 @@ class EvaluateMoveOwnPrisonerService(private val smartAI: SmartAI) {
      * by calling forSimulatePlacePrisoner function.
      */
     fun getScoreMoveOwnPrisoner(game: AquaGhetto, depth: Int): ActionMovePrisoner {
-
-        //TODO
-        return ActionMovePrisoner(false, 0, PlaceCard(Pair(0,0)))
+        //return ActionMovePrisoner(false, 0, PlaceCard(Pair(0,0)))
 
         val player = game.players[game.currentPlayer]
 
@@ -45,7 +43,12 @@ class EvaluateMoveOwnPrisonerService(private val smartAI: SmartAI) {
 
         /*don't do anything if no valid place*/
         val pos = smartAI.evaluateBestPosition.getBestPositions(removedTile, player, game)
-            ?: return null
+
+        if (pos == null) {
+            player.coins += 1
+            player.isolation.add(removedTile)
+            return null
+        }
 
         val undoData = smartAI.simulatePlacement(pos.first, removedTile, pos.second, player)
 
@@ -59,8 +62,8 @@ class EvaluateMoveOwnPrisonerService(private val smartAI: SmartAI) {
         val result = ActionMovePrisoner(true, bestAction.score, pos.first)
 
         player.coins += 1
-        player.isolation.add(removedTile)
         smartAI.undoSimulatePlacement(pos.first, pos.second, player, undoData)
+        player.isolation.add(removedTile)
 
         /*buying a prisoner is useful if the player gets a baby*/
         /*in endgame useful if player earns employee or cannot buy extension or this decreases negative points from isolation*/
@@ -69,9 +72,9 @@ class EvaluateMoveOwnPrisonerService(private val smartAI: SmartAI) {
         val second = pos.first.secondTileBonusEmployee
         return if (baby != null) {
             result
-        } else if ((first != null || second != null) && (game.drawStack.size + game.finalStack.size) < 20) {
+        } else if ((first != null || second != null) && (game.drawStack.size + game.finalStack.size) < 40) {
             result
-        } else if ((game.drawStack.size + game.finalStack.size) < 15 && player.lawyerCount <= 1) {
+        } else if ((game.drawStack.size + game.finalStack.size) < 30) {
             result
         } else {
             null

@@ -19,10 +19,6 @@ class EvaluateBestPosition(private val smartAI: SmartAI) {
     /*boolean is if players earns a bonus coin*/
     fun getBestPositions(tileToPlace: PrisonerTile, player: Player, game: AquaGhetto): Pair<PlaceCard, Boolean>? {
 
-        if (game.drawStack.size < 20) {
-           // println("a")
-        }
-
         val tileType = tileToPlace.prisonerType
 
         val bestLocation = getBestLocationPrisoner(tileToPlace, player, game) ?: return null
@@ -128,7 +124,7 @@ class EvaluateBestPosition(private val smartAI: SmartAI) {
 
     private fun getPointsSecretary(player: Player): Int {
         /*AI should not like placing a secretary it should invest the coins if possible*/
-        return (player.coins * (player.secretaryCount + 1) * 0.3).toInt()
+        return (player.coins * (player.secretaryCount + 1) * 0.6).toInt()
     }
 
     private fun getPointsLawyer(player: Player): Int {
@@ -153,7 +149,7 @@ class EvaluateBestPosition(private val smartAI: SmartAI) {
         for (firstIterator in player.board.getPrisonGridIterator()) {
             for (secondIterator in firstIterator.value) {
                 val tile = player.board.getPrisonYard(firstIterator.key, secondIterator.key)
-                if (tile != null) continue
+                if (tile != null || !secondIterator.value) continue
                 val xPos = firstIterator.key
                 val yPos = secondIterator.key
                 val validPlacement = smartAI.rootService.validationService.validateTilePlacement(tileToPlace, xPos, yPos, game)

@@ -72,7 +72,7 @@ class GameService(private val rootService: RootService): AbstractRefreshingServi
         }
 
         /*if the first player is an AI call the AI service*/
-        this.checkAITurn(game.players[game.currentPlayer], 1500)
+        //this.checkAITurn(game.players[game.currentPlayer], 1500)
     }
 
     /**
@@ -172,7 +172,7 @@ class GameService(private val rootService: RootService): AbstractRefreshingServi
      * there is no additional delay. Delay is measured in milliseconds
      * @see AIService
      */
-    private fun checkAITurn(player: Player, delay: Int) {
+    fun checkAITurn(player: Player, delay: Int) {
         require(player.takenBus == null)
         if (player.type == PlayerType.AI || player.type == PlayerType.RANDOM_AI) {
             rootService.aiService.makeTurn(player , delay)

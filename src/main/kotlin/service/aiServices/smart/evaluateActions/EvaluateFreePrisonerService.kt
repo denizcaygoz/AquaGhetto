@@ -13,13 +13,14 @@ class EvaluateFreePrisonerService(private val smartAI: SmartAI) {
      * next player is determined. minMax calls and after that undo stuff are called.
      */
     fun freePrisoner(game: AquaGhetto, depth: Int): ActionFreePrisoner {
-
-        //TODO
-        return ActionFreePrisoner(false, 0)
-
-
         val player = game.players[game.currentPlayer]
         if (player.coins < 2 || player.isolation.isEmpty()) {
+            return ActionFreePrisoner(false, 0)
+        }
+
+        val location = smartAI.evaluateBestPosition.getBestPositions(player.isolation.peek(), player, game)
+        if (location != null) {
+            /*placing the prisoner is smarter and removing the prisoner should not be an option*/
             return ActionFreePrisoner(false, 0)
         }
 
