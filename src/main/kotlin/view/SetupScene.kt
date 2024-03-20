@@ -36,7 +36,7 @@ class SetupScene (rootService : RootService, test: SceneTest2 = SceneTest2()) : 
      *  ToggleButton might be suited better
      */
     val testCheck =
-        ToggleButton(posX = ((1920 / 2) - 100), posY = (1080 - 200), text = "Normal Order", width = 400,).apply {
+        ToggleButton(posX = 400, posY = (1080 - 200), text = "Normal Order", width = 400,).apply {
             onMouseClicked = {
                 //this.isSelected = !this.isSelected
                 if (this.isSelected) {
@@ -49,19 +49,20 @@ class SetupScene (rootService : RootService, test: SceneTest2 = SceneTest2()) : 
 
     /*Grid to Display PlayerCards*/
     private val playerGrid: GridPane<UIComponent> =
-        GridPane(posX = 600, posY = 450, columns = 3, rows = 5, spacing = 25)
+        GridPane(posX = 550, posY = 450, columns = 3, rows = 5, spacing = 25)
 
     /**
      * User can Set the Delay in s
      * Default is 5s
      */
     val delayInputPlayer1: TextField = TextField(
-        posX = ((1920 / 2) - 100),
+        posX = 400,
         posY = (1080 - 250),
         height = 50,
         width = 50,
         text = "5",
     ).apply {
+        this.isVisible = false
         onKeyTyped = {
             if(it.keyCode.isLetter()){
                 this.text = ""
@@ -123,7 +124,7 @@ class SetupScene (rootService : RootService, test: SceneTest2 = SceneTest2()) : 
                 height = 50,
                 text = "add",
                 alignment = Alignment.CENTER,
-                //visual = ImageVisual("Test.png")
+                visual = ImageVisual("icon/ADD.png")
             ).apply {
                 onMouseClicked = {
                     playerGrid[0, position] = createPlayerInputfield("Player${position + 1}")
@@ -147,7 +148,7 @@ class SetupScene (rootService : RootService, test: SceneTest2 = SceneTest2()) : 
                 height = 50,
                 text = "remove",
                 alignment = Alignment.CENTER_LEFT,
-                //visual = ImageVisual("Test.png"),
+                visual = ImageVisual("icon/remove.png"),
             ).apply {
                 onMouseClicked = {
                     //remove
@@ -177,7 +178,7 @@ class SetupScene (rootService : RootService, test: SceneTest2 = SceneTest2()) : 
                 text = "PLAYER",
                 font = Font(size = 0),
                 alignment = Alignment.CENTER,
-                //visual = ImageVisual("PLAYER.png"),
+                visual = ImageVisual("icon/PLAYER.png"),
             ).apply {
                 /*Unsure if we should be able to swap a Player to a Network Player
             * Network case can be removed in that case*/
@@ -185,21 +186,21 @@ class SetupScene (rootService : RootService, test: SceneTest2 = SceneTest2()) : 
                     when (text) {
                         "PLAYER" -> {
                             text = "AI";
-                            //visual = ImageVisual("AI.png");
+                            visual = ImageVisual("icon/AI.png");
                             determineAIPlayer()
                             //delayInputPlayer1.apply { delayInputPlayer1.isVisible = true }
                         }
 
                         "AI" -> {
                             text = "RANDOM";
-                            //visual = ImageVisual("RANDOM.png");
+                            visual = ImageVisual("icon/RANDOM.png");
                             determineAIPlayer()
                             //delayInputPlayer1.apply { delayInputPlayer1.isVisible = true }
                         }
 
                         "RANDOM" -> {
                             text = "NETWORK";
-                            //visual = ImageVisual("NETWORK.png");
+                            visual = ImageVisual("icon/NETWORK.png");
                             determineAIPlayer()
 
                             //delayInputPlayer1.apply { delayInputPlayer1.isVisible = false }
@@ -207,14 +208,14 @@ class SetupScene (rootService : RootService, test: SceneTest2 = SceneTest2()) : 
 
                         "NETWORK" -> {
                             text = "PLAYER";
-                            //visual = ImageVisual("PLAYER.png");
+                            visual = ImageVisual("icon/PLAYER.png");
                             determineAIPlayer()
                             //delayInputPlayer1.apply { delayInputPlayer1.isVisible = false }
                         }
 
                         else -> {
-                            text = "PLAYER";
-                            //visual = ImageVisual("PLAYER.png")
+                            text = "icon/PLAYER";
+                            visual = ImageVisual("PLAYER.png")
                             determineAIPlayer()
                             //delayInputPlayer1.apply { delayInputPlayer1.isVisible = false }
                         }
@@ -229,7 +230,7 @@ class SetupScene (rootService : RootService, test: SceneTest2 = SceneTest2()) : 
          * to validate amount of Players with Names [determinePlayerCount]
          */
         val startNewGameButton = Button(
-            posX = ((1920 / 2) - 100),
+            posX = 400,
             posY = (1080 - 150),
             height = 50,
             width = 200,
@@ -308,6 +309,7 @@ class SetupScene (rootService : RootService, test: SceneTest2 = SceneTest2()) : 
 
         init {
             addComponents(
+
                 testCheck,
                 playerGrid,
                 startNewGameButton,
@@ -327,6 +329,8 @@ class SetupScene (rootService : RootService, test: SceneTest2 = SceneTest2()) : 
             playerGrid[0, 2] = createPlayerAddButton(2)
             playerGrid[0, 3] = createPlayerAddButton(3)
             playerGrid[0, 4] = createPlayerAddButton(4)
+            background = ImageVisual("background/SetupBackground.png")
+
         }
     }
 
@@ -346,5 +350,7 @@ class SceneTest2 : BoardGameApplication("Test") , Refreshable {
         rootService.gameService.startNewGame(
             mutableListOf(Pair("Moin", PlayerType.PLAYER), Pair("Moin2", PlayerType.PLAYER)))
         this.showMenuScene(setupScene)
+
+
     }
 }
