@@ -70,7 +70,8 @@ class BoardService(private val rootService: RootService): AbstractRefreshingServ
         }
         game.allTiles.removeAll(toRemove)
 
-        tilesInGame.shuffle(Random(2)) //TODO remove static seed, only for testing
+        //tilesInGame.shuffle(Random(2)) //TODO remove static seed, only for testing
+        tilesInGame.shuffle()
 
         val finalStack = Stack<Tile>()
         finalStack.addAll(tilesInGame.reversed().subList(0 , 15))

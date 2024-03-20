@@ -147,6 +147,9 @@ class PlayerActionService(private val rootService: RootService): AbstractRefresh
         // Validate the tile placement
         check(rootService.validationService.validateTilePlacement(tile, x, y))
                 { "Invalid Tile location ($x, $y) TileID: ${tile.id}" }
+        //if (!rootService.validationService.validateTilePlacement(tile, x, y)) {
+        //    println("ABC")
+        //}
 
         // Set the PrisonerTile on the game board
         board.setPrisonYard(x, y, tile)

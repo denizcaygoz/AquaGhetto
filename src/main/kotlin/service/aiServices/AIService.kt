@@ -33,9 +33,6 @@ class AIService(private val rootService: RootService): AbstractRefreshingService
      * @throws IllegalArgumentException if the provided player is not the current player
      */
     fun makeTurn(player: Player, delay: Int) {
-        /*get the time when function is called*/
-        val startTime = System.currentTimeMillis()
-
         val game = rootService.currentGame
         checkNotNull(game) { "No running game." }
 
@@ -43,7 +40,7 @@ class AIService(private val rootService: RootService): AbstractRefreshingService
         require(player == game.players[game.currentPlayer]) {"provided player has to be the current player"}
 
         if (player.type == PlayerType.RANDOM_AI) {
-            randomAIService.randomAITurn(player, game)
+            randomAIService.randomAITurn(player, game, delay)
         } else {
 
             /*get the instance for the player*/
@@ -51,17 +48,14 @@ class AIService(private val rootService: RootService): AbstractRefreshingService
 
             /*create new instance if no exist*/
             if (serviceAI == null) {
-                serviceAI = SmartAI(rootService, player)
+                serviceAI = SmartAI(rootService, player , game.currentPlayer)
                 playerAIServiceMap[player.name] = serviceAI
             }
 
             /*make turn*/
-            serviceAI.makeTurn(game)
+            serviceAI.makeTurn(game, player, delay)
         }
 
-        /*wait until delay is over*/
-        val endTime = System.currentTimeMillis()
-        Thread.sleep(Integer.max((delay) - (endTime - startTime).toInt() , 0).toLong())
     }
 
 

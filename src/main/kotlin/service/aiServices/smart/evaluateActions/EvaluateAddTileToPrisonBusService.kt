@@ -2,6 +2,7 @@ package service.aiServices.smart.evaluateActions
 
 import entity.AquaGhetto
 import entity.PrisonBus
+import entity.aIActions.AIAction
 import entity.aIActions.ActionAddTileToBus
 import entity.enums.PrisonerTrait
 import entity.enums.PrisonerType
@@ -9,6 +10,7 @@ import entity.tileTypes.CoinTile
 import entity.tileTypes.PrisonerTile
 import entity.tileTypes.Tile
 import service.aiServices.smart.SmartAI
+import kotlin.math.floor
 
 /**
  * Class that stores the function that is necessary
@@ -43,7 +45,8 @@ class EvaluateAddTileToPrisonBusService(private val smartAI: SmartAI) {
 
         if (coinsLeft > 0) {
             val coinAction = this.simulateCoinTileWasDrawn(game, prisonBusesLeftToPlace, depth,
-                coinsLeft / allCardsAmount.toDouble())
+                (coinsLeft / (allCardsAmount.toDouble()))
+            )
             if (coinAction.first) {
                 totalScore += coinAction.second
                 chooseBusCoin = coinAction.third
@@ -52,12 +55,11 @@ class EvaluateAddTileToPrisonBusService(private val smartAI: SmartAI) {
         }
 
 
-
-
         val optionMapPrisoner = mutableMapOf<PrisonerType,Int>()
         for (prisoner in prisonerLeft) {
             val prisonerAction = this.simulatePrisonerTileWasDrawn(game, prisonBusesLeftToPlace, depth,
-                 prisoner.key, prisoner.value / allCardsAmount.toDouble())
+                 prisoner.key, (prisoner.value / (allCardsAmount.toDouble()))
+            )
             if (prisonerAction.first) {
                 totalScore += prisonerAction.second
                 optionMapPrisoner[prisoner.key] = prisonerAction.third
@@ -109,7 +111,7 @@ class EvaluateAddTileToPrisonBusService(private val smartAI: SmartAI) {
 
         /*simulates future actions*/
         var bestBus = -1
-        var best = Integer.MIN_VALUE
+        var bestAction: AIAction? = null
         for (i in prisonBusesLeftToPlace) {
             val nextPlayer = smartAI.getNextAndOldPlayer(game, false)
             game.currentPlayer = nextPlayer.second
@@ -122,8 +124,8 @@ class EvaluateAddTileToPrisonBusService(private val smartAI: SmartAI) {
             removeTileFromBus(game.prisonBuses[i] , tile)
 
             game.currentPlayer = nextPlayer.first
-            if ((action.score > best)) {
-                best = action.score
+            if (bestAction == null || (action.score > bestAction.score)) {
+                bestAction = action
                 bestBus = i
             }
         }
@@ -137,10 +139,10 @@ class EvaluateAddTileToPrisonBusService(private val smartAI: SmartAI) {
         }
         */
 
-        return if (bestBus == -1) {
+        return if (bestBus == -1 || bestAction == null) {
             Triple(false, 0.0, 0)
         } else {
-            Triple(true, best * mult, bestBus)
+            Triple(bestAction.validAction, bestAction.score * mult, bestBus)
         }
 
     }
@@ -175,7 +177,7 @@ class EvaluateAddTileToPrisonBusService(private val smartAI: SmartAI) {
 
         /*simulates future actions*/
         var bestBus = -1
-        var best = Integer.MIN_VALUE
+        var bestAction: AIAction? = null
 
         for (i in prisonBusesLeftToPlace) {
             val nextPlayer = smartAI.getNextAndOldPlayer(game, false)
@@ -190,8 +192,8 @@ class EvaluateAddTileToPrisonBusService(private val smartAI: SmartAI) {
             removeTileFromBus(game.prisonBuses[i] , tile)
 
             game.currentPlayer = nextPlayer.first
-            if ((action.score > best)) {
-                best = action.score
+            if (bestAction == null || (action.score > bestAction.score)) {
+                bestAction = action
                 bestBus = i
             }
         }
@@ -205,10 +207,10 @@ class EvaluateAddTileToPrisonBusService(private val smartAI: SmartAI) {
         }
         */
 
-        return if (bestBus == -1) {
+        return if (bestBus == -1 || bestAction == null) {
             Triple(false, 0.0, 0)
         } else {
-            Triple(true, best * mult, bestBus)
+            Triple(bestAction.validAction, bestAction.score * mult, bestBus)
         }
     }
 

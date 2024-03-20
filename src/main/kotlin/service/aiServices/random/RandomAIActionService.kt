@@ -49,6 +49,7 @@ class RandomAIActionService(private val rootService: RootService, private val ra
         if (bonusTile != null) {
             this.placeTile(bonusTile , player)
         }
+        rootService.gameService.determineNextPlayer(false)
     }
 
     /**
@@ -139,6 +140,7 @@ class RandomAIActionService(private val rootService: RootService, private val ra
         if (bonusTile != null) {
             this.placeTile(bonusTile , player)
         }
+        rootService.gameService.determineNextPlayer(false)
     }
 
     /**
@@ -252,6 +254,7 @@ class RandomAIActionService(private val rootService: RootService, private val ra
             if (tileToTake == null) continue
             this.placeTile(tileToTake, player)
         }
+        rootService.gameService.determineNextPlayer(true)
     }
 
     /**

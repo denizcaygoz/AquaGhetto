@@ -19,6 +19,10 @@ class EvaluateBestPosition(private val smartAI: SmartAI) {
     /*boolean is if players earns a bonus coin*/
     fun getBestPositions(tileToPlace: PrisonerTile, player: Player, game: AquaGhetto): Pair<PlaceCard, Boolean>? {
 
+        if (game.drawStack.size < 20) {
+           // println("a")
+        }
+
         val tileType = tileToPlace.prisonerType
 
         val bestLocation = getBestLocationPrisoner(tileToPlace, player, game) ?: return null
@@ -41,19 +45,19 @@ class EvaluateBestPosition(private val smartAI: SmartAI) {
         val shouldGetBaby = this.checkBabyNotRemove(player)
         if (shouldGetBaby != null) {
             val babyToPlace = PrisonerTile(-1, PrisonerTrait.BABY, shouldGetBaby.first.prisonerType)
-            val bestBabyLocation = getBestLocationPrisoner(tileToPlace, player, game)
+            val bestBabyLocation = getBestLocationPrisoner(babyToPlace, player, game)
             if (bestBabyLocation != null) {
-
+                locationBaby = bestBabyLocation
                 player.board.setPrisonYard(bestBabyLocation.first, bestBabyLocation.second, babyToPlace)
                 val getEmployeeTwo = checkShouldGetBonus(player, tileType)
                 if (getEmployeeTwo.second) {
                     locationSecondEmployee = getBestLocationEmployee(player)
                 }
-                if (getEmployeeOne.first) coin = true
+                if (getEmployeeTwo.first) coin = true
                 player.board.setPrisonYard(bestBabyLocation.first, bestBabyLocation.second, null)
 
             } else {
-                locationBaby = Pair(-101,-101)
+                locationBaby = Pair(-100,-100)
             }
         }
 
@@ -75,7 +79,7 @@ class EvaluateBestPosition(private val smartAI: SmartAI) {
         for (firstIterator in player.board.getPrisonGridIterator()) {
             for (secondIterator in firstIterator.value) {
                 val tile = player.board.getPrisonYard(firstIterator.key, secondIterator.key)
-                if (tile != null) continue
+                if (tile != null || !secondIterator.value) continue
                 val scoreOfPlacement = smartAI.rootService.evaluationService.getExtraPointsForGuard(firstIterator.key,
                                                                     secondIterator.key, player.board)
                 allValidPositions.add(Pair(Pair(firstIterator.key, secondIterator.key), scoreOfPlacement))
@@ -151,7 +155,7 @@ class EvaluateBestPosition(private val smartAI: SmartAI) {
                 val tile = player.board.getPrisonYard(firstIterator.key, secondIterator.key)
                 if (tile != null) continue
                 val xPos = firstIterator.key
-                val yPos = firstIterator.key
+                val yPos = secondIterator.key
                 val validPlacement = smartAI.rootService.validationService.validateTilePlacement(tileToPlace, xPos, yPos, game)
                 if (validPlacement) {
                     val pos = Pair(xPos, yPos)
@@ -172,13 +176,13 @@ class EvaluateBestPosition(private val smartAI: SmartAI) {
         if (bestOption.isEmpty()) return null
 
         /*get spaces with the maximum distance to other cards*/
-        var secondCheckBest = mutableListOf<Pair<Pair<Int,Int>, Int>>()
+        val secondCheckBest = mutableListOf<Pair<Pair<Int,Int>, Int>>()
         for (pos in bestOption) {
             val dist = this.calcDistanceToDifferentType(player, tileToPlace, pos.first, pos.second)
             secondCheckBest.add(Pair(Pair(pos.first,pos.second),dist))
         }
         secondCheckBest.sortByDescending { it.second }
-        secondCheckBest = secondCheckBest.subList(0, min(secondCheckBest.size,5))
+        //secondCheckBest = secondCheckBest.subList(0, min(secondCheckBest.size,5))
 
         /*if prisoner is old last check is ignored*/
         if (tileToPlace.prisonerTrait == PrisonerTrait.OLD) {

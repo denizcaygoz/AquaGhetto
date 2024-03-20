@@ -25,7 +25,10 @@ class RandomAIService(rootService: RootService) {
      * @param player the random AI player, has to be the current player
      * @param game the current instance of AquaGhetto
      */
-    fun randomAITurn(player: Player, game: AquaGhetto) {
+    fun randomAITurn(player: Player, game: AquaGhetto, delay: Int) {
+        /*get the time when function is called*/
+        val startTime = System.currentTimeMillis()
+
         val canTakeBuses = randomAICheckValidService.canTakePrisonBus(player, game)
         val canPlaceTile = randomAICheckValidService.canPlaceTileOnBus(player, game)
         val canBuyOtherPrisoners = randomAICheckValidService.canBuyOtherPrisoner(player, game)
@@ -34,7 +37,7 @@ class RandomAIService(rootService: RootService) {
             canPlaceTile.isNotEmpty(),
             randomAICheckValidService.canMoveOwnPrisoner(player),
             randomAICheckValidService.canMoveEmployee(player),
-            canBuyOtherPrisoners.isNotEmpty(),
+            canBuyOtherPrisoners.toList().isNotEmpty(),
             randomAICheckValidService.canFreeOwnPrisoner(player),
             randomAICheckValidService.canBuyExpansion(player),
             canTakeBuses.isNotEmpty()
@@ -43,6 +46,10 @@ class RandomAIService(rootService: RootService) {
         val option = getRandomValidOption(validOptions)
         require(option != -1) {"No valid options, how did this happen?"}
 
+        /*wait until delay is over*/
+        val endTime = System.currentTimeMillis()
+        Thread.sleep(Integer.max((delay) - (endTime - startTime).toInt() , 0).toLong())
+        println("random ai action: $option")
         when (option) {
             0 -> { /*place tile on prison bus*/
                 randomAIActionService.addTileToPrisonBus(canPlaceTile.toList())
