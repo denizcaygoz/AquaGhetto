@@ -579,7 +579,11 @@ class PlayerActionService(private val rootService: RootService): AbstractRefresh
     fun drawCard(): Tile {
         val game = rootService.currentGame
         checkNotNull(game) { "No game is currently running." }
-        val stackToDrawFrom = game.drawStack.ifEmpty { game.finalStack }
+        val stackToDrawFrom = game.drawStack.ifEmpty {
+            game.finalStack
+        }
+        if (game.drawStack.isEmpty())
+        onAllRefreshables { refreshTileStack(game.drawStack.isEmpty())}
         return stackToDrawFrom.removeAt(0)
     }
 
