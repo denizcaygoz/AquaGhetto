@@ -203,14 +203,14 @@ class InGameScene(var rootService: RootService, test: SceneTest = SceneTest()) :
                 prisonBuses[i].posY = 540.0
                 prisonBuses[i].apply {
                     for (j in 0 until this.bus.tiles.size) {
-                        if (bus.tiles[i] == null) {
-                            this[0, i] = TokenView(height = 50, width = 50, visual = ImageVisual("tiles/default_tile.png")) }
-                        if (bus.tiles[i] is CoinTile) {
-                            this[0, i] = TokenView(height = 50, width = 50, visual = ImageVisual("tiles/default_coin.png")) }
-                        if (bus.tiles[i] is GuardTile) {
-                            this[0, i] = TokenView(height = 50, width = 50, visual = ImageVisual("tiles/default_guard.png")) }
-                        if (bus.tiles[i] is PrisonerTile) {
-                            this[0, i] = TokenView(height = 50, width = 50, visual = tileVisual(bus.tiles[i] as PrisonerTile)) }
+                        if (bus.tiles[j] == null) {
+                            this[0, j] = TokenView(height = 50, width = 50, visual = ImageVisual("tiles/default_tile.png")) }
+                        if (bus.tiles[j] is CoinTile) {
+                            this[0, j] = TokenView(height = 50, width = 50, visual = ImageVisual("tiles/default_coin.png")) }
+                        if (bus.tiles[j] is GuardTile) {
+                            this[0, j] = TokenView(height = 50, width = 50, visual = ImageVisual("tiles/default_guard.png")) }
+                        if (bus.tiles[j] is PrisonerTile) {
+                            this[0, j] = TokenView(height = 50, width = 50, visual = tileVisual(bus.tiles[j] as PrisonerTile)) }
                     }
                 }
             }
@@ -220,14 +220,14 @@ class InGameScene(var rootService: RootService, test: SceneTest = SceneTest()) :
                 if(prisonBuses[i].bus == prisonBus) {
                     prisonBuses[i].apply {
                         for (j in 0 until this.bus.tiles.size) {
-                            if (bus.tiles[i] == null) {
-                                this[0, i] = TokenView(height = 50, width = 50, visual = ImageVisual("tiles/default_tile.png")) }
-                            if (bus.tiles[i] is CoinTile) {
-                                this[0, i] = TokenView(height = 50, width = 50, visual = ImageVisual("tiles/default_coin.png")) }
-                            if (bus.tiles[i] is GuardTile) {
-                                this[0, i] = TokenView(height = 50, width = 50, visual = ImageVisual("tiles/default_guard.png")) }
-                            if (bus.tiles[i] is PrisonerTile) {
-                                this[0, i] = TokenView(height = 50, width = 50, visual = tileVisual(bus.tiles[i] as PrisonerTile)) }
+                            if (bus.tiles[j] == null) {
+                                this[0, j] = TokenView(height = 50, width = 50, visual = ImageVisual("tiles/default_tile.png")) }
+                            if (bus.tiles[j] is CoinTile) {
+                                this[0, j] = TokenView(height = 50, width = 50, visual = ImageVisual("tiles/default_coin.png")) }
+                            if (bus.tiles[j] is GuardTile) {
+                                this[0, j] = TokenView(height = 50, width = 50, visual = ImageVisual("tiles/default_guard.png")) }
+                            if (bus.tiles[j] is PrisonerTile) {
+                                this[0, j] = TokenView(height = 50, width = 50, visual = tileVisual(bus.tiles[j] as PrisonerTile)) }
                         }
                     }
                 }
@@ -667,14 +667,14 @@ class InGameScene(var rootService: RootService, test: SceneTest = SceneTest()) :
             this.spacing = 1.0
             for (i in 0 until bus.tiles.size) {
                 for (j in 0 until this.bus.tiles.size) {
-                    if (bus.tiles[i] == null) {
-                        this[0, i] = TokenView(height = 50, width = 50, visual = ImageVisual("tiles/default_tile.png")) }
-                    if (bus.tiles[i] is CoinTile) {
-                        this[0, i] = TokenView(height = 50, width = 50, visual = ImageVisual("tiles/default_coin.png")) }
-                    if (bus.tiles[i] is GuardTile) {
-                        this[0, i] = TokenView(height = 50, width = 50, visual = ImageVisual("tiles/default_guard.png")) }
-                    if (bus.tiles[i] is PrisonerTile) {
-                        this[0, i] = TokenView(height = 50, width = 50, visual = tileVisual(bus.tiles[i] as PrisonerTile)) }
+                    if (bus.tiles[j] == null) {
+                        this[0, j] = TokenView(height = 50, width = 50, visual = ImageVisual("tiles/default_tile.png")) }
+                    if (bus.tiles[j] is CoinTile) {
+                        this[0, j] = TokenView(height = 50, width = 50, visual = ImageVisual("tiles/default_coin.png")) }
+                    if (bus.tiles[j] is GuardTile) {
+                        this[0, j] = TokenView(height = 50, width = 50, visual = ImageVisual("tiles/default_guard.png")) }
+                    if (bus.tiles[j] is PrisonerTile) {
+                        this[0, j] = TokenView(height = 50, width = 50, visual = tileVisual(bus.tiles[i] as PrisonerTile)) }
                 }
                 this.apply{
                     this.onMouseClicked = {
@@ -688,8 +688,8 @@ class InGameScene(var rootService: RootService, test: SceneTest = SceneTest()) :
                             ownGui.isDisabled = false
                             for (j in hideLabels) {
                                 j.apply {
-                                    j.isDisabled = false
-                                    j.isVisible = true
+                                    j.isDisabled = true
+                                    j.isVisible = false
                                 }
                             }
                         }
@@ -740,9 +740,9 @@ class SceneTest : BoardGameApplication("AquaGhetto"), Refreshable {
         rootService.gameService.startNewGame(mutableListOf(
             Pair("Moin0", PlayerType.PLAYER),
             Pair("Moin1", PlayerType.PLAYER),
-            Pair("Moin2", PlayerType.PLAYER)))/*
-            Pair("Moin3", PlayerType.PLAYER))),
-            Pair("Moin4", PlayerType.PLAYER)))*/
+            Pair("Moin2", PlayerType.PLAYER),
+            Pair("Moin3", PlayerType.PLAYER),
+            Pair("Moin4", PlayerType.PLAYER)))
 
         rootService.currentGame?.players?.get(0)?.apply {
             this.coins = 6
@@ -755,11 +755,11 @@ class SceneTest : BoardGameApplication("AquaGhetto"), Refreshable {
         rootService.currentGame?.players?.get(1)?.apply {
             this.coins = 6 }
         rootService.currentGame?.players?.get(2)?.apply {
-            this.coins = 5 }/*
+            this.coins = 5 }
         rootService.currentGame?.players?.get(3)?.apply {
-            this.coins = 5 }*/
-        /*rootService.currentGame?.players?.get(4)?.apply {
-            this.coins = 5 }*/
+            this.coins = 5 }
+        rootService.currentGame?.players?.get(4)?.apply {
+            this.coins = 5 }
         showGameScene(gameScene)
     }
 }
