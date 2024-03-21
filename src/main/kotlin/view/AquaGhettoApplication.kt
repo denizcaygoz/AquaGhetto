@@ -118,11 +118,17 @@ class AquaGhettoApplication: BoardGameApplication("AquaGhetto"), Refreshable {
             }
         }
 
+
         mainMenuScene.hostButton.apply {
             onMouseClicked = {
                 rootService.networkService.startNewHostedGame()
                 showGameScene(inGameScene)
             }
+        }
+        mainMenuScene.joinButton.apply {
+
+            showGameScene(inGameScene)
+
         }
 
         inGameScene.apply {
@@ -132,7 +138,7 @@ class AquaGhettoApplication: BoardGameApplication("AquaGhetto"), Refreshable {
 
                     rootService.currentlyonPause = true
                     pauseMenuScene.refreshpauseIndicator(rootService)
-                    
+
                     this@AquaGhettoApplication.showMenuScene(pauseMenuScene)
 
 
