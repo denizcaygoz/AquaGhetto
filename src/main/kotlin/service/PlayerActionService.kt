@@ -159,9 +159,14 @@ class PlayerActionService(private val rootService: RootService): AbstractRefresh
         if (tile.prisonerTrait == PrisonerTrait.BABY) {
             rootService.networkService.increaseChildren(Triple(x,y,tile))
         } else {
-            //rootService.networkService.increaseWorkers(Triple(x, y, positionAufTruck))
+            val tilesFromBus: PrisonBus? = player.takenBus
+            if (tilesFromBus != null) {
+                val tileIndex: Int = tilesFromBus.tiles.indexOf(tile)
+                if (tileIndex != -1) {
+                    rootService.networkService.increasePrisoners(Triple(x,y,tileIndex))
+                }
+            }
         }
-
 
         // Calculate the count of the specified PrisonerType in the player's PrisonYard
         val count = rootService.evaluationService.getPrisonerTypeCount(player)[tile.prisonerType]!!

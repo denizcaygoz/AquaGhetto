@@ -57,9 +57,6 @@ class MainMenuScene(rootService : RootService) : MenuScene(), Refreshable {
         text = "Create Game"
     ).apply {
         isVisible = false
-        onMouseClicked = {
-            rootService.networkService.startNewHostedGame()
-        }
     }
     val joinButton = Button(
         posX = (1920 / 2) -250,

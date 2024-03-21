@@ -157,6 +157,7 @@ class NetworkService(private val rootService: RootService): AbstractRefreshingSe
         determineNextPlayer()
 
         client?.sendGameActionMessage(message)
+        println("Fertig")
     }
 
     /**

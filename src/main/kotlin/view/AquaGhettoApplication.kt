@@ -1,6 +1,7 @@
 package view
 
 
+import entity.Player
 import service.RootService
 import tools.aqua.bgw.core.BoardGameApplication
 import tools.aqua.bgw.event.KeyCode
@@ -109,13 +110,21 @@ class AquaGhettoApplication: BoardGameApplication("AquaGhetto"), Refreshable {
             }
         }
 
+        mainMenuScene.hostButton.apply {
+            onMouseClicked = {
+                rootService.networkService.startNewHostedGame()
+                showGameScene(inGameScene)
+            }
+        }
 
-        rootService.addRefreshable(this)
-        rootService.addRefreshable(inGameScene)
-        rootService.addRefreshable(mainMenuScene)
-        rootService.addRefreshable(pauseMenuScene)
-        rootService.addRefreshable(scoreboardScene)
-        rootService.addRefreshable(setupScene)
+        rootService.addRefreshables(
+            this,
+            inGameScene,
+            mainMenuScene,
+            pauseMenuScene,
+            pauseMenuScene,
+            setupScene
+        )
 
         //this is from NetWar
         onWindowClosed = {
@@ -126,6 +135,10 @@ class AquaGhettoApplication: BoardGameApplication("AquaGhetto"), Refreshable {
 
     override fun refreshAfterStartGame() {
         this.hideMenuScene()
+    }
+
+    override fun refreshAfterNextTurn(player: Player) {
+        this.showGameScene(inGameScene)
     }
 
     override fun refreshAfterEndGame() {

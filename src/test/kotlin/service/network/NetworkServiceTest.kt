@@ -189,17 +189,14 @@ class NetworkServiceTest {
         tileThree as PrisonerTile
 
         rootServiceHost.playerActionService.placePrisoner(tileOne,1,1)
-        rootServiceHost.networkService.increasePrisoners(Triple(1,1, 0))
         /** place tile from bus and get children **/
         val child = rootServiceHost.playerActionService.placePrisoner(tileTwo,2,1)
         val childToPlace = child.second
         if (childToPlace is PrisonerTile) {
-            rootServiceHost.networkService.increasePrisoners(Triple(2,1, 1))
             rootServiceHost.playerActionService.placePrisoner(childToPlace,1,2)
         }
         /** place tile from bus and get worker **/
         rootServiceHost.playerActionService.placePrisoner(tileThree,3,2)
-        rootServiceHost.networkService.increasePrisoners(Triple(3,2, 2))
         rootServiceHost.playerActionService.moveEmployee(-101,-101, 2,2)
         /** send message to other player **/
         rootServiceHost.networkService.sendTakeTruck(0)
