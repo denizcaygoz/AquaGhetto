@@ -262,6 +262,7 @@ class InGameScene(var rootService: RootService, test: SceneTest = SceneTest()) :
                 }
             }
         }
+
     }
 
     fun busDoGestureEndStuff(dropEvent: DropEvent, prisonBus: BoardPrisonBus) {
@@ -452,6 +453,12 @@ class InGameScene(var rootService: RootService, test: SceneTest = SceneTest()) :
         val game = rootService.currentGame
         checkNotNull(game) { "There is no game running" }
         val player = game.currentPlayer
+        /*currentPlayerlabel */
+        val playerName = game.players[game.currentPlayer].name
+        removeComponents(currentPlayerLabel)
+        currentPlayerLabel.text = "Current Player:\n${playerName}"
+        addComponents(currentPlayerLabel)
+        /*currentPlayerlabel */
 
         val tileGuard = game.players[player].board.getPrisonYard(x,y)
         if (tileGuard is GuardTile) {
@@ -580,6 +587,7 @@ class InGameScene(var rootService: RootService, test: SceneTest = SceneTest()) :
 
     //TODO
     override fun refreshIsolation(player: Player) {
+        println("refreshIsolation called.")
         val game = rootService.currentGame
         requireNotNull(game) {"game null"}
         val indexPlayer = game.players.indexOf(player)
