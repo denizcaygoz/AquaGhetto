@@ -353,7 +353,7 @@ class InGameScene(var rootService: RootService) : BoardGameScene(1920,1080), Ref
         }
         removeComponents(statGui)
         statGui.addAll(playerLabels)
-        addComponents(statGui, pauseButton)
+        addComponents(statGui)
     }
 
     override fun refreshAfterStartGame() {
