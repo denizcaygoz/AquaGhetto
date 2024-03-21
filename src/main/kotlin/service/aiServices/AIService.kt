@@ -37,7 +37,7 @@ class AIService(private val rootService: RootService): AbstractRefreshingService
         checkNotNull(game) { "No running game." }
         val delay = game.delayTime
 
-        require(delay <= 0) {"Delay is smaller than 0"}
+        require(delay > 0) {"Delay is smaller than 0"}
         require(player.type == PlayerType.AI || player.type == PlayerType.RANDOM_AI) {"player need to be an ai"}
         require(player == game.players[game.currentPlayer]) {"provided player has to be the current player"}
 

@@ -43,11 +43,11 @@ class RandomAIActionService(private val rootService: RootService, private val ra
         val location = validLocations[ran.nextInt(validLocations.size)]
         val bonus = rootService.playerActionService.movePrisonerToPrisonYard(location.first , location.second)
         if (bonus.first) {
-            placeTile(GuardTile() , player)
+            placeTile(GuardTile() , player, false)
         }
         val bonusTile = bonus.second
         if (bonusTile != null) {
-            this.placeTile(bonusTile , player)
+            this.placeTile(bonusTile , player, false)
         }
         rootService.gameService.determineNextPlayer(false)
     }
@@ -134,11 +134,11 @@ class RandomAIActionService(private val rootService: RootService, private val ra
             rootService.playerActionService.buyPrisonerFromOtherIsolation(playerToBuy, location.first, location.second)
 
         if (bonus.first) {
-            placeTile(GuardTile() , player)
+            placeTile(GuardTile() , player, false)
         }
         val bonusTile = bonus.second
         if (bonusTile != null) {
-            this.placeTile(bonusTile , player)
+            this.placeTile(bonusTile , player, false)
         }
         rootService.gameService.determineNextPlayer(false)
     }
@@ -267,7 +267,7 @@ class RandomAIActionService(private val rootService: RootService, private val ra
      * @param tile the tile to place
      * @param player the current player
      */
-    private fun placeTile(tile: Tile, player: Player) {
+    private fun placeTile(tile: Tile, player: Player, fromBus: Boolean) {
         when (tile) {
             is GuardTile -> {
                 /*creates a list of booleans where an employee can be placed*/
@@ -308,13 +308,13 @@ class RandomAIActionService(private val rootService: RootService, private val ra
                 } else {
                      validLocations[ran.nextInt(validLocations.size)]
                 }
-                val bonus = rootService.playerActionService.placePrisoner(tile, location.first, location.second)
+                val bonus = rootService.playerActionService.placePrisoner(tile, location.first, location.second, fromBus)
                 if (bonus.first) {
-                    placeTile(GuardTile() , player)
+                    placeTile(GuardTile() , player, fromBus)
                 }
                 val bonusTile = bonus.second
                 if (bonusTile != null) {
-                    this.placeTile(bonusTile , player)
+                    this.placeTile(bonusTile , player, fromBus)
                 }
             }
         }

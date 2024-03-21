@@ -103,7 +103,9 @@ class AquaGhettoApplication: BoardGameApplication("AquaGhetto"), Refreshable {
                 val game = rootService.currentGame
                 checkNotNull(game)
                 game.delayTime = setupScene.delayInputPlayer1.text.toInt()
+                //game.delayTime = 2000
                 showGameScene(inGameScene)
+                rootService.gameService.checkAITurn(game.players[game.currentPlayer])
             }
         }
 

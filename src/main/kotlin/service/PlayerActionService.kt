@@ -122,7 +122,7 @@ class PlayerActionService(private val rootService: RootService): AbstractRefresh
      *
      * @throws IllegalStateException if the game has not been started yet.
      */
-    fun placePrisoner(tile: PrisonerTile, x: Int, y: Int): Pair<Boolean, PrisonerTile?> {
+    fun placePrisoner(tile: PrisonerTile, x: Int, y: Int, fromBus: Boolean = false): Pair<Boolean, PrisonerTile?> {
         val game = rootService.currentGame
         checkNotNull(game) { "No game started yet." }
         val player = game.players[game.currentPlayer]
@@ -237,7 +237,7 @@ class PlayerActionService(private val rootService: RootService): AbstractRefresh
         }
 
         // Place the prisoner on the game board's prison yard
-        return placePrisoner(tile, x, y)
+        return placePrisoner(tile, x, y, false)
     }
 
 
@@ -402,7 +402,7 @@ class PlayerActionService(private val rootService: RootService): AbstractRefresh
             refreshIsolation(player)
         }
 
-        return placePrisoner(prisonerFromSelectedPlayersIsolation, x, y)
+        return placePrisoner(prisonerFromSelectedPlayersIsolation, x, y, false)
     }
 
     /**
