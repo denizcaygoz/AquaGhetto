@@ -100,6 +100,8 @@ class GameService(private val rootService: RootService): AbstractRefreshingServi
             game.prisonBuses.size
         }
 
+        onAllRefreshables { refreshPrisonBus(null) }
+
         when (numberOfBussesLeft) {
             1 ->  {
                 // Without that, it would still be the second-to-last player's turn
@@ -119,6 +121,7 @@ class GameService(private val rootService: RootService): AbstractRefreshingServi
             0 -> { /*all players have taken a buss*/
                 if (game.finalStack.size != 15) { /*reserve stack was taken*/
                     rootService.evaluationService.evaluateGame()
+                    Thread.sleep(5000)
                     onAllRefreshables {
                         refreshAfterEndGame()
                     }
@@ -171,7 +174,7 @@ class GameService(private val rootService: RootService): AbstractRefreshingServi
         }
 
         onAllRefreshables {
-            //refreshPrisonBus(null)
+            refreshPrisonBus(null)
             refreshAfterNextTurn(game.players[game.currentPlayer])
         }
         this.checkAITurn(game.players[game.currentPlayer])
@@ -188,7 +191,7 @@ class GameService(private val rootService: RootService): AbstractRefreshingServi
         require(player.takenBus == null)
         if (player.type == PlayerType.AI || player.type == PlayerType.RANDOM_AI) {
             thread {
-                Thread.sleep(1000)
+                Thread.sleep(500)
                 BoardGameApplication.runOnGUIThread {
                     rootService.aiService.makeTurn(player)
                 }

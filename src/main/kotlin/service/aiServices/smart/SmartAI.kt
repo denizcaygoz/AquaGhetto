@@ -388,6 +388,10 @@ class SmartAI(val rootService: RootService, var player: Player, val playerIndex:
         /*place possible employee if valid*/
         placeEmployee(bonus.first, placeCard.firstTileBonusEmployee)
 
+        if (bonus.second != null) {
+            println("ABC")
+        }
+
         /*place possible baby*/
         var secondBonus: Pair<Boolean, PrisonerTile?>? = null
         val bonusBaby = bonus.second
@@ -395,30 +399,18 @@ class SmartAI(val rootService: RootService, var player: Player, val playerIndex:
         if (bonusBaby != null && bonusLocation == null) {
             /*If there is no place in prison area to place the bonus baby,
             * then bonus card goes to isolation.*/
+            println("Error AI action did not matched bonus Card 1") //TODO sometimes no baby location, why?
             val bestEmergency = evaluateBestPosition.getBestPositions(bonusBaby, player, game)
             if (bestEmergency != null) {
                 val loc = bestEmergency.first
                 val b = rootService.playerActionService.placePrisoner(bonusBaby, loc.placePrisoner.first, loc.placePrisoner.second, false)
-                if (b.first) {
-                    val emergencyEmployee = evaluateBestPosition.getBestLocationEmployee(player)
-
-                    try {
-                        rootService.playerActionService.moveEmployee(-101,-101,emergencyEmployee.first,emergencyEmployee.second)
-                    } catch (e: Exception) {
-                        if (player.lawyerCount < 2) {
-                            rootService.playerActionService.moveEmployee(-101,-101,-104,-104)
-                        } else if (player.secretaryCount < 2) {
-                            rootService.playerActionService.moveEmployee(-101,-101,-103,-103)
-                        } else if (!player.hasJanitor) {
-                            rootService.playerActionService.moveEmployee(-101,-101,-102,-102)
-                        }
-                    }
-
-                }
+                /*place possible employee if valid*/
+                placeEmployee(bonus.first, null)
+                return
             } else {
                 rootService.playerActionService.placePrisoner(bonusBaby, -100,-100, false)
+                return
             }
-            println("Error AI action did not matched bonus Card 1") //TODO sometimes no baby location, why?
         } else if (bonusBaby == null && bonusLocation != null) {
             /*do nothing I guess*/
             println("Error AI action did not matched bonus Card 2")
@@ -437,7 +429,19 @@ class SmartAI(val rootService: RootService, var player: Player, val playerIndex:
      */
     private fun placeEmployee(bonus: Boolean, employee: Pair<Int,Int>?) {
         if (bonus && (employee == null)) {
-            //TODO add emergency action?
+            val emergencyLocation = evaluateBestPosition.getBestLocationEmployee(player)
+            try {
+                rootService.playerActionService.moveEmployee(-101,-101,
+                    emergencyLocation.first, emergencyLocation.second)
+            } catch (e: Exception) {
+                if (player.lawyerCount < 2) {
+                    rootService.playerActionService.moveEmployee(-101,-101,-104,-104)
+                } else if (player.secretaryCount < 2) {
+                    rootService.playerActionService.moveEmployee(-101,-101,-103,-103)
+                } else if (!player.hasJanitor) {
+                    rootService.playerActionService.moveEmployee(-101,-101,-102,-102)
+                }
+            }
             println("Error AI action did not matched bonus")
         } else if (!bonus && (employee != null)) {
             /*do nothing I guess*/

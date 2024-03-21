@@ -139,6 +139,7 @@ class PlayerActionService(private val rootService: RootService): AbstractRefresh
             onAllRefreshables {
                 refreshScoreStats()
                 refreshIsolation(player)
+                refreshPrisonBus(null)
             }
 
             return result
@@ -186,8 +187,15 @@ class PlayerActionService(private val rootService: RootService): AbstractRefresh
         }
 
         // Checking for baby prisoner
+        /*
         val babyPrisoner = rootService.playerActionService.checkBabyPrisoner()?.let {
             rootService.boardService.getBabyTile(it)
+        }
+        */
+        var possibleBabyTile: PrisonerTile? = null
+        val possibleBaby = rootService.playerActionService.checkBabyPrisoner()
+        if (possibleBaby != null) {
+            possibleBabyTile = rootService.boardService.getBabyTile(possibleBaby)
         }
 
         rootService.evaluationService.evaluatePlayer(player)
@@ -196,9 +204,21 @@ class PlayerActionService(private val rootService: RootService): AbstractRefresh
         onAllRefreshables {
             refreshScoreStats()
             refreshPrison(tile, x, y)
+            refreshPrisonBus(null)
+            //refreshPrisonBus(player.takenBus)
         }
 
-        result = Pair(getsNewEmployee, babyPrisoner)
+        /*
+        for (first in player.board.getPrisonGridIterator()) {
+            for (second in first.value) {
+                onAllRefreshables {
+                    refreshPrison(player.board.getPrisonYard(first.key,second.key), first.key, second.key)
+                }
+            }
+        }
+        */
+
+        result = Pair(getsNewEmployee, possibleBabyTile)
 
         return result
     }
