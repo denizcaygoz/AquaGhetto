@@ -60,30 +60,29 @@ class ScoreboardScene (val rootService : RootService, val inGameScene: InGameSce
      */
      fun generateGridPane() : GridPane<UIComponent>{
         val scoreboardGrid = GridPane<UIComponent>((1920/2),(1080/2),3,5, spacing = 50)
-        val game = root.currentGame
-        checkNotNull(game)
-        val rankedList  = game.players
-        rankedList.sortBy { it.currentScore }
+        val rankedList  = rootService.evaluationService.evaluateGame()
         for(i in rankedList.indices) {
-
             val forPlayer : Player = rankedList[i]
             scoreboardGrid[0, i] = createTextLabel(forPlayer.name)
-            scoreboardGrid[1, i] = createTextLabel(root.evaluationService.evaluatePlayer(forPlayer).toString())
-            scoreboardGrid[2, i] = null
-
-        /*createPrisonYard(forPlayer)*/
-
+            scoreboardGrid[1, i] = createTextLabel(forPlayer.currentScore.toString())
+            scoreboardGrid[2, i] = null /*here could be the Islands*/
         }
         return scoreboardGrid
     }
 
-    val scoreboardGrid : GridPane<UIComponent> = generateGridPane()
+    var scoreboardGrid : GridPane<UIComponent> = GridPane(0,0,0,0)
 
+    override fun refreshAfterEndGame() {
+        removeComponents(scoreboardGrid)
+        scoreboardGrid = generateGridPane()
+        addComponents(scoreboardGrid)
+    }
     init {
         addComponents(
             scoreboardGrid ,
             backToMenuButton,
             )
+        scoreboardGrid[0, 0] = createTextLabel("TestPlayer1")
         scoreboardGrid.setRowHeights(100) // size of a Prison Grid
 
 
