@@ -105,9 +105,6 @@ class EvaluationService(private val rootService: RootService): AbstractRefreshin
         }
         var returnList = game.players
         returnList.sortBy { it.currentScore}
-        onAllRefreshables {
-            refreshAfterEndGame()
-        }
         return returnList
     }
 
