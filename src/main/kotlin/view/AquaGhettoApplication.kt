@@ -5,6 +5,8 @@ import entity.Player
 import service.RootService
 import tools.aqua.bgw.core.BoardGameApplication
 import tools.aqua.bgw.event.KeyCode
+import tools.aqua.bgw.event.*
+import java.security.Key
 
 /**
  * Application and SceneManagement
@@ -22,11 +24,7 @@ class AquaGhettoApplication: BoardGameApplication("AquaGhetto"), Refreshable {
      * Main in game Scene
      * this will need an Esc Key Listener to go to Pause Menu
      */
-    private var inGameScene = InGameScene(rootService).apply {
-        onKeyPressed = {
-            if (it.keyCode == KeyCode.ESCAPE) { this@AquaGhettoApplication.showMenuScene(pauseMenuScene)}
-        }
-    }
+    private var inGameScene = InGameScene(rootService)
 
     /**
      * The Main Menu Screen for selecting a mode
@@ -104,7 +102,6 @@ class AquaGhettoApplication: BoardGameApplication("AquaGhetto"), Refreshable {
                 val game = rootService.currentGame
                 checkNotNull(game)
                 game.delayTime = setupScene.delayInputPlayer1.text.toInt()
-                //game.delayTime = 2000
                 showGameScene(inGameScene)
                 rootService.gameService.checkAITurn(game.players[game.currentPlayer])
             }
@@ -117,13 +114,42 @@ class AquaGhettoApplication: BoardGameApplication("AquaGhetto"), Refreshable {
             }
         }
 
+        inGameScene.apply {
+        onKeyTyped = {
+            //println("Key typed: ${it.character}, Key code: ${it.keyCode}" + "/ String: ${it.keyCode.string}" + "/ name: ${it.keyCode.name}")
+                if(it.character == "1") {
+                    this@AquaGhettoApplication.showMenuScene(pauseMenuScene)
+                }
+                if (it.keyCode == KeyCode.ESCAPE){
+                    println("Key typed: ${it.character}, Key code: ${it.keyCode}" + "/ String: ${it.keyCode.string}" + "/ name: ${it.keyCode.name}")
+                    println("ESCPAE was pressed -> Pause Menu opened")
+                    println("if you read this that means that BGW doesnt support MacBook Keys")
+                    this@AquaGhettoApplication.showMenuScene(pauseMenuScene)
+                }
+            }
+        }
+        pauseMenuScene.apply {
+            onKeyTyped = {
+
+                if(it.character == "2") {
+                    println("1 Button was Pressed")
+                    this@AquaGhettoApplication.hideMenuScene()
+                }
+                if (it.keyCode == KeyCode.ESCAPE){
+                    println("Key typed: ${it.character}, Key code: ${it.keyCode}" + "/ String: ${it.keyCode.string}" + "/ name: ${it.keyCode.name}")
+                    println("ESCPAE was pressed -> Pause Menu opened")
+                    println("if you read this that means that BGW doesnt support MacBook Keys")
+                    this@AquaGhettoApplication.hideMenuScene()
+                }
+            }
+        }
+
         rootService.addRefreshables(
             this,
             inGameScene,
             mainMenuScene,
             pauseMenuScene,
-            pauseMenuScene,
-            setupScene
+            setupScene,
         )
 
         //this is from NetWar
