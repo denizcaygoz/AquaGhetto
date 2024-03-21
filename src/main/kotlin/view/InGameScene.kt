@@ -289,7 +289,7 @@ class InGameScene(var rootService: RootService, test: SceneTest = SceneTest()) :
                 val currentPlayer = game.players[currentPlayerIndex]
                 val bonus = rootService.playerActionService.placePrisoner(temp as PrisonerTile,loc.first,loc.second)
                 refreshPrison(temp as PrisonerTile, loc.first, loc.second)
-                doBonusStuff(currentPlayerIndex, bonus, busTaken = false, true)
+                doBonusStuff(currentPlayerIndex, bonus, busTaken = true, game.players[currentPlayerIndex].takenBus!!.tiles.isEmpty())
             } else {
                 /*player tries to place prisoner on other grid, this is not allowed*/
                 refreshPrisonBus(null)
@@ -470,6 +470,13 @@ class InGameScene(var rootService: RootService, test: SceneTest = SceneTest()) :
     override fun refreshAfterNextTurn(player: Player) {
         ownGui = Pane<ComponentView>(width = 130, height = 1080, visual = ColorVisual.LIGHT_GRAY)
 
+        val game = rootService.currentGame
+        requireNotNull(game)
+        /*update copied*/
+        for (i in prisons.indices) {
+            prisons[i].player = game.players[i]
+        }
+
         removeComponents(currentPlayerLabel)
         currentPlayerLabel.text = "Current Player:\n${player.name}"
         addComponents(currentPlayerLabel)
@@ -572,7 +579,7 @@ class InGameScene(var rootService: RootService, test: SceneTest = SceneTest()) :
         isolation.refreshIsolation()
     }
 
-    inner class PlayerBoard(val player: Player, val rootService: RootService) :
+    inner class PlayerBoard(var player: Player, val rootService: RootService) :
         GridPane<TokenView>(rows = 21, columns = 21, layoutFromCenter = true) {
 
         // Both get patched by calculateSize()

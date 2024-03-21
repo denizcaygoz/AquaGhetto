@@ -107,7 +107,9 @@ class GameService(private val rootService: RootService): AbstractRefreshingServi
                     } while (game.players[game.currentPlayer].takenBus != null)
                 }
 
+                game.players[game.currentPlayer].currentScore = rootService.evaluationService.evaluatePlayer(game.players[game.currentPlayer])
                 onAllRefreshables {
+                    refreshScoreStats()
                     refreshAfterNextTurn(game.players[game.currentPlayer])
                 }
                 this.checkAITurn(game.players[game.currentPlayer])
@@ -118,6 +120,10 @@ class GameService(private val rootService: RootService): AbstractRefreshingServi
                 } else {
                     /*reserve stack was not taken*/
                     /*next player is the current player*/
+                    game.players[game.currentPlayer].currentScore = rootService.evaluationService.evaluatePlayer(game.players[game.currentPlayer])
+                    onAllRefreshables {
+                        refreshScoreStats()
+                    }
                     startNewRound(game)
                 }
             }
@@ -131,7 +137,9 @@ class GameService(private val rootService: RootService): AbstractRefreshingServi
                     game.currentPlayer = (game.currentPlayer + 1) % game.players.size
                 } while (game.players[game.currentPlayer].takenBus != null)
 
+                game.players[game.currentPlayer].currentScore = rootService.evaluationService.evaluatePlayer(game.players[game.currentPlayer])
                 onAllRefreshables {
+                    refreshScoreStats()
                     refreshAfterNextTurn(game.players[game.currentPlayer])
                 }
                 this.checkAITurn(game.players[game.currentPlayer])
