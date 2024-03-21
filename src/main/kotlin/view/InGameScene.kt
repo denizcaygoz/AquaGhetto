@@ -1032,11 +1032,31 @@ class InGameScene(var rootService: RootService) : BoardGameScene(1920,1080), Ref
                                 this.isVisible = false
                                 this.name = "expansion"
                                 this.dropAcceptor = { dragEvent ->
+                                    var result = false
+                                    var big =
                                     when (dragEvent.draggedComponent.name) {
-                                        "big_extension" -> true
-                                        "small_extension" -> true
-                                        else -> {
-                                            false
+                                        "big_extension" -> 0
+                                        "small_extension" -> 1
+                                        else -> 2
+                                    }
+                                    if(big == 0) {
+                                        result = rootService.validationService.validateExpandPrisonGrid(true,x,y,0)
+                                                && rootService.currentGame!!.players[rootService.currentGame!!.currentPlayer].coins >= 2
+                                    }
+                                    else if(big == 1) {
+                                        result = rootService.validationService.validateExpandPrisonGrid(false,x,y,smallExtensionRotation)
+                                                && rootService.currentGame!!.players[rootService.currentGame!!.currentPlayer].coins >= 1
+                                    }
+                                    else result = false
+
+                                    result
+                                }
+
+                                this.onDragGestureEnded = { dragEvent , success->
+                                    if(success) {
+                                        when (dragEvent.draggedComponent.name) {
+                                            "big_extension" -> rootService.playerActionService.expandPrisonGrid(true, x, y, 0)
+                                            "small_extension" -> rootService.playerActionService.expandPrisonGrid( false, x, y, smallExtensionRotation)
                                         }
                                     }
                                 }
@@ -1044,13 +1064,13 @@ class InGameScene(var rootService: RootService) : BoardGameScene(1920,1080), Ref
                                 this.onDragDropped = { dragEvent ->
                                     when (dragEvent.draggedComponent.name) {
                                         "big_extension" -> {
-                                            rootService.playerActionService.expandPrisonGrid(true, x, y, 0)
-                                            //calculateSize()
+                                            if(rootService.validationService.validateExpandPrisonGrid(true,x,y,0)) {
+                                            rootService.playerActionService.expandPrisonGrid(true, x, y, 0) }
                                         }
 
                                         "small_extension" -> {
-                                            rootService.playerActionService.expandPrisonGrid( false, x, y, smallExtensionRotation)
-                                            //calculateSize()
+                                            if(rootService.validationService.validateExpandPrisonGrid(false,x,y,smallExtensionRotation)) {
+                                            rootService.playerActionService.expandPrisonGrid( false, x, y, smallExtensionRotation) }
                                         }
                                     }
                                 }
