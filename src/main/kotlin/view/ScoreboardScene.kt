@@ -70,7 +70,7 @@ class ScoreboardScene (val rootService : RootService, val inGameScene: InGameSce
         return scoreboardGrid
     }
 
-    var scoreboardGrid : GridPane<UIComponent> = GridPane(0,0,0,0)
+    var scoreboardGrid : GridPane<UIComponent> = GridPane(0,0,1,1)
 
     override fun refreshAfterEndGame() {
         removeComponents(scoreboardGrid)

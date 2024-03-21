@@ -41,7 +41,7 @@ fun tileVisual(tile: Tile?) : ImageVisual {
     return ImageVisual(imgPath)
 }
 
-class InGameScene(var rootService: RootService, test: SceneTest = SceneTest()) : BoardGameScene(1920,1080), Refreshable {
+class InGameScene(var rootService: RootService) : BoardGameScene(1920,1080), Refreshable {
 
     private var tileDrawn = false
     private var bonusToPlace = 0
@@ -1226,7 +1226,9 @@ class InGameScene(var rootService: RootService, test: SceneTest = SceneTest()) :
     }
 
 }
-/**
+/*
+/*
+/
  * Below this are methods for testing the IngameScene
  */
 fun main() {
@@ -1237,16 +1239,17 @@ fun main() {
 
 class SceneTest : BoardGameApplication("AquaGhetto"), Refreshable {
     private val rootService = RootService()
-    private val gameScene = InGameScene(rootService, this)
+    private val gameScene = InGameScene(rootService)
 
     init {
         rootService.gameService.startNewGame(mutableListOf(
             Pair("Moin0", PlayerType.PLAYER),
-            Pair("Moin1", PlayerType.PLAYER),
+            Pair("Moin1", PlayerType.PLAYER)))/*
             Pair("Moin2", PlayerType.PLAYER),
             Pair("Moin3", PlayerType.PLAYER),
-            Pair("Moin4", PlayerType.PLAYER)))
+            Pair("Moin4", PlayerType.PLAYER))*/
 
+        /*
         rootService.currentGame?.players?.get(0)?.apply {
             this.coins = 10
             this.board.setPrisonGrid(2,2,true)
@@ -1272,6 +1275,7 @@ class SceneTest : BoardGameApplication("AquaGhetto"), Refreshable {
         rootService.currentGame?.players?.get(4)?.apply {
             this.coins = 5 }
         rootService.playerActionService.moveEmployee(-101, -101, 2, 3)
-        showGameScene(gameScene)
+        showGameScene(gameScene)*/
     }
 }
+*/

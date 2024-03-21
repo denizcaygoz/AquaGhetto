@@ -11,6 +11,7 @@ import tools.aqua.bgw.event.KeyCode
  */
 class AquaGhettoApplication: BoardGameApplication("AquaGhetto"), Refreshable {
 
+
     /**
      * Central Service to provide all Game/PlayerActions
      */
@@ -20,7 +21,7 @@ class AquaGhettoApplication: BoardGameApplication("AquaGhetto"), Refreshable {
      * Main in game Scene
      * this will need an Esc Key Listener to go to Pause Menu
      */
-    private val inGameScene = InGameScene(rootService).apply {
+    private var inGameScene = InGameScene(rootService).apply {
         onKeyPressed = {
             if (it.keyCode == KeyCode.ESCAPE) { this@AquaGhettoApplication.showMenuScene(pauseMenuScene)}
         }
@@ -87,6 +88,7 @@ class AquaGhettoApplication: BoardGameApplication("AquaGhetto"), Refreshable {
      */
     private val setupScene = SetupScene(rootService).apply {
         startNewGameButton.onMouseClicked = {
+
             this@AquaGhettoApplication.hideMenuScene(500)
             this@AquaGhettoApplication.showGameScene(inGameScene)
         }
