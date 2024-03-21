@@ -41,7 +41,7 @@ class Player(val name: String, val type: PlayerType): Serializable, Cloneable {
     var board: Board = Board()
     var isolation: Stack<PrisonerTile> = Stack()
     var takenBus: PrisonBus? = null
-    var coins: Int = 0
+    var coins: Int = 1
     var hasJanitor = false
     var secretaryCount = 0
     var lawyerCount = 0
