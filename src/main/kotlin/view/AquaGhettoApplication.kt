@@ -14,6 +14,7 @@ import java.security.Key
  */
 class AquaGhettoApplication: BoardGameApplication("AquaGhetto"), Refreshable {
 
+    private var refreshedForNetwork = false
 
     /**
      * Central Service to provide all Game/PlayerActions
@@ -203,7 +204,10 @@ class AquaGhettoApplication: BoardGameApplication("AquaGhetto"), Refreshable {
     }
 
     override fun refreshAfterNextTurn(player: Player) {
-        this.showGameScene(inGameScene)
+        if (!refreshedForNetwork) {
+            this.showGameScene(inGameScene)
+            refreshedForNetwork = true
+        }
     }
 
     override fun refreshAfterEndGame() {
