@@ -250,9 +250,12 @@ class RandomAIActionService(private val rootService: RootService, private val ra
     fun takePrisonBus(canTakeBuses: List<PrisonBus>, player: Player) {
         val busToTake = canTakeBuses[ran.nextInt(canTakeBuses.size)]
         rootService.playerActionService.takePrisonBus(busToTake)
-        for (tileToTake in busToTake.tiles) {
-            if (tileToTake == null) continue
+        for (i in busToTake.tiles.indices) {
+            val tileToTake = busToTake.tiles[i] ?: continue
             this.placeTile(tileToTake, player)
+
+            /*remove tile from bus*/
+            busToTake.tiles[i] = null
         }
         rootService.gameService.determineNextPlayer(true)
     }

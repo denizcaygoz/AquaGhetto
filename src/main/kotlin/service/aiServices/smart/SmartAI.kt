@@ -162,11 +162,10 @@ class SmartAI(val rootService: RootService, var player: Player, val playerIndex:
         for (i in tiles.indices) {
             val tile = tiles[i]
 
-            /*remove tile from bus*/
-            takenBus.tiles[i] = null
-
             if (tile !is PrisonerTile) {
                 println("Found non prisoner tile in bus, this should not happen")
+                /*remove tile from bus*/
+                takenBus.tiles[i] = null
                 continue
             }
 
@@ -184,6 +183,8 @@ class SmartAI(val rootService: RootService, var player: Player, val playerIndex:
                 rootService.playerActionService.placePrisoner(tile, -100, -100)
                 println("Wrong location calculated! (${prisoner.first} ${prisoner.second})")
             }
+            /*remove tile from bus*/
+            takenBus.tiles[i] = null
         }
     }
 
