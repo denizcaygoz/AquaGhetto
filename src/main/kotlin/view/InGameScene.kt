@@ -78,7 +78,9 @@ class InGameScene(var rootService: RootService) : BoardGameScene(1920,1080), Ref
     private val drawStack = TokenView(posX = 855, posY = 500, height = 80, width = 80, visual = ImageVisual("tiles/default_drawStack.png")
     ).apply {
         onMouseClicked = {
-            if(!tileDrawn) {
+            if(!tileDrawn
+                && rootService.currentGame!!.players[rootService.currentGame!!.currentPlayer].takenBus == null
+                /*&& !areAllViewBusesFull()*/) {
                 tileDrawn = true
                 drawnTile.isDisabled = false
                 drawnTile.isVisible = true
@@ -106,6 +108,7 @@ class InGameScene(var rootService: RootService) : BoardGameScene(1920,1080), Ref
             }
         }
     }
+
     private val finalStack = TokenView(posX = 785, posY = 515, height = 50, width = 50, visual = ImageVisual("tiles/default_finalStack.png")
     ).apply {
         isDisabled = true
@@ -198,7 +201,6 @@ class InGameScene(var rootService: RootService) : BoardGameScene(1920,1080), Ref
 
     override fun refreshPrisonBus(prisonBus: PrisonBus?) {
         /*just refresh all prison buses*/
-
 
         val game = rootService.currentGame
         requireNotNull(game)
@@ -308,15 +310,7 @@ class InGameScene(var rootService: RootService) : BoardGameScene(1920,1080), Ref
                                                             tempBoardPrisonBus
                                                         )
                                                         player.takenBus!!.tiles[k] = null
-                                                        var elementsExist = false
-                                                        for (l in 0 until player.takenBus!!.tiles.size) {
-                                                            if (player.takenBus!!.tiles[l] != null) {
-                                                                elementsExist = true
-                                                            }
-                                                        }
-                                                        if (!elementsExist) rootService.gameService.determineNextPlayer(
-                                                            true
-                                                        )
+                                                        isBusEmpty(player)
                                                     }
                                                 }
                                             }
@@ -358,10 +352,36 @@ class InGameScene(var rootService: RootService) : BoardGameScene(1920,1080), Ref
 
             }
         }
-
         targetLayout.addAll(prisonBuses)
-
     }
+
+    fun isBusEmpty(player : Player) {
+        if (player.takenBus == null) return
+        var elementsExist = false
+        for (l in 0 until player.takenBus!!.tiles.size) {
+            if (player.takenBus!!.tiles[l] != null) {
+                elementsExist = true
+            }
+        }
+        if (!elementsExist) rootService.gameService.determineNextPlayer(
+            true
+        )
+    }
+
+
+    fun areAllViewBusesFull() : Boolean {
+        for (i in prisonBuses) {
+            if(i.name.contains("board")) {
+                for (j in 0 until prisonBuses.size) {
+                    val compareVisual = ImageVisual("tiles/default_tile.png")
+                    if (i[0, j]!!.visual == compareVisual
+                    ) return false
+                }
+            }
+        }
+        return true
+    }
+
 
     fun busDoGestureEndStuff(dropEvent: DropEvent,tile : Tile, prisonBus: BoardPrisonBus) {
         val targetList = dropEvent.dragTargets
@@ -386,14 +406,12 @@ class InGameScene(var rootService: RootService) : BoardGameScene(1920,1080), Ref
             requireNotNull(game)
             val currentPlayerIndex = game.currentPlayer
 
-            prisonBus.isTurnEnded()
             if (currentPlayerIndex == playerIndexLocation) {
                 /*player moving on own grid*/
                 if (!rootService.validationService.validateTilePlacement(tile as PrisonerTile, loc.first, loc.second)) {
                     println("invalid placemente")
                     /*no valid location, refreshIsolation*/
                     refreshPrisonBus(null)
-                    prisonBus.isTurnEnded()
                     return
                 }
                 val bonus = rootService.playerActionService.placePrisoner(tile as PrisonerTile,loc.first,loc.second)
@@ -409,7 +427,6 @@ class InGameScene(var rootService: RootService) : BoardGameScene(1920,1080), Ref
             } else {
                 /*player tries to place prisoner on other grid, this is not allowed*/
                 refreshPrisonBus(null)
-                prisonBus.isTurnEnded()
                 return
             }
 
@@ -1061,12 +1078,15 @@ class InGameScene(var rootService: RootService) : BoardGameScene(1920,1080), Ref
         /**
          * Fills the bus with tiles
          */
+        var isFull = true
+
         init {
             this.spacing = 1.0
             for (i in 0 until bus.tiles.size) {
                 for (j in 0 until this.bus.tiles.size) {
                     if (bus.tiles[j] == null) {
                         this[0, j] = TokenView(height = 50, width = 50, visual = ImageVisual("tiles/default_tile.png"))
+                        isFull = false
                     }
                     if (bus.tiles[j] is CoinTile) {
                         this[0, j] = TokenView(height = 50, width = 50, visual = ImageVisual("tiles/default_coin.png"))
@@ -1100,16 +1120,12 @@ class InGameScene(var rootService: RootService) : BoardGameScene(1920,1080), Ref
                             }
                         } else if (this.name.contains("bus_") && this.name.contains("board")) {
                             rootService.playerActionService.takePrisonBus(this.bus)
+                            isBusEmpty(rootService.currentGame!!.players[rootService.currentGame!!.currentPlayer])
                         }
                     }
                 }
             }
         }
-
-        fun isTurnEnded() {
-            if (bus.tiles.isEmpty()) rootService.gameService.determineNextPlayer(true)
-        }
-
     }
 
     inner class BoardIsolation(var isolation: Stack<PrisonerTile>, val playerIndex: Int) :
