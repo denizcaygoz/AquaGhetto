@@ -5,6 +5,8 @@ import entity.Board
 import entity.Player
 import entity.PrisonBus
 import entity.enums.PlayerType
+import tools.aqua.bgw.core.BoardGameApplication
+import kotlin.concurrent.thread
 
 /**
  * Service layer class that provides the logic for basic game functions, like creating a new game or
@@ -166,7 +168,7 @@ class GameService(private val rootService: RootService): AbstractRefreshingServi
         }
 
         onAllRefreshables {
-            refreshPrisonBus(null)
+            //refreshPrisonBus(null)
             refreshAfterNextTurn(game.players[game.currentPlayer])
         }
         this.checkAITurn(game.players[game.currentPlayer])
@@ -182,7 +184,13 @@ class GameService(private val rootService: RootService): AbstractRefreshingServi
     fun checkAITurn(player: Player, delay: Int = 0) {
         require(player.takenBus == null)
         if (player.type == PlayerType.AI || player.type == PlayerType.RANDOM_AI) {
-            rootService.aiService.makeTurn(player)
+            thread {
+                Thread.sleep(1000)
+                BoardGameApplication.runOnGUIThread {
+                    rootService.aiService.makeTurn(player)
+                }
+                //rootService.aiService.makeTurn(player)
+            }
         }
     }
 

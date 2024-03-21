@@ -176,12 +176,12 @@ class SmartAI(val rootService: RootService, var player: Player, val playerIndex:
             println("place card ${tile.id} at (${placeCard.placePrisoner.first}, ${placeCard.placePrisoner.second})")
 
             try {
-                val bonus = rootService.playerActionService.placePrisoner(tile, prisoner.first, prisoner.second)
+                val bonus = rootService.playerActionService.placePrisoner(tile, prisoner.first, prisoner.second , true)
                 this.placeCardBonus(placeCard, bonus, game)
             } catch (e: IllegalStateException) {
                 /*sometimes wrong location is calculated*/
                 /*emergency location*/
-                rootService.playerActionService.placePrisoner(tile, -100, -100)
+                rootService.playerActionService.placePrisoner(tile, -100, -100, true)
                 println("Wrong location calculated! (${prisoner.first} ${prisoner.second})")
             }
         }
@@ -387,13 +387,13 @@ class SmartAI(val rootService: RootService, var player: Player, val playerIndex:
             val bestEmergency = evaluateBestPosition.getBestPositions(bonusBaby, player, game)
             if (bestEmergency != null) {
                 val loc = bestEmergency.first
-                val b = rootService.playerActionService.placePrisoner(bonusBaby, loc.placePrisoner.first, loc.placePrisoner.second)
+                val b = rootService.playerActionService.placePrisoner(bonusBaby, loc.placePrisoner.first, loc.placePrisoner.second, false)
                 if (b.first) {
                     val emergencyEmployee = evaluateBestPosition.getBestLocationEmployee(player)
                     rootService.playerActionService.moveEmployee(-101,-101,emergencyEmployee.first,emergencyEmployee.second)
                 }
             } else {
-                rootService.playerActionService.placePrisoner(bonusBaby, -100,-100)
+                rootService.playerActionService.placePrisoner(bonusBaby, -100,-100, false)
             }
             println("Error AI action did not matched bonus Card 1") //TODO sometimes no baby location, why?
         } else if (bonusBaby == null && bonusLocation != null) {
@@ -401,7 +401,7 @@ class SmartAI(val rootService: RootService, var player: Player, val playerIndex:
             println("Error AI action did not matched bonus Card 2")
         } else if (bonusBaby != null && bonusLocation != null) {
             secondBonus = rootService.playerActionService.placePrisoner(bonusBaby,
-                bonusLocation.first, bonusLocation.second)
+                bonusLocation.first, bonusLocation.second, false)
         }
 
         /*Second bonus can only "contain" a new employee*/
