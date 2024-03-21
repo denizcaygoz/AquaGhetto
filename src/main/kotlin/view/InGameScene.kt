@@ -43,7 +43,6 @@ fun tileVisual(tile: Tile?) : ImageVisual {
 
 class InGameScene(var rootService: RootService) : BoardGameScene(1920,1080), Refreshable {
 
-    val pauseButton : Button = Button(1640,50,150,50,text = "Pause Game")
     private var tileDrawn = false
     private var bonusToPlace = 0
     private var bonusTiles = mutableListOf<PrisonerTile>() /*do not edit*/
@@ -69,12 +68,6 @@ class InGameScene(var rootService: RootService) : BoardGameScene(1920,1080), Ref
             if (player.isolation.isNotEmpty() && player.coins >= 2) { /*button does nothing if action is not valid*/
                 rootService.playerActionService.freePrisoner()
             }
-        }
-    }
-    private val endTurnButton : Button = Button(1440,950,150,100,text = "End turn (If bus empty)"
-    ).apply{
-        onMouseClicked = {
-            rootService.gameService.determineNextPlayer(true)
         }
     }
     private var drawnServiceTile : Tile? = null
@@ -165,7 +158,6 @@ class InGameScene(var rootService: RootService) : BoardGameScene(1920,1080), Ref
         addComponents(
             cameraPane,
             freePrisonerButton,
-            endTurnButton,
             statGui,
             hideLabels[0], hideLabels[1], hideLabels[2], hideLabels[3],
             currentPlayerLabel,
