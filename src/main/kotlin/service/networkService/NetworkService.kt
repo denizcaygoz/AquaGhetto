@@ -157,7 +157,6 @@ class NetworkService(private val rootService: RootService): AbstractRefreshingSe
         determineNextPlayer()
 
         client?.sendGameActionMessage(message)
-        println("Fertig")
     }
 
     /**
@@ -224,6 +223,7 @@ class NetworkService(private val rootService: RootService): AbstractRefreshingSe
         onAllRefreshables {
             refreshAfterStartGame()
             refreshAfterNextTurn(currentPlayer)
+            refreshPrisonBus(null)
         }
     }
 
@@ -294,19 +294,14 @@ class NetworkService(private val rootService: RootService): AbstractRefreshingSe
      * @throws IllegalArgumentException if it's not currently my turn
      * @throws IllegalStateException if there is no game running
      */
-    fun sendAddTileToTruck(prisonBus: PrisonBus) {
+    fun sendAddTileToTruck(prisonBus: Int) {
         require(connectionState == ConnectionState.PLAYING_MY_TURN) { "not my turn" }
 
-        var selectedPrisonBus = 0
         val game = rootService.currentGame
 
         checkNotNull(game) { "somehow the current game doesnt exist." }
 
-        game.prisonBuses.forEachIndexed { index, bus ->
-            if (bus == prisonBus) { selectedPrisonBus = index }
-        }
-
-        val message = AddTileToTruckMessage(selectedPrisonBus)
+        val message = AddTileToTruckMessage(prisonBus)
         client?.sendGameActionMessage(message)
 
         determineNextPlayer()
@@ -333,7 +328,9 @@ class NetworkService(private val rootService: RootService): AbstractRefreshingSe
         check(busId in 0 until  game.prisonBuses.size) { "there is no bus at this index" }
 
         val tileToAdd: Tile = rootService.playerActionService.drawCard()
-        val prisonBus: PrisonBus = game.prisonBuses[busId]
+        val prisonBus: PrisonBus? = game.prisonBuses.find { it.index == busId  }
+
+        checkNotNull(prisonBus) { "prison bus does not exist" }
 
         rootService.playerActionService.addTileToPrisonBus(tileToAdd, prisonBus, PlayerType.NETWORK)
 
@@ -368,8 +365,8 @@ class NetworkService(private val rootService: RootService): AbstractRefreshingSe
         client?.sendGameActionMessage(message)
         resetLists()
 
-        if (serviceType == PlayerType.PLAYER)
-            rootService.gameService.determineNextPlayer(true)
+        //if (serviceType == PlayerType.PLAYER)
+            //rootService.gameService.determineNextPlayer(true)
 
         determineNextPlayer()
     }
@@ -396,8 +393,10 @@ class NetworkService(private val rootService: RootService): AbstractRefreshingSe
         check(busId in 0 until  game.prisonBuses.size) { "there is no bus at this index" }
 
         val currentPlayer: Player = game.players[game.currentPlayer]
-        val prisonBus: PrisonBus = game.prisonBuses[busId]
+        val prisonBus: PrisonBus? = game.prisonBuses.find { it.index == busId  }
         val possibleChildren: MutableList<Pair<Boolean, PrisonerTile?>> = mutableListOf()
+
+        checkNotNull(prisonBus) { "The Prison bus does not exist" }
 
         rootService.playerActionService.takePrisonBus(prisonBus)
 

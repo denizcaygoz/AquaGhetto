@@ -68,7 +68,7 @@ class NetworkServiceTest {
         val hostBusToPlaceOn: PrisonBus = hostGame.prisonBuses[0]
 
         assertThrows<IllegalArgumentException> {
-            rootServiceGuest.networkService.sendAddTileToTruck(hostBusToPlaceOn) }
+            rootServiceGuest.networkService.sendAddTileToTruck(hostBusToPlaceOn.index) }
 
         val wrongMessage = AddTileToTruckMessage(4)
         assertThrows<IllegalStateException> { rootServiceGuest.networkService.receiveAddTileToTruck(wrongMessage) }
@@ -199,7 +199,9 @@ class NetworkServiceTest {
         rootServiceHost.playerActionService.placePrisoner(tileThree,3,2)
         rootServiceHost.playerActionService.moveEmployee(-101,-101, 2,2)
         /** send message to other player **/
-        rootServiceHost.networkService.sendTakeTruck(0)
+        rootServiceHost.gameService.determineNextPlayer(true)
+
+        //rootServiceHost.networkService.sendTakeTruck(takenBus.index)
 
         rootServiceHost.waitForState(ConnectionState.WAITING_FOR_TURN)
         rootServiceGuest.waitForState(ConnectionState.PLAYING_MY_TURN)

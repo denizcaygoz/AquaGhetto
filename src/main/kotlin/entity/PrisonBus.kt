@@ -18,11 +18,13 @@ class PrisonBus: Serializable, Cloneable {
 
     var tiles: Array<Tile?> = Array(3) {null}
     var blockedSlots: BooleanArray = BooleanArray(3) {false}
+    var index: Int = 0
 
     public override fun clone(): PrisonBus {
         return PrisonBus().apply {
             tiles = this@PrisonBus.tiles.clone()
             blockedSlots = this@PrisonBus.blockedSlots.clone()
+            index = this@PrisonBus.index
         }
     }
 }

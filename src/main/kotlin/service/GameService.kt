@@ -5,6 +5,7 @@ import entity.Board
 import entity.Player
 import entity.PrisonBus
 import entity.enums.PlayerType
+import service.networkService.ConnectionState
 import tools.aqua.bgw.core.BoardGameApplication
 import kotlin.concurrent.thread
 
@@ -91,6 +92,9 @@ class GameService(private val rootService: RootService): AbstractRefreshingServi
     fun determineNextPlayer(busWasTakenInThisRound: Boolean) {
         // Copy current game and use it as a new starting point
         val game = rootService.gameStatesService.copyAquaGhetto()
+        val currentPlayer = game.players[game.currentPlayer]
+        val busTaken = currentPlayer.takenBus
+        val state = rootService.networkService.connectionState
         rootService.currentGame = game
         game.nextState = null /*ensure the next state is null and redo is not possible*/
 
@@ -156,6 +160,10 @@ class GameService(private val rootService: RootService): AbstractRefreshingServi
             }
         }
 
+        if (busWasTakenInThisRound && busTaken != null && state == ConnectionState.PLAYING_MY_TURN) {
+            rootService.networkService.sendTakeTruck(busTaken.index)
+        }
+
     }
 
     /**
@@ -190,6 +198,28 @@ class GameService(private val rootService: RootService): AbstractRefreshingServi
      * @see AIService
      */
     fun checkAITurn(player: Player, delay: Int = 0) {
+        val state = rootService.networkService.connectionState
+        val isNetworkGame = state != ConnectionState.DISCONNECTED
+
+        if (!isNetworkGame) {
+            innerCheckAITurn(player)
+        } else {
+            if (state == ConnectionState.PLAYING_MY_TURN) {
+                innerCheckAITurn(player)
+            }
+        }
+
+    }
+
+    /**
+     * inner function of checkAITurn
+     *  If the provided player is an AI calls makeTurn in AIService
+     *
+     * @param player the player in whose name the action is performed
+     * @param delay not used anymore, still there to not break anything
+     * @see AIService
+     **/
+    private fun innerCheckAITurn(player: Player) {
         require(player.takenBus == null)
         if (player.type == PlayerType.AI || player.type == PlayerType.RANDOM_AI) {
             thread {

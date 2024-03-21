@@ -124,12 +124,12 @@ class BoardService(private val rootService: RootService): AbstractRefreshingServ
 
         if (playerCount >= 3) {
             for (i in 0 until playerCount) {
-                buses.add(PrisonBus())
+                buses.add(PrisonBus().apply { index = i })
             }
         } else {
-            buses.add(PrisonBus())
-            buses.add(PrisonBus().apply { blockedSlots[0] = true })
-            buses.add(PrisonBus().apply { blockedSlots[0] = true; blockedSlots[1] = true})
+            buses.add(PrisonBus().apply { index = 2 })
+            buses.add(PrisonBus().apply { blockedSlots[0] = true; index = 1 })
+            buses.add(PrisonBus().apply { blockedSlots[0] = true; blockedSlots[1] = true; index = 0})
         }
 
         return buses
