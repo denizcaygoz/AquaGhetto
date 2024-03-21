@@ -10,28 +10,46 @@ import entity.tileTypes.GuardTile
 import entity.tileTypes.PrisonerTile
 import entity.tileTypes.Tile
 import service.RootService
-import tools.aqua.bgw.core.BoardGameApplication
-import tools.aqua.bgw.core.BoardGameScene
-import tools.aqua.bgw.visual.ImageVisual
 import tools.aqua.bgw.components.ComponentView
 import tools.aqua.bgw.components.gamecomponentviews.TokenView
-import tools.aqua.bgw.event.KeyCode
 import tools.aqua.bgw.components.layoutviews.CameraPane
 import tools.aqua.bgw.components.layoutviews.GridPane
 import tools.aqua.bgw.components.layoutviews.Pane
-import tools.aqua.bgw.components.uicomponents.*
+import tools.aqua.bgw.components.uicomponents.Button
+import tools.aqua.bgw.components.uicomponents.Label
+import tools.aqua.bgw.core.BoardGameApplication
+import tools.aqua.bgw.core.BoardGameScene
 import tools.aqua.bgw.event.DropEvent
+import tools.aqua.bgw.event.KeyCode
 import tools.aqua.bgw.util.Font
 import tools.aqua.bgw.visual.ColorVisual
+import tools.aqua.bgw.visual.ImageVisual
 import java.awt.Color
 import java.util.*
 import kotlin.math.absoluteValue
+
+/**
+ * Returns the fitting visual for a prison tile
+ */
+fun tileVisual(tile: Tile?) : ImageVisual {
+    val imgPath = when (tile) {
+        is PrisonerTile -> "tiles/${tile.prisonerType}_${tile.prisonerTrait}_tile.png"
+        is GuardTile -> "tiles/default_guard.png"
+        else -> "tiles/default_tile.png" // richtige CoinTile visuals?
+    }
+
+    return ImageVisual(imgPath)
+}
 
 class InGameScene(var rootService: RootService, test: SceneTest = SceneTest()) : BoardGameScene(1920,1080), Refreshable {
 
     private var tileDrawn = false
     private var bonusToPlace = 0
     private var bonusTiles = mutableListOf<PrisonerTile>() /*do not edit*/
+
+    // Quick Access
+    private val defaultVisual = ImageVisual("tiles/default_tile.png")
+    private val guardVisual = ImageVisual("tiles/default_guard.png")
 
     // Assets on screen
     private val prisons: MutableList<PlayerBoard> = mutableListOf()
@@ -598,6 +616,31 @@ class InGameScene(var rootService: RootService, test: SceneTest = SceneTest()) :
         isolation.refreshIsolation()
     }
 
+    override fun refreshGuards(
+        player: Player,
+        sourceCoords: Pair<Int, Int>?,
+        destCoords: Pair<Int, Int>?
+    ) {
+        val game = rootService.currentGame!!
+        val playerIndex = game.players.indexOf(player)
+        val playerBoard = prisons[playerIndex]
+
+        sourceCoords?.let {
+            val (sourceX, sourceY) = it
+            val (gridX, gridY) = coordsToView(sourceX, sourceY)
+            var playerBoardTile = playerBoard[gridX, gridY]
+        }
+
+        destCoords?.let {
+            val (destX, destY) = it
+            val (gridX, gridY) = coordsToView(destX, destY)
+            val playerBoardTile = playerBoard[gridX, gridY]
+            playerBoardTile?.visual = guardVisual
+            playerBoardTile?.isDraggable = true
+            playerBoardTile?.name = "guard_${playerIndex}_${destX}_${destY}"
+        }
+    }
+
     inner class PlayerBoard(var player: Player, val rootService: RootService) :
         GridPane<TokenView>(rows = 21, columns = 21, layoutFromCenter = true) {
 
@@ -611,6 +654,7 @@ class InGameScene(var rootService: RootService, test: SceneTest = SceneTest()) :
 
             // Iterator for grid
             val gridIterator = player.board.getPrisonGridIterator()
+
             while (gridIterator.hasNext()) {
                 val entry = gridIterator.next()
                 val x = entry.key
@@ -618,8 +662,7 @@ class InGameScene(var rootService: RootService, test: SceneTest = SceneTest()) :
 
                 for ((y, floor) in yMap) {
                     if (floor) {
-                        val tempX = coordsToView(x, y).first
-                        val tempY = coordsToView(x, y).second
+                        val (tempX, tempY) = coordsToView(x, y)
                         this[tempX, tempY] = TokenView(
                             height = 50 * currentGridSize,
                             width = 50 * currentGridSize,
@@ -635,8 +678,10 @@ class InGameScene(var rootService: RootService, test: SceneTest = SceneTest()) :
                             dropAcceptor = {
                                 var result = false
                                 val fromIsolation = it.draggedComponent.name.contains("isolation_")
-                                val fromTakenBus = it.draggedComponent.name.contains("busTile_") && it.draggedComponent.name.contains("true")
-                                println(fromIsolation)
+                                val fromTakenBus = it.draggedComponent.name.contains("busTile") && it.draggedComponent.name.contains("true")
+                                val fromGuardMove = it.draggedComponent.name.contains("guard_")
+                                println("fromIsolation: $fromIsolation")
+                                println("fromGuardMove: $fromGuardMove")
                                 if (fromIsolation) {
                                     val textSplit = it.draggedComponent.name.split("_")
                                     val playerIsolation = Integer.parseInt(textSplit[1])
@@ -688,6 +733,8 @@ class InGameScene(var rootService: RootService, test: SceneTest = SceneTest()) :
                                         if (tile == null) throw IllegalStateException("found no bonus card to check")
                                         result = rootService.validationService.validateTilePlacement(tile, x, y)
                                     }
+                                } else if (fromGuardMove) {
+                                    result = game.players[game.currentPlayer].coins >= 1
                                 }
                                 if(fromTakenBus) {
                                     val textSplit = it.draggedComponent.name.split("_")
@@ -698,15 +745,39 @@ class InGameScene(var rootService: RootService, test: SceneTest = SceneTest()) :
                                 result
                             }
 
-                            /*
                             onDragDropped = {
-                                println(it.draggedComponent.name)
+                                val tileName = it.draggedComponent.name
+                                when {
+                                    tileName.contains("guard_") -> {
+                                        val currentGame = rootService.currentGame
+                                        requireNotNull(currentGame)
+                                        val currentPlayer = currentGame.players[currentGame.currentPlayer]
+
+                                        tileName.split("_")
+                                            .takeLast(2)
+                                            .let { coords ->
+                                                val (sourceX, sourceY) = coords.map { pos -> pos.toInt() }
+                                                println("Moving Guard for \"${currentPlayer.name}\": ($sourceX, $sourceY) -> ($x, $y)")
+                                                check(currentPlayer.coins >= 1) {
+                                                    "${currentPlayer.name} has only ${currentPlayer.coins} coins"
+                                                }
+                                                rootService.playerActionService.moveEmployee(
+                                                    sourceX, sourceY, x, y
+                                                )
+                                                println(currentPlayer.coins)
+                                        }
+                                    }
+                                }
                             }
-                            */
+
+
+
+
                         }
                     }
                 }
             }
+
             // Iterator for Yard
             val yardIterator = player.board.getPrisonYardIterator()
             while (yardIterator.hasNext()) {
@@ -718,7 +789,7 @@ class InGameScene(var rootService: RootService, test: SceneTest = SceneTest()) :
                     val slot = this[coordsToView(x, y).first, coordsToView(x, y).second]
                     checkNotNull(slot) { "There is no Yard at the given coordinates x:$x and y: $y (View cords)" }
                     slot.apply {
-                        this.visual = tileVisual(player.board.getPrisonYard(x, y) as PrisonerTile)
+                        this.visual = tileVisual(player.board.getPrisonYard(x, y))
                     }
                 }
             }
@@ -860,6 +931,7 @@ class InGameScene(var rootService: RootService, test: SceneTest = SceneTest()) :
                     }
                 }
             }
+
             return currentGridSize
         }
 
@@ -1197,6 +1269,7 @@ class SceneTest : BoardGameApplication("AquaGhetto"), Refreshable {
             this.coins = 5 }
         rootService.currentGame?.players?.get(4)?.apply {
             this.coins = 5 }
+        rootService.playerActionService.moveEmployee(-101, -101, 2, 3)
         showGameScene(gameScene)
     }
 }

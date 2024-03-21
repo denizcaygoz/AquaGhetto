@@ -1,6 +1,3 @@
-/**
-
-import entity.AquaGhetto
 import view.AquaGhettoApplication
 
 fun main() {
@@ -8,4 +5,3 @@ fun main() {
     println("Application ended. Goodbye")
 }
 
- */
