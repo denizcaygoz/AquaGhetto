@@ -187,6 +187,7 @@ class InGameScene(var rootService: RootService, test: SceneTest = SceneTest()) :
     override fun refreshPrisonBus(prisonBus: PrisonBus?) {
         if (prisonBus == null) {
             prisonBuses = mutableListOf()
+            if (rootService.currentGame!!.prisonBuses.size == 0) return
             for (i in 0 until rootService.currentGame!!.prisonBuses.size) {
                 prisonBuses[i].posX = (1000 + i * 60).toDouble()
                 prisonBuses[i].posY = 540.0
@@ -238,17 +239,20 @@ class InGameScene(var rootService: RootService, test: SceneTest = SceneTest()) :
                         prisonBuses[j].apply {
                             posX = getPlayerBoard(rootService.currentGame!!.players[i])!!.posX - 200
                             posY = getPlayerBoard(rootService.currentGame!!.players[i])!!.posY
+                            this.name = "bus_${i}_true"
                             for (k in 0 until this.bus.tiles.size) {
-                                this.name = "bus_${i}_true"
                                 if (this.bus.tiles[k] != null) {
                                     this[0, k]!!.name = "busTile_${i}_${this.bus.tiles[k]!!.id}_true}"
                                     temp = this.bus.tiles[k]!!
+                                    val temp2 = this
                                     this[0, k]!!.apply {
                                         isDraggable = true
+                                        onDragGestureEntered = {
+                                            temp = temp2.bus.tiles[k]!!
+                                        }
                                         onDragGestureEnded = {event, success ->
                                             println("success: $success")
-                                            busDoGestureEndStuff(event, name)
-                                            isTurnEnded()
+                                            busDoGestureEndStuff(event, temp2)
                                         }
                                     }
                                 }
@@ -260,8 +264,13 @@ class InGameScene(var rootService: RootService, test: SceneTest = SceneTest()) :
         }
     }
 
-    fun busDoGestureEndStuff(dropEvent: DropEvent, nameDropped: String) {
+    fun busDoGestureEndStuff(dropEvent: DropEvent, prisonBus: BoardPrisonBus) {
         val targetList = dropEvent.dragTargets
+
+        if(prisonBus.bus.tiles.isEmpty()) {
+            rootService.gameService.determineNextPlayer(true)
+            return
+        }
         for (element in targetList) {
             val name = element.name
             if (!name.contains("dropTile_")) continue
@@ -278,21 +287,23 @@ class InGameScene(var rootService: RootService, test: SceneTest = SceneTest()) :
             requireNotNull(game)
             val currentPlayerIndex = game.currentPlayer
 
+            prisonBus.isTurnEnded()
             if (currentPlayerIndex == playerIndexLocation) {
                 /*player moving on own grid*/
                 if (!rootService.validationService.validateTilePlacement(temp as PrisonerTile, loc.first, loc.second)) {
                     println("invalid placemente")
                     /*no valid location, refreshIsolation*/
                     refreshPrisonBus(null)
+                    prisonBus.isTurnEnded()
                     return
                 }
-                val currentPlayer = game.players[currentPlayerIndex]
                 val bonus = rootService.playerActionService.placePrisoner(temp as PrisonerTile,loc.first,loc.second)
                 refreshPrison(temp as PrisonerTile, loc.first, loc.second)
                 doBonusStuff(currentPlayerIndex, bonus, busTaken = true, game.players[currentPlayerIndex].takenBus!!.tiles.isEmpty())
             } else {
                 /*player tries to place prisoner on other grid, this is not allowed*/
                 refreshPrisonBus(null)
+                prisonBus.isTurnEnded()
                 return
             }
 
@@ -921,15 +932,7 @@ class InGameScene(var rootService: RootService, test: SceneTest = SceneTest()) :
         }
 
         fun isTurnEnded() {
-            var isEnded = true
-            for (i in 0..2) {
-                if (this[0, i] != null) {
-                    if (this[0, i]!!.visual == ImageVisual("tiles/default_tile.png")) {
-                        isEnded = false
-                    }
-                }
-            }
-            if (isEnded) rootService.gameService.determineNextPlayer(true)
+            if (bus.tiles.isEmpty()) rootService.gameService.determineNextPlayer(true)
         }
 
     }
