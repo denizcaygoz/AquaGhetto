@@ -353,7 +353,7 @@ class InGameScene(var rootService: RootService) : BoardGameScene(1920,1080), Ref
         }
         removeComponents(statGui)
         statGui.addAll(playerLabels)
-        addComponents(statGui)
+        addComponents(statGui, pauseButton)
     }
 
     override fun refreshAfterStartGame() {
@@ -464,7 +464,6 @@ class InGameScene(var rootService: RootService) : BoardGameScene(1920,1080), Ref
         targetLayout.addAll(isolations)
         targetLayout.addAll(names)
         targetLayout.addAll(drawStack, finalStack, drawnTile)
-        targetLayout.addAll(pauseButton)
 
         refreshScoreStats()
     }
