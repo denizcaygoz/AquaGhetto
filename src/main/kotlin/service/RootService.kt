@@ -22,7 +22,7 @@ class RootService {
     val networkService = NetworkService(this)
 
     var currentGame: AquaGhetto? = null
-
+    var currentlyonPause : Boolean = false
     /**
      * Adds the provided [newRefreshable] to all services connected
      * to this root service

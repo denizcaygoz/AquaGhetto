@@ -16,7 +16,6 @@ import tools.aqua.bgw.visual.ImageVisual
  *  Resume Game Button would be a great addition to Pressing ESC?
  */
 class PauseMenuScene (rootService : RootService) : MenuScene(1920,1080), Refreshable{
-    var currentlyonPause : Boolean = false;
     private val pauseGrid = GridPane<Button>(
         posX = (1920/2) ,
         posY = (1080/2) ,
@@ -27,7 +26,7 @@ class PauseMenuScene (rootService : RootService) : MenuScene(1920,1080), Refresh
     )
     val pausedIndicator : Label = Label(posY = 1080-200 , posX = 1920 / 2 , width = 200, height = 200, text = "Safran")
     fun refreshpauseIndicator(rootService: RootService){
-        pausedIndicator.apply { text = currentlyonPause.toString() }
+        pausedIndicator.apply { text = rootService.currentlyonPause.toString() }
     }
     /*Action Handling is currently in AquaGhettoApplication*/
     val resumeGameButton = Button(posX = (1920/2)-200, posY = 25, width = 400, height = 100, text = "Resume Game")

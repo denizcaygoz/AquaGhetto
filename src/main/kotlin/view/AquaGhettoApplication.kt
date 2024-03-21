@@ -61,7 +61,7 @@ class AquaGhettoApplication: BoardGameApplication("AquaGhetto"), Refreshable {
         onKeyPressed = {
             if (it.keyCode == KeyCode.ESCAPE) {
 
-                this.currentlyonPause = false
+                rootService.currentlyonPause = false
                 this.refreshpauseIndicator(rootService)
                 this@AquaGhettoApplication.hideMenuScene(500 )
 
@@ -69,7 +69,7 @@ class AquaGhettoApplication: BoardGameApplication("AquaGhetto"), Refreshable {
             }
         }
         resumeGameButton.onMouseClicked = {
-            this.currentlyonPause = false
+            rootService.currentlyonPause = false
             this.refreshpauseIndicator(rootService)
             this@AquaGhettoApplication.hideMenuScene( 500 )
 
@@ -130,7 +130,7 @@ class AquaGhettoApplication: BoardGameApplication("AquaGhetto"), Refreshable {
             //println("Key typed: ${it.character}, Key code: ${it.keyCode}" + "/ String: ${it.keyCode.string}" + "/ name: ${it.keyCode.name}")
                 if(it.character == "1") {
 
-                    pauseMenuScene.currentlyonPause = true
+                    rootService.currentlyonPause = true
                     pauseMenuScene.refreshpauseIndicator(rootService)
                     
                     this@AquaGhettoApplication.showMenuScene(pauseMenuScene)
@@ -143,7 +143,7 @@ class AquaGhettoApplication: BoardGameApplication("AquaGhetto"), Refreshable {
                     println("Key typed: ${it.character}, Key code: ${it.keyCode}" + "/ String: ${it.keyCode.string}" + "/ name: ${it.keyCode.name}")
                     println("ESCPAE was pressed -> Pause Menu opened")
                     println("if you read this that means that BGW doesnt support MacBook Keys")
-                    pauseMenuScene.currentlyonPause = true
+                    rootService.currentlyonPause = true
                     pauseMenuScene.refreshpauseIndicator(rootService)
                     this@AquaGhettoApplication.showMenuScene(pauseMenuScene)
 
@@ -157,7 +157,7 @@ class AquaGhettoApplication: BoardGameApplication("AquaGhetto"), Refreshable {
                 if(it.character == "2") {
                     println("1 Button was Pressed")
 
-                    pauseMenuScene.currentlyonPause = false
+                    rootService.currentlyonPause = false
                     pauseMenuScene.refreshpauseIndicator(rootService)
 
                     this@AquaGhettoApplication.hideMenuScene()
@@ -168,7 +168,7 @@ class AquaGhettoApplication: BoardGameApplication("AquaGhetto"), Refreshable {
                     println("ESCPAE was pressed -> Pause Menu opened")
                     println("if you read this that means that BGW doesnt support MacBook Keys")
 
-                    pauseMenuScene.currentlyonPause = false
+                    rootService.currentlyonPause = false
                     pauseMenuScene.refreshpauseIndicator(rootService)
                     this@AquaGhettoApplication.hideMenuScene(500)
 
