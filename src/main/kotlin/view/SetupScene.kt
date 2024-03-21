@@ -29,7 +29,7 @@ import javax.imageio.ImageIO
  * Buttons Should know their Position in the Grid due to Parameter Position
  * if this is not the Case text can be used to save position
  */
-class SetupScene (rootService : RootService, test: SceneTest2 = SceneTest2()) : MenuScene(1920 , 1080 ), Refreshable {
+class SetupScene (rootService : RootService) : MenuScene(1920 , 1080 ), Refreshable {
     /**
      * CheckBox that lets the Player toggle on a Random order for the PlayerList
      * CheckBox changes its state upon click
@@ -335,22 +335,4 @@ class SetupScene (rootService : RootService, test: SceneTest2 = SceneTest2()) : 
     }
 
 
-/*Fails to build in Bgw? :(((*/
-fun main() {
-    val test = SceneTest2()
-    test.show()
-}
-class SceneTest2 : BoardGameApplication("Test") , Refreshable {
-    private val rootService = RootService()
 
-    private val setupScene = SetupScene(rootService, this)
-
-    init {
-        rootService.addRefreshables(this,setupScene)
-        rootService.gameService.startNewGame(
-            mutableListOf(Pair("Moin", PlayerType.PLAYER), Pair("Moin2", PlayerType.PLAYER)))
-        this.showMenuScene(setupScene)
-
-
-    }
-}
