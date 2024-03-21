@@ -25,39 +25,41 @@ class PauseMenuScene (rootService : RootService) : MenuScene(1920,1080), Refresh
     )
 
     /*Action Handling is currently in AquaGhettoApplication*/
-    val resumeGameButton = Button(width = 450, height = 100, text = "Resume Game")
-    val undoButton = Button(width = 400, height = 100, text = "Undo").apply {
+    val resumeGameButton = Button(posX = 100, posY = 100, width = 450, height = 100, text = "Resume Game")
+    val undoButton = Button(posX = 200, posY = 200,width = 400, height = 100, text = "Undo").apply {
         onMouseClicked = {
             rootService.gameStatesService.undo()
         }
     }
-    val redoButton = Button(width = 400, height = 100, text = "Redo").apply {
+    val redoButton = Button(posX = 300, posY = 300,width = 400, height = 100, text = "Redo").apply {
         onMouseClicked = {
             rootService.gameStatesService.redo()
         }
     }
-    val saveButton = Button(width = 400, height = 100, text = "Save").apply {
+    val saveButton = Button(posX = 400, posY = 400,width = 400, height = 100, text = "Save").apply {
         onMouseClicked = {
             rootService.gameStatesService.saveGame()
         }
     }
-    val loadButton = Button(width = 400, height = 100, text = "Load").apply {
+    val loadButton = Button(posX = 500, posY = 500, width = 400, height = 100, text = "Load").apply {
         onMouseClicked = {
             rootService.gameStatesService.loadGame()
         }
     }
 
     init {
+        addComponents(resumeGameButton,redoButton,undoButton,saveButton,loadButton)
         pauseGrid.setRowHeights(50)
         pauseGrid.setCenterMode(Alignment.CENTER)
         pauseGrid.setCellCenterMode(0 , 0 ,  Alignment.TOP_CENTER)
 
+        /*
         /*Not sure if resume Button will span both Rows if not needs to be created outside*/
         pauseGrid[0,0] = resumeGameButton
         pauseGrid[1,0] = undoButton
         pauseGrid[1,1] = redoButton
         pauseGrid[2,0] = saveButton
-        pauseGrid[2,1] = loadButton
+        pauseGrid[2,1] = loadButton*/
 
     }
 

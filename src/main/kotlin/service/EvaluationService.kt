@@ -96,16 +96,19 @@ class EvaluationService(private val rootService: RootService): AbstractRefreshin
      *
      * @throws IllegalStateException if there is no running game
      */
-    fun evaluateGame() {
+    fun evaluateGame() : MutableList<Player> {
         val game = rootService.currentGame
         checkNotNull(game) { "No running game." }
         for (player in game.players) {
             player.currentScore = this.evaluatePlayer(player)
             println("${player.name}: ${player.currentScore}")
         }
+        var returnList = game.players
+        returnList.sortBy { it.currentScore}
         onAllRefreshables {
             refreshAfterEndGame()
         }
+        return returnList
     }
 
     /**

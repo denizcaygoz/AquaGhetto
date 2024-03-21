@@ -10,6 +10,12 @@ import entity.tileTypes.PrisonerTile
 import kotlin.math.abs
 import kotlin.math.min
 
+/**
+ * Evaluates the best position for placing a prisoner tile and additional game actions.
+ *
+ * @property smartAI The SmartAI instance associated with this evaluation.
+ * @constructor Initializes the EvaluateBestPosition with the given SmartAI instance.
+ */
 class EvaluateBestPosition(private val smartAI: SmartAI) {
 
     private val nextTo = mutableListOf(Pair(0,1),Pair(1,0),Pair(0,-1),Pair(-1,0))

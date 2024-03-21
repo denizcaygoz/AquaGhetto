@@ -361,8 +361,6 @@ class PlayerActionService(private val rootService: RootService): AbstractRefresh
             }
 
             refreshScoreStats()
-
-            refreshPrison(null,destinationX,destinationY)
         }
 
         if (!isNetworkGame && !(sourceX == sourceY && sourceX == -101)) {

@@ -18,7 +18,7 @@ import java.awt.Image
  * Create goes to the setupScene
  * -> Maybe the Create a Game needs a Specialized Scene that Displays the Lobbycode given by Network?
  */
-class MainMenuScene(rootService : RootService, test:SceneTest3 = SceneTest3()) : MenuScene(), Refreshable {
+class MainMenuScene(rootService : RootService) : MenuScene(), Refreshable {
     private val backgroundLabel = Label(
         posY = 0, posX = 0, width = 1920, height = 1080, visual = ImageVisual("background/SetupBackground.png") )
     /**
@@ -222,20 +222,4 @@ class MainMenuScene(rootService : RootService, test:SceneTest3 = SceneTest3()) :
             multiplayerButton,
             )
         background = ImageVisual("background/MainBackground.png")    }
-}
-fun main() {
-    val test = SceneTest3()
-    test.show()
-}
-class SceneTest3 : BoardGameApplication("Test") , Refreshable {
-    private val rootService = RootService()
-
-    private val setupScene = MainMenuScene(rootService, this)
-
-    init {
-        rootService.addRefreshables(this,setupScene)
-        rootService.gameService.startNewGame(
-            mutableListOf(Pair("Moin", PlayerType.PLAYER), Pair("Moin2", PlayerType.PLAYER)))
-        this.showMenuScene(setupScene)
-    }
 }
