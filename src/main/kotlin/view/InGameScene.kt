@@ -330,6 +330,16 @@ class InGameScene(var rootService: RootService, test: SceneTest = SceneTest()) :
         checkNotNull(game) { "There is no game running" }
         val playerCount = game.players.size
 
+        /*remove old values*/
+        targetLayout.removeAll(prisons)
+        targetLayout.removeAll(isolations)
+        targetLayout.removeAll(names)
+        targetLayout.removeAll(prisonBuses)
+        prisons.clear()
+        isolations.clear()
+        names.clear()
+        prisonBuses.clear()
+
         // Prison Grids and Isolations
         for (i in 0 until playerCount) {
             prisons.add(PlayerBoard(game.players[i], rootService))
@@ -448,11 +458,11 @@ class InGameScene(var rootService: RootService, test: SceneTest = SceneTest()) :
                     height = 50 * prisons[player].currentGridSize, width = 50 * prisons[player].currentGridSize,
                     visual = ImageVisual("tiles/default_tile.png")
                 ).apply {name = "takenBusTileTarget"} //TODO add drop for isolation tiles here
-        } else {
+        } else if (tile is PrisonerTile) {
             prisons[player][coordsToView(x, y).first, coordsToView(x, y).second] =
                 TokenView(
                     height = 50 * prisons[player].currentGridSize, width = 50 * prisons[player].currentGridSize,
-                    visual = prisons[player].tileVisual(tile as PrisonerTile)
+                    visual = prisons[player].tileVisual(tile)
                 )
         }
     }
@@ -917,7 +927,7 @@ class InGameScene(var rootService: RootService, test: SceneTest = SceneTest()) :
 
     }
 
-    inner class BoardIsolation(val isolation: Stack<PrisonerTile>, val playerIndex: Int) :
+    inner class BoardIsolation(var isolation: Stack<PrisonerTile>, val playerIndex: Int) :
         GridPane<TokenView>(rows = 1, columns = 120, layoutFromCenter = true) {
 
         init {
@@ -986,6 +996,11 @@ class InGameScene(var rootService: RootService, test: SceneTest = SceneTest()) :
         }
 
         fun refreshIsolation() {
+            val game = rootService.currentGame
+            requireNotNull(game) {"game is null"}
+            val player = game.players[playerIndex]
+            this.isolation = player.isolation
+
             this.spacing = 0.5
             for (i in 0 until columns) {
                 this[i,0] = null
@@ -1034,7 +1049,7 @@ class InGameScene(var rootService: RootService, test: SceneTest = SceneTest()) :
             bonusToPlace++
         }
 
-        //if (nextPlayer) rootService.gameService.determineNextPlayer(busTaken)
+        if (nextPlayer) rootService.gameService.determineNextPlayer(busTaken)
     }
 
     fun handleBonusWorker(playerIndex: Int) {
