@@ -1253,7 +1253,9 @@ class InGameScene(var rootService: RootService) : BoardGameScene(1920,1080), Ref
             bonusToPlace++
         }
 
-        if (nextPlayer) rootService.gameService.determineNextPlayer(busTaken)
+        if (nextPlayer && bonusToPlace == 0) {
+            rootService.gameService.determineNextPlayer(busTaken)
+        }
     }
 
     fun handleBonusWorker(playerIndex: Int) {
