@@ -1066,11 +1066,13 @@ class InGameScene(var rootService: RootService) : BoardGameScene(1920,1080), Ref
                                         "big_extension" -> {
                                             if(rootService.validationService.validateExpandPrisonGrid(true,x,y,0)) {
                                             rootService.playerActionService.expandPrisonGrid(true, x, y, 0) }
+                                            refreshAfterStartGame()
                                         }
 
                                         "small_extension" -> {
                                             if(rootService.validationService.validateExpandPrisonGrid(false,x,y,smallExtensionRotation)) {
                                             rootService.playerActionService.expandPrisonGrid( false, x, y, smallExtensionRotation) }
+                                            refreshAfterStartGame()
                                         }
                                     }
                                 }
