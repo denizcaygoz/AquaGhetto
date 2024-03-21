@@ -127,9 +127,13 @@ class GameService(private val rootService: RootService): AbstractRefreshingServi
             0 -> { /*all players have taken a buss*/
                 if (game.finalStack.size != 15) { /*reserve stack was taken*/
                     rootService.evaluationService.evaluateGame()
-                    Thread.sleep(5000)
-                    onAllRefreshables {
-                        refreshAfterEndGame()
+                    thread {
+                        Thread.sleep(5000)
+                        BoardGameApplication.runOnGUIThread {
+                            onAllRefreshables {
+                                refreshAfterEndGame()
+                            }
+                        }
                     }
                 } else {
                     /*reserve stack was not taken*/

@@ -54,7 +54,8 @@ class EvaluateTakeBusService(private val smartAI: SmartAI) {
         var coins = 0
         val bestPos = mutableListOf<Pair<PrisonerTile, Pair<PlaceCard, Boolean>>>()
         val undoes = mutableListOf<Pair<PrisonerTile, PrisonerTile>?>()
-        for (card in bus.tiles) {
+        for (i in bus.tiles.indices) {
+            val card = bus.tiles[i]
             if (card == null) {
                 continue
             } else if (card is CoinTile) {

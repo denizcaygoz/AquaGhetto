@@ -180,6 +180,8 @@ class SmartAI(val rootService: RootService, var player: Player, val playerIndex:
             }
 
             val placeCard = aiAction.placeCards[i]
+            //val placeCardPair = evaluateBestPosition.getBestPositions(tile, player, game)
+            //val placeCard = placeCardPair?.first ?: PlaceCard(Pair(-100,-100))
             val prisoner = placeCard.placePrisoner
 
             println("place card ${tile.id} at (${placeCard.placePrisoner.first}, ${placeCard.placePrisoner.second})")
