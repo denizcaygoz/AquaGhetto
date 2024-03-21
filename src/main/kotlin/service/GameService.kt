@@ -71,6 +71,7 @@ class GameService(private val rootService: RootService): AbstractRefreshingServi
         onAllRefreshables {
             refreshAfterStartGame()
             refreshAfterNextTurn(game.players[game.currentPlayer])
+            refreshPrisonBus(null)
         }
 
         /*if the first player is an AI call the AI service*/
