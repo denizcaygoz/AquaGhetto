@@ -43,6 +43,7 @@ fun tileVisual(tile: Tile?) : ImageVisual {
 
 class InGameScene(var rootService: RootService) : BoardGameScene(1920,1080), Refreshable {
 
+    val pauseButton : Button = Button(1640,50,150,50,text = "Pause Game")
     private var tileDrawn = false
     private var bonusToPlace = 0
     private var bonusTiles = mutableListOf<PrisonerTile>() /*do not edit*/
@@ -132,6 +133,7 @@ class InGameScene(var rootService: RootService) : BoardGameScene(1920,1080), Ref
         })
 
     // Camera Pane stuff
+
     private val targetLayout = Pane<ComponentView>(width = 1920, height = 1080)
     private val cameraPane =
         CameraPane(width = 1920, height = 1080, target = targetLayout, visual = ColorVisual.DARK_GRAY).apply {
@@ -203,7 +205,6 @@ class InGameScene(var rootService: RootService) : BoardGameScene(1920,1080), Ref
         }
         return null
     }
-
 
     override fun refreshPrisonBus(prisonBus: PrisonBus?) {
         if (prisonBus == null) {
@@ -463,6 +464,7 @@ class InGameScene(var rootService: RootService) : BoardGameScene(1920,1080), Ref
         targetLayout.addAll(isolations)
         targetLayout.addAll(names)
         targetLayout.addAll(drawStack, finalStack, drawnTile)
+        targetLayout.addAll(pauseButton)
 
         refreshScoreStats()
     }
@@ -765,7 +767,7 @@ class InGameScene(var rootService: RootService) : BoardGameScene(1920,1080), Ref
                                                     sourceX, sourceY, x, y
                                                 )
                                                 println(currentPlayer.coins)
-                                        }
+                                            }
                                     }
                                 }
                             }

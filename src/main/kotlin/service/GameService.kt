@@ -166,8 +166,9 @@ class GameService(private val rootService: RootService): AbstractRefreshingServi
         }
 
         onAllRefreshables {
-            refreshPrisonBus(null)
-            refreshAfterNextTurn(game.players[game.currentPlayer])
+            /*refreshPrisonBus(null)*/
+            /*refreshAfterNextTurn(game.players[game.currentPlayer])*/
+            refreshAfterStartGame()
         }
         this.checkAITurn(game.players[game.currentPlayer])
     }
