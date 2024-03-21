@@ -1066,7 +1066,7 @@ class InGameScene(var rootService: RootService, test: SceneTest = SceneTest()) :
             bonusToPlace++
         }
 
-        //if (nextPlayer) rootService.gameService.determineNextPlayer(busTaken)
+        if (nextPlayer) rootService.gameService.determineNextPlayer(busTaken)
     }
 
     fun handleBonusWorker(playerIndex: Int) {
