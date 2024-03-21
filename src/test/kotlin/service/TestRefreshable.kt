@@ -2,7 +2,7 @@ package service
 
 import entity.Player
 import entity.PrisonBus
-import entity.tileTypes.PrisonerTile
+import entity.tileTypes.Tile
 import view.Refreshable
 
 /**
@@ -95,7 +95,7 @@ class TestRefreshable: Refreshable {
     /**
      * [refreshPrison] sets [refreshPrisonCalled] to true.
      */
-    override fun refreshPrison(tile: PrisonerTile?, x: Int, y: Int) {
+    override fun refreshPrison(tile: Tile?, x: Int, y: Int) {
         refreshPrisonCalled = true
     }
 
@@ -121,9 +121,9 @@ class TestRefreshable: Refreshable {
     }
 
     /**
-     * [refreshEmployee] sets [refreshEmployeeCalled] to true.
+     * [refreshGuards] sets [refreshEmployeeCalled] to true.
      */
-    override fun refreshEmployee(player: Player) {
+    override fun refreshGuards(player: Player, sourceCoords: Pair<Int, Int>?, destCoords: Pair<Int, Int>?) {
         refreshEmployeeCalled = true
     }
 }

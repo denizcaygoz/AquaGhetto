@@ -2,7 +2,7 @@ package view
 
 import entity.Player
 import entity.PrisonBus
-import entity.tileTypes.PrisonerTile
+import entity.tileTypes.Tile
 import service.networkService.ConnectionState
 
 /**
@@ -30,7 +30,7 @@ interface Refreshable {
 
     fun refreshScoreStats() {}
 
-    fun refreshPrison(tile: PrisonerTile?, x: Int, y: Int) {}
+    fun refreshPrison(tile: Tile?, x: Int, y: Int) {}
 
     fun refreshAfterSelectGameMode(multiplayer: Boolean) {}
 
@@ -38,7 +38,7 @@ interface Refreshable {
 
     fun refreshIsolation(player: Player) {}
 
-    fun refreshEmployee(player: Player) {}
+    fun refreshGuards(player: Player, sourceCoords: Pair<Int, Int>?, destCoords: Pair<Int, Int>?) {}
 
     /**
      * refreshes the network connection status with the given information
