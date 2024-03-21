@@ -123,16 +123,16 @@ class GameStatesService(private val rootService: RootService): AbstractRefreshin
         val currentGame = rootService.currentGame
         checkNotNull(currentGame) {"No active game"}
 
-        /*
+
         val copiedGame = currentGame.clone()
 
         copiedGame.previousState = currentGame
         currentGame.nextState = copiedGame
 
         return copiedGame
-        */
 
-        return currentGame
+
+        //return currentGame
     }
 
 }
