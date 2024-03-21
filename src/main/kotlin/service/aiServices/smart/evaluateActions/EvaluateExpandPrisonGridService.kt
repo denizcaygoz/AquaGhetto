@@ -153,6 +153,7 @@ class EvaluateExpandPrisonGridService(private val smartAI: SmartAI) {
         val playerCards = smartAI.rootService.evaluationService.getPrisonerTypeCount(player)
         this.addCardOnBus(cardsInGame, game)
 
+        validPlacements.shuffle()
         val posScored = mutableListOf<Pair<Triple<Int,Int,Int>,Int>>()
         for (placement in validPlacements) {
             posScored.add(Pair(placement, this.evaluatePlacement(placement, isBig, player, cardsInGame, playerCards)))
