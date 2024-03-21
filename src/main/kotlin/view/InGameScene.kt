@@ -279,9 +279,11 @@ class InGameScene(var rootService: RootService) : BoardGameScene(1920,1080), Ref
                     if (bus.bus.tiles[j] is GuardTile) {
                         bus[0, j] = TokenView(height = 50, width = 50, visual = ImageVisual("tiles/default_guard.png")).apply { name = ""; isDraggable = false}}
                     if (bus.bus.tiles[j] is PrisonerTile) {
-                        bus[0, j] = TokenView(height = 50, width = 50, visual = tileVisual(bus.bus.tiles[j] as PrisonerTile)).apply { name = ""; isDraggable = false}}
+                        bus[0, j] = TokenView(height = 50, width = 50, visual = tileVisual(bus.bus.tiles[j])).apply { name = ""; isDraggable = false}}
 
-                    bus[0,j]!!.name = "busTile_${j}_false"
+                    bus[0,j]!!.name =
+                    if(bus.bus.tiles[j] == null) "busTile_${j}_false"
+                    else "busTile_${j}_true_${bus.bus.tiles[j]!!.id }"
                 }
 
                 bus.apply {
@@ -297,20 +299,22 @@ class InGameScene(var rootService: RootService) : BoardGameScene(1920,1080), Ref
                                         this.name = "bus_${i}_true}"
                                         for (k in 0 until this.bus.tiles.size) {
                                             if (this.bus.tiles[k] != null) {
-                                                this[0, k]!!.name = "busTile_${i}_${this.bus.tiles[k]!!.id}_true}"
+                                                this[0, k]!!.name = "busTile_${i}_true_${this.bus.tiles[k]!!.id}"
                                                 val tempBoardPrisonBus = this
                                                 val tempPrisonerTile = this.bus.tiles[k]!!
                                                 this[0, k]!!.apply {
                                                     isDraggable = true
                                                     onDragGestureEnded = { event, success ->
                                                         println("success: $success")
-                                                        busDoGestureEndStuff(
-                                                            event,
-                                                            tempPrisonerTile,
-                                                            tempBoardPrisonBus
-                                                        )
-                                                        player.takenBus!!.tiles[k] = null
-                                                        isBusEmpty(player)
+                                                        if(success) {
+                                                            busDoGestureEndStuff(
+                                                                event,
+                                                                tempPrisonerTile,
+                                                                tempBoardPrisonBus
+                                                            )
+                                                            player.takenBus!!.tiles[k] = null
+                                                            isBusEmpty(player)
+                                                        }
                                                     }
                                                 }
                                             }
@@ -368,7 +372,6 @@ class InGameScene(var rootService: RootService) : BoardGameScene(1920,1080), Ref
         )
     }
 
-
     fun areAllViewBusesFull() : Boolean {
         for (i in prisonBuses) {
             if(i.name.contains("board")) {
@@ -381,7 +384,6 @@ class InGameScene(var rootService: RootService) : BoardGameScene(1920,1080), Ref
         }
         return true
     }
-
 
     fun busDoGestureEndStuff(dropEvent: DropEvent,tile : Tile, prisonBus: BoardPrisonBus) {
         val targetList = dropEvent.dragTargets
@@ -400,7 +402,7 @@ class InGameScene(var rootService: RootService) : BoardGameScene(1920,1080), Ref
 
             val loc = coordsToService(locXVisual, locYVisual)
 
-            println("place tile info $playerIndexLocation    ${loc.first}    ${loc.second}")
+            println("place tile info $playerIndexLocation ${loc.first} ${loc.second}")
 
             val game = rootService.currentGame
             requireNotNull(game)
@@ -853,9 +855,19 @@ class InGameScene(var rootService: RootService) : BoardGameScene(1920,1080), Ref
                                 }
                                 if(fromTakenBus) {
                                     val textSplit = it.draggedComponent.name.split("_")
-                                    result = true
-                                }
+                                    for(i in textSplit) println(i)
 
+                                    if(textSplit.size == 4) {
+                                        var tempTile : Tile? = null
+                                        for(i in rootService.currentGame!!.allTiles) {
+                                            if (textSplit[3].toInt() == i.id) {
+                                                tempTile = i
+                                            }
+                                        }
+                                        if (rootService.validationService.validateTilePlacement(tempTile as PrisonerTile,x,y)) {result = true}
+                                        else {result = false}
+                                    }
+                                }
 
                                 result
                             }
