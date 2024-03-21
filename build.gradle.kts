@@ -40,8 +40,13 @@ dependencies {
 
 tasks.distZip {
     archiveFileName.set("distribution.zip")
+    into("") {
+        from(".")
+        include("HowToPlay.pdf")
+    }
     destinationDirectory.set(layout.projectDirectory.dir("public"))
 }
+
 
 tasks.test {
     useJUnitPlatform()
