@@ -78,7 +78,9 @@ class InGameScene(var rootService: RootService) : BoardGameScene(1920,1080), Ref
     private val drawStack = TokenView(posX = 855, posY = 500, height = 80, width = 80, visual = ImageVisual("tiles/default_drawStack.png")
     ).apply {
         onMouseClicked = {
-            if(!tileDrawn /*&& rootService.currentGame!!.prisonBuses.contains(null)*/) {
+            if(!tileDrawn
+                && rootService.currentGame!!.players[rootService.currentGame!!.currentPlayer].takenBus == null
+                /*&& !areAllViewBusesFull()*/) {
                 tileDrawn = true
                 drawnTile.isDisabled = false
                 drawnTile.isVisible = true
@@ -106,6 +108,7 @@ class InGameScene(var rootService: RootService) : BoardGameScene(1920,1080), Ref
             }
         }
     }
+
     private val finalStack = TokenView(posX = 785, posY = 515, height = 50, width = 50, visual = ImageVisual("tiles/default_finalStack.png")
     ).apply {
         isDisabled = true
@@ -364,6 +367,21 @@ class InGameScene(var rootService: RootService) : BoardGameScene(1920,1080), Ref
             true
         )
     }
+
+
+    fun areAllViewBusesFull() : Boolean {
+        for (i in prisonBuses) {
+            if(i.name.contains("board")) {
+                for (j in 0 until prisonBuses.size) {
+                    val compareVisual = ImageVisual("tiles/default_tile.png")
+                    if (i[0, j]!!.visual == compareVisual
+                    ) return false
+                }
+            }
+        }
+        return true
+    }
+
 
     fun busDoGestureEndStuff(dropEvent: DropEvent,tile : Tile, prisonBus: BoardPrisonBus) {
         val targetList = dropEvent.dragTargets
@@ -1051,12 +1069,15 @@ class InGameScene(var rootService: RootService) : BoardGameScene(1920,1080), Ref
         /**
          * Fills the bus with tiles
          */
+        var isFull = true
+
         init {
             this.spacing = 1.0
             for (i in 0 until bus.tiles.size) {
                 for (j in 0 until this.bus.tiles.size) {
                     if (bus.tiles[j] == null) {
                         this[0, j] = TokenView(height = 50, width = 50, visual = ImageVisual("tiles/default_tile.png"))
+                        isFull = false
                     }
                     if (bus.tiles[j] is CoinTile) {
                         this[0, j] = TokenView(height = 50, width = 50, visual = ImageVisual("tiles/default_coin.png"))
