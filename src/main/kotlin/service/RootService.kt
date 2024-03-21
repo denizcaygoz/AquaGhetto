@@ -35,6 +35,7 @@ class RootService {
         aiService.addRefreshable(newRefreshable)
         playerActionService.addRefreshable(newRefreshable)
         validationService.addRefreshable(newRefreshable)
+        networkService.addRefreshable(newRefreshable)
     }
 
     /**

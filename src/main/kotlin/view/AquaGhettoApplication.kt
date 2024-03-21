@@ -196,6 +196,8 @@ class AquaGhettoApplication: BoardGameApplication("AquaGhetto"), Refreshable {
         onWindowClosed = {
             rootService.networkService.disconnect()
         }
+
+        this.showGameScene(inGameScene)
         this.showMenuScene(mainMenuScene)
     }
 
