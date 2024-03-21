@@ -143,7 +143,6 @@ class InGameScene(var rootService: RootService) : BoardGameScene(1920,1080), Ref
         }
 
     init {
-        rootService = rootService
 
         onKeyPressed = { event ->
             if (event.keyCode == KeyCode.A) {
@@ -210,7 +209,7 @@ class InGameScene(var rootService: RootService) : BoardGameScene(1920,1080), Ref
         if (prisonBus == null) {
             prisonBuses = mutableListOf()
             if (rootService.currentGame!!.prisonBuses.size == 0) return
-            for (i in 0 until rootService.currentGame!!.prisonBuses.size) {
+            for (i in 0 until prisonBuses.size) {
                 prisonBuses[i].posX = (1000 + i * 60).toDouble()
                 prisonBuses[i].posY = 540.0
                 prisonBuses[i].apply {
@@ -232,7 +231,7 @@ class InGameScene(var rootService: RootService) : BoardGameScene(1920,1080), Ref
             }
         }
         else {
-            for(i in 0 until rootService.currentGame!!.prisonBuses.size) {
+            for(i in 0 until prisonBuses.size) {
                 if(prisonBuses[i].bus == prisonBus) {
                     prisonBuses[i].apply {
                         name = ""
@@ -255,23 +254,32 @@ class InGameScene(var rootService: RootService) : BoardGameScene(1920,1080), Ref
         }
 
         for(i in 0 until rootService.currentGame!!.players.size) {
-            if(rootService.currentGame!!.players[i].takenBus != null) {
+            val player = rootService.currentGame!!.players[i]
+            if(player.takenBus != null) {
                 for(j in 0 until prisonBuses.size) {
-                    if (rootService.currentGame!!.players[i].takenBus == prisonBuses[j].bus) {
+                    if (player.takenBus == prisonBuses[j].bus) {
                         prisonBuses[j].apply {
-                            posX = getPlayerBoard(rootService.currentGame!!.players[i])!!.posX - 200
-                            posY = getPlayerBoard(rootService.currentGame!!.players[i])!!.posY
-                            this.name = "bus_${i}_true"
+                            posX = getPlayerBoard(player)!!.posX - 200
+                            posY = getPlayerBoard(player)!!.posY
+                            this.name = "bus_${i}_true}"
                             for (k in 0 until this.bus.tiles.size) {
                                 if (this.bus.tiles[k] != null) {
                                     this[0, k]!!.name = "busTile_${i}_${this.bus.tiles[k]!!.id}_true}"
-                                    val temp2 = this
-                                    val temp = this.bus.tiles[k]!!
+                                    val tempBoardPrisonBus = this
+                                    val tempPrisonerTile = this.bus.tiles[k]!!
                                     this[0, k]!!.apply {
                                         isDraggable = true
                                         onDragGestureEnded = {event, success ->
                                             println("success: $success")
-                                            busDoGestureEndStuff(event,temp, temp2)
+                                            busDoGestureEndStuff(event, tempPrisonerTile,tempBoardPrisonBus)
+                                            player.takenBus!!.tiles[k] = null
+                                            var elementsExist = false
+                                            for(l in 0 until player.takenBus!!.tiles.size) {
+                                                if (player.takenBus!!.tiles[l] != null) {
+                                                    elementsExist = true
+                                                }
+                                            }
+                                            if (!elementsExist) rootService.gameService.determineNextPlayer(true)
                                         }
                                     }
                                 }
