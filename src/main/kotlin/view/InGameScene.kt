@@ -52,6 +52,12 @@ class InGameScene(var rootService: RootService, test: SceneTest = SceneTest()) :
             }
         }
     }
+    private val endTurnButton : Button = Button(1440,950,150,100,text = "End turn (If bus empty)"
+    ).apply{
+        onMouseClicked = {
+            rootService.gameService.determineNextPlayer(true)
+        }
+    }
     private var drawnServiceTile : Tile? = null
     private val drawnTile = TokenView(posX = 785, posY = 465, height = 150, width = 150, visual = ImageVisual("tiles/default_tile.png")
     ).apply {
@@ -142,9 +148,10 @@ class InGameScene(var rootService: RootService, test: SceneTest = SceneTest()) :
         addComponents(
             cameraPane,
             freePrisonerButton,
+            endTurnButton,
             statGui,
             hideLabels[0], hideLabels[1], hideLabels[2], hideLabels[3],
-            currentPlayerLabel
+            currentPlayerLabel,
         )
     }
 
@@ -181,8 +188,6 @@ class InGameScene(var rootService: RootService, test: SceneTest = SceneTest()) :
         return null
     }
 
-
-    var temp : Tile? = null
 
     override fun refreshPrisonBus(prisonBus: PrisonBus?) {
         if (prisonBus == null) {
@@ -243,16 +248,13 @@ class InGameScene(var rootService: RootService, test: SceneTest = SceneTest()) :
                             for (k in 0 until this.bus.tiles.size) {
                                 if (this.bus.tiles[k] != null) {
                                     this[0, k]!!.name = "busTile_${i}_${this.bus.tiles[k]!!.id}_true}"
-                                    temp = this.bus.tiles[k]!!
                                     val temp2 = this
+                                    val temp = this.bus.tiles[k]!!
                                     this[0, k]!!.apply {
                                         isDraggable = true
-                                        onDragGestureEntered = {
-                                            temp = temp2.bus.tiles[k]!!
-                                        }
                                         onDragGestureEnded = {event, success ->
                                             println("success: $success")
-                                            busDoGestureEndStuff(event, temp2)
+                                            busDoGestureEndStuff(event,temp, temp2)
                                         }
                                     }
                                 }
@@ -264,7 +266,7 @@ class InGameScene(var rootService: RootService, test: SceneTest = SceneTest()) :
         }
     }
 
-    fun busDoGestureEndStuff(dropEvent: DropEvent, prisonBus: BoardPrisonBus) {
+    fun busDoGestureEndStuff(dropEvent: DropEvent,tile : Tile, prisonBus: BoardPrisonBus) {
         val targetList = dropEvent.dragTargets
 
         if(prisonBus.bus.tiles.isEmpty()) {
@@ -290,15 +292,15 @@ class InGameScene(var rootService: RootService, test: SceneTest = SceneTest()) :
             prisonBus.isTurnEnded()
             if (currentPlayerIndex == playerIndexLocation) {
                 /*player moving on own grid*/
-                if (!rootService.validationService.validateTilePlacement(temp as PrisonerTile, loc.first, loc.second)) {
+                if (!rootService.validationService.validateTilePlacement(tile as PrisonerTile, loc.first, loc.second)) {
                     println("invalid placemente")
                     /*no valid location, refreshIsolation*/
                     refreshPrisonBus(null)
                     prisonBus.isTurnEnded()
                     return
                 }
-                val bonus = rootService.playerActionService.placePrisoner(temp as PrisonerTile,loc.first,loc.second)
-                refreshPrison(temp as PrisonerTile, loc.first, loc.second)
+                val bonus = rootService.playerActionService.placePrisoner(tile as PrisonerTile,loc.first,loc.second)
+                refreshPrison(tile as PrisonerTile, loc.first, loc.second)
                 doBonusStuff(currentPlayerIndex, bonus, busTaken = true, game.players[currentPlayerIndex].takenBus!!.tiles.isEmpty())
             } else {
                 /*player tries to place prisoner on other grid, this is not allowed*/
