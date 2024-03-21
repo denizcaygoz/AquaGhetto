@@ -14,6 +14,7 @@ import java.security.Key
  */
 class AquaGhettoApplication: BoardGameApplication("AquaGhetto"), Refreshable {
 
+    private var refreshedForNetwork = false
 
     /**
      * Central Service to provide all Game/PlayerActions
@@ -118,11 +119,17 @@ class AquaGhettoApplication: BoardGameApplication("AquaGhetto"), Refreshable {
             }
         }
 
+
         mainMenuScene.hostButton.apply {
             onMouseClicked = {
                 rootService.networkService.startNewHostedGame()
                 showGameScene(inGameScene)
             }
+        }
+        mainMenuScene.joinButton.apply {
+
+            showGameScene(inGameScene)
+
         }
 
         inGameScene.apply {
@@ -132,7 +139,7 @@ class AquaGhettoApplication: BoardGameApplication("AquaGhetto"), Refreshable {
 
                     rootService.currentlyonPause = true
                     pauseMenuScene.refreshpauseIndicator(rootService)
-                    
+
                     this@AquaGhettoApplication.showMenuScene(pauseMenuScene)
 
 
@@ -197,7 +204,10 @@ class AquaGhettoApplication: BoardGameApplication("AquaGhetto"), Refreshable {
     }
 
     override fun refreshAfterNextTurn(player: Player) {
-        this.showGameScene(inGameScene)
+        if (!refreshedForNetwork) {
+            this.showGameScene(inGameScene)
+            refreshedForNetwork = true
+        }
     }
 
     override fun refreshAfterEndGame() {
