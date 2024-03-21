@@ -276,6 +276,16 @@ class InGameScene(var rootService: RootService, test: SceneTest = SceneTest()) :
         checkNotNull(game) { "There is no game running" }
         val playerCount = game.players.size
 
+        /*remove old values*/
+        targetLayout.removeAll(prisons)
+        targetLayout.removeAll(isolations)
+        targetLayout.removeAll(names)
+        targetLayout.removeAll(prisonBuses)
+        prisons.clear()
+        isolations.clear()
+        names.clear()
+        prisonBuses.clear()
+
         // Prison Grids and Isolations
         for (i in 0 until playerCount) {
             prisons.add(PlayerBoard(game.players[i], rootService))
@@ -839,7 +849,7 @@ class InGameScene(var rootService: RootService, test: SceneTest = SceneTest()) :
 
     }
 
-    inner class BoardIsolation(val isolation: Stack<PrisonerTile>, val playerIndex: Int) :
+    inner class BoardIsolation(var isolation: Stack<PrisonerTile>, val playerIndex: Int) :
         GridPane<TokenView>(rows = 1, columns = 120, layoutFromCenter = true) {
 
         init {
@@ -908,6 +918,11 @@ class InGameScene(var rootService: RootService, test: SceneTest = SceneTest()) :
         }
 
         fun refreshIsolation() {
+            val game = rootService.currentGame
+            requireNotNull(game) {"game is null"}
+            val player = game.players[playerIndex]
+            this.isolation = player.isolation
+
             this.spacing = 0.5
             for (i in 0 until columns) {
                 this[i,0] = null
