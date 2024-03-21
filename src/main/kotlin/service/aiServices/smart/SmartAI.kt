@@ -101,8 +101,18 @@ class SmartAI(val rootService: RootService, var player: Player, val playerIndex:
             is ActionMoveEmployee -> {
                 val source = aiAction.source
                 val destination = aiAction.destination
-                rootService.playerActionService.moveEmployee(source.first, source.second,
-                    destination.first, destination.first)
+                try {
+                    rootService.playerActionService.moveEmployee(source.first, source.second,
+                        destination.first, destination.first)
+                } catch (e: Exception) {
+                    if (player.lawyerCount < 2) {
+                        rootService.playerActionService.moveEmployee(-101,-101,-104,-104)
+                    } else if (player.secretaryCount < 2) {
+                        rootService.playerActionService.moveEmployee(-101,-101,-103,-103)
+                    } else if (!player.hasJanitor) {
+                        rootService.playerActionService.moveEmployee(-101,-101,-102,-102)
+                    }
+                }
                 println("execute action move employee from ${source.first}  ${source.second} to ${source.first}  ${source.second}")
             }
             is ActionBuyPrisoner -> {
@@ -390,7 +400,19 @@ class SmartAI(val rootService: RootService, var player: Player, val playerIndex:
                 val b = rootService.playerActionService.placePrisoner(bonusBaby, loc.placePrisoner.first, loc.placePrisoner.second, false)
                 if (b.first) {
                     val emergencyEmployee = evaluateBestPosition.getBestLocationEmployee(player)
-                    rootService.playerActionService.moveEmployee(-101,-101,emergencyEmployee.first,emergencyEmployee.second)
+
+                    try {
+                        rootService.playerActionService.moveEmployee(-101,-101,emergencyEmployee.first,emergencyEmployee.second)
+                    } catch (e: Exception) {
+                        if (player.lawyerCount < 2) {
+                            rootService.playerActionService.moveEmployee(-101,-101,-104,-104)
+                        } else if (player.secretaryCount < 2) {
+                            rootService.playerActionService.moveEmployee(-101,-101,-103,-103)
+                        } else if (!player.hasJanitor) {
+                            rootService.playerActionService.moveEmployee(-101,-101,-102,-102)
+                        }
+                    }
+
                 }
             } else {
                 rootService.playerActionService.placePrisoner(bonusBaby, -100,-100, false)
@@ -420,8 +442,18 @@ class SmartAI(val rootService: RootService, var player: Player, val playerIndex:
             /*do nothing I guess*/
             println("Error AI action did not matched bonus")
         } else if (bonus && employee != null) {
-            rootService.playerActionService.moveEmployee(-101,-101,
-                employee.first, employee.second)
+            try {
+                rootService.playerActionService.moveEmployee(-101,-101,
+                    employee.first, employee.second)
+            } catch (e: Exception) {
+                if (player.lawyerCount < 2) {
+                    rootService.playerActionService.moveEmployee(-101,-101,-104,-104)
+                } else if (player.secretaryCount < 2) {
+                    rootService.playerActionService.moveEmployee(-101,-101,-103,-103)
+                } else if (!player.hasJanitor) {
+                    rootService.playerActionService.moveEmployee(-101,-101,-102,-102)
+                }
+            }
         }
     }
 
