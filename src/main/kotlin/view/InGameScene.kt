@@ -711,6 +711,9 @@ class InGameScene(var rootService: RootService, test: SceneTest = SceneTest()) :
                 visual = ImageVisual("tiles/no_tile.png")
             ).apply {
                 this.isDisabled = true
+                dropAcceptor = {
+                    false
+                }
             }
             tempX = coordsToView(1, 0).first
             tempY = coordsToView(1, 0).second
@@ -719,7 +722,12 @@ class InGameScene(var rootService: RootService, test: SceneTest = SceneTest()) :
                 width = 50 * currentGridSize,
                 visual = ImageVisual("tiles/no_tile.png")
             ).apply {
-                this.isDisabled = true
+                name = "place_secretary"
+                this.isDisabled = false
+                dropAcceptor = {
+                    /*secretary*/
+                    player.secretaryCount < 2
+                }
             }
             tempX = coordsToView(0, 1).first
             tempY = coordsToView(0, 1).second
@@ -728,7 +736,12 @@ class InGameScene(var rootService: RootService, test: SceneTest = SceneTest()) :
                 width = 50 * currentGridSize,
                 visual = ImageVisual("tiles/no_tile.png")
             ).apply {
-                this.isDisabled = true
+                this.isDisabled = false
+                name = "place_lawyer"
+                dropAcceptor = {
+                    /*lawyerCount*/
+                    player.lawyerCount < 2
+                }
             }
 
         }
@@ -1007,6 +1020,13 @@ class InGameScene(var rootService: RootService, test: SceneTest = SceneTest()) :
                                 println("success: $success")
                                 doGestureEndStuff(event, name)
                             }
+                            dropAcceptor = {
+                                /*lawyerCount*/
+                                val game = rootService.currentGame
+                                requireNotNull(game)
+                                name = "place_janitor"
+                                !game.players[playerIndex].hasJanitor
+                            }
                         }
                     } else {
                         this[i, 0] = TokenView(height = 25, width = 25, visual = tileVisual(isolation[isolation.size - i - 1])).apply {
@@ -1016,7 +1036,14 @@ class InGameScene(var rootService: RootService, test: SceneTest = SceneTest()) :
                 }
             } else {
                 this[0, 0] = TokenView(height = 40, width = 40, visual = ImageVisual("tiles/no_tile.png")).apply {
-                    isDisabled = true
+                    isDisabled = false
+                    dropAcceptor = {
+                        /*lawyerCount*/
+                        val game = rootService.currentGame
+                        requireNotNull(game)
+                        name = "place_janitor"
+                        !game.players[playerIndex].hasJanitor
+                    }
                 }
             }
         }
@@ -1116,8 +1143,18 @@ class InGameScene(var rootService: RootService, test: SceneTest = SceneTest()) :
                 bonusToPlace--
                 removeComponents(tokenView)
                 break
-            } else if (name.contains("abc")) { //TODO other locations
-
+            } else if (name.contains("place_secretary")) {
+                rootService.playerActionService.moveEmployee(-101,-101,-103,-103)
+                bonusToPlace--
+                removeComponents(tokenView)
+            } else if (name.contains("place_lawyer")) {
+                rootService.playerActionService.moveEmployee(-101,-101,-104,-104)
+                bonusToPlace--
+                removeComponents(tokenView)
+            } else if (name.contains("place_janitor")) {
+                rootService.playerActionService.moveEmployee(-101,-101,-102,-102)
+                bonusToPlace--
+                removeComponents(tokenView)
             }
 
         }
