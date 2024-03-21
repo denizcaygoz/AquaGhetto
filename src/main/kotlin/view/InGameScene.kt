@@ -141,9 +141,7 @@ class InGameScene(var rootService: RootService) : BoardGameScene(1920,1080), Ref
         }
 
     init {
-        rootService.addRefreshables(
-            this
-        )
+        rootService = rootService
 
         onKeyPressed = { event ->
             if (event.keyCode == KeyCode.A) {

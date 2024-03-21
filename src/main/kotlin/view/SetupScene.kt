@@ -236,15 +236,7 @@ class SetupScene (rootService : RootService) : MenuScene(1920 , 1080 ), Refresha
             width = 200,
             text = "Start New Game",
             alignment = Alignment.CENTER,
-            visual = ColorVisual(Color.YELLOW)
-        ).apply {
-            onMouseClicked = {
-                rootService.gameService.startNewGame(getPlayerList(testCheck.isSelected))
-                val game = rootService.currentGame
-                checkNotNull(game)
-                game.delayTime = delayInputPlayer1.text.toInt()
-            }
-        }
+            visual = ColorVisual(Color.YELLOW))
 
         /**
          * Determines the PlayerType of the Playertype Button
@@ -270,7 +262,7 @@ class SetupScene (rootService : RootService) : MenuScene(1920 , 1080 ), Refresha
          *  DONE: needs to acutally shuffle the List if [random] == true
          *  @return List with <Player>
          */
-        private fun getPlayerList(random: Boolean): MutableList<Pair<String, PlayerType>> {
+        fun getPlayerList(random: Boolean): MutableList<Pair<String, PlayerType>> {
             val playerList: MutableList<Pair<String, PlayerType>> = mutableListOf()
             for (i in 0 until playerGrid.rows) {
                 val current = if (playerGrid[0, i] != null) {

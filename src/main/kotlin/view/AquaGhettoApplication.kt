@@ -96,6 +96,18 @@ class AquaGhettoApplication: BoardGameApplication("AquaGhetto"), Refreshable {
 
     init{
         //we dont have a "addRefreshables" function so everything needs to be added individually
+
+        setupScene.startNewGameButton.apply {
+            onMouseClicked = {
+                rootService.gameService.startNewGame(setupScene.getPlayerList(setupScene.testCheck.isSelected))
+                val game = rootService.currentGame
+                checkNotNull(game)
+                game.delayTime = setupScene.delayInputPlayer1.text.toInt()
+                showGameScene(inGameScene)
+            }
+        }
+
+
         rootService.addRefreshable(this)
         rootService.addRefreshable(inGameScene)
         rootService.addRefreshable(mainMenuScene)
