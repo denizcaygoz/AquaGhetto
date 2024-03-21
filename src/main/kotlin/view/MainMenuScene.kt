@@ -5,9 +5,13 @@ import service.RootService
 import tools.aqua.bgw.components.uicomponents.Button
 import tools.aqua.bgw.components.uicomponents.Label
 import tools.aqua.bgw.components.uicomponents.TextField
+import tools.aqua.bgw.components.uicomponents.UIComponent
+import tools.aqua.bgw.core.Alignment
 import tools.aqua.bgw.core.BoardGameApplication
 import tools.aqua.bgw.core.MenuScene
+import tools.aqua.bgw.util.Font
 import tools.aqua.bgw.visual.ImageVisual
+import java.awt.Color
 import java.awt.Image
 
 /**
@@ -115,7 +119,7 @@ class MainMenuScene(rootService : RootService) : MenuScene(), Refreshable {
                 onMouseClicked = {
                     val guestName = nameGuestInputField.text
                     val sessionID = lobbycodeInputfield.text
-                    rootService.networkService.joinGame("aqua24a", guestName, sessionID, PlayerType.RANDOM_AI)
+                    rootService.networkService.joinGame("aqua24a", guestName, sessionID, getPlayerType(typeSelector))
                     newMultiplayerGameButton.isDisabled = true
 
                 }
@@ -144,7 +148,7 @@ class MainMenuScene(rootService : RootService) : MenuScene(), Refreshable {
             ).apply {
                 isVisible = false
                 onMouseClicked = {
-                    rootService.networkService.startNewHostedGame(PlayerType.RANDOM_AI)
+                    rootService.networkService.startNewHostedGame(getPlayerType(typeSelector))
                 }
             }
             val lobbyButton = Button(
@@ -174,6 +178,8 @@ class MainMenuScene(rootService : RootService) : MenuScene(), Refreshable {
                 onMouseClicked = {
                     lobbycodeInputfield.isVisible = true
                     nameGuestInputField.isVisible = true
+                    typeSelector.isVisible = true
+                    playertypeLabel.isVisible = true
                     joinButton.isVisible = true
                     sessionLabel.isVisible = false
                     hostButton.isVisible = false
@@ -186,6 +192,8 @@ class MainMenuScene(rootService : RootService) : MenuScene(), Refreshable {
                 onMouseClicked = {
                     lobbycodeInputfield.isVisible = false
                     nameGuestInputField.isVisible = false
+                    typeSelector.isVisible = true
+                    playertypeLabel.isVisible = true
                     joinButton.isVisible = false
                     sessionLabel.isVisible = true
                     hostButton.isVisible = false
@@ -211,12 +219,75 @@ class MainMenuScene(rootService : RootService) : MenuScene(), Refreshable {
             )
         }
     }
-    
+
+
+
+        val typeSelector = Button(
+            posX = (1920 / 2) + 250,
+            posY = 600,
+            width = 100,
+            height = 100,
+            text = "PLAYER",
+            font = Font(size = 1),
+            alignment = Alignment.CENTER,
+            visual = ImageVisual("icon/PLAYER.png"),
+        ).apply {
+            this.isVisible = false
+            onMouseClicked = {
+                when (text) {
+                    "PLAYER" -> {
+                        text = "AI";
+                        visual = ImageVisual("icon/AI.png");
+                        //delayInputPlayer1.apply { delayInputPlayer1.isVisible = true }
+                    }
+
+                    "AI" -> {
+                        text = "RANDOM";
+                        visual = ImageVisual("icon/RANDOM.png");
+                        //delayInputPlayer1.apply { delayInputPlayer1.isVisible = true }
+                    }
+
+                    "RANDOM" -> {
+                        text = "PLAYER";
+                        visual = ImageVisual("icon/PLAYER.png");
+
+                        //delayInputPlayer1.apply { delayInputPlayer1.isVisible = false }
+                    }
+
+                    else -> {
+                        text = "icon/PLAYER";
+                        visual = ImageVisual("PLAYER.png")
+                        //delayInputPlayer1.apply { delayInputPlayer1.isVisible = false }
+                    }
+                }
+                refreshLabel()
+            }
+        }
+    private fun getPlayerType(button: UIComponent?): PlayerType {
+        var selectedPlayerType: PlayerType = PlayerType.PLAYER
+        if (button is Button) {
+            when (button.text) {
+                "PLAYER" -> selectedPlayerType = PlayerType.PLAYER
+                "AI" -> selectedPlayerType = PlayerType.AI
+                "RANDOM" -> selectedPlayerType = PlayerType.RANDOM_AI
+                "NETWORK" -> selectedPlayerType = PlayerType.NETWORK
+                else -> selectedPlayerType = PlayerType.PLAYER
+            }
+        }
+        return selectedPlayerType
+    }
+    val playertypeLabel : Label = Label(
+        font = Font(color = Color.YELLOW), text = getPlayerType(typeSelector).toString()).apply { isVisible = false }
+    private fun refreshLabel() : Unit{
+        playertypeLabel.apply { text = getPlayerType(typeSelector).toString() }
+    }
     init {
         addComponents(
             quitButton,
             newSinglePlayerGameButton,
             multiplayerButton,
+            typeSelector,
+            playertypeLabel
             )
         background = ImageVisual("background/MainBackground.png")    }
 }

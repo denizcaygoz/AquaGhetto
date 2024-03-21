@@ -59,8 +59,8 @@ class SetupScene (rootService : RootService) : MenuScene(1920 , 1080 ), Refresha
         posX = 400,
         posY = (1080 - 250),
         height = 50,
-        width = 50,
-        text = "5",
+        width = 100,
+        text = "500",
     ).apply {
         this.isVisible = false
         onKeyTyped = {
@@ -123,6 +123,7 @@ class SetupScene (rootService : RootService) : MenuScene(1920 , 1080 ), Refresha
                 width = 50,
                 height = 50,
                 text = "add",
+                font = Font(size = 1),
                 alignment = Alignment.CENTER,
                 visual = ImageVisual("icon/ADD.png")
             ).apply {
@@ -147,6 +148,7 @@ class SetupScene (rootService : RootService) : MenuScene(1920 , 1080 ), Refresha
                 width = 50,
                 height = 50,
                 text = "remove",
+                font = Font(size = 1),
                 alignment = Alignment.CENTER_LEFT,
                 visual = ImageVisual("icon/remove.png"),
             ).apply {
@@ -176,7 +178,7 @@ class SetupScene (rootService : RootService) : MenuScene(1920 , 1080 ), Refresha
                 width = 50,
                 height = 50,
                 text = "PLAYER",
-                font = Font(size = 0),
+                font = Font(size = 1),
                 alignment = Alignment.CENTER,
                 visual = ImageVisual("icon/PLAYER.png"),
             ).apply {

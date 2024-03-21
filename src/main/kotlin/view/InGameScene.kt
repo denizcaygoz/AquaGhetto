@@ -416,6 +416,13 @@ class InGameScene(var rootService: RootService) : BoardGameScene(1920,1080), Ref
                 }
                 val bonus = rootService.playerActionService.placePrisoner(tile as PrisonerTile,loc.first,loc.second)
                 refreshPrison(tile as PrisonerTile, loc.first, loc.second)
+                for (i in prisonBus.bus.tiles.indices) {
+                    val tileABC = prisonBus.bus.tiles[i] ?: continue
+                    if (tileABC.id  == tile.id) {
+                        prisonBus.bus.tiles[i] = null
+                    }
+                }
+                refreshPrisonBus(null)
                 doBonusStuff(currentPlayerIndex, bonus, busTaken = true, game.players[currentPlayerIndex].takenBus!!.tiles.isEmpty())
             } else {
                 /*player tries to place prisoner on other grid, this is not allowed*/
@@ -424,6 +431,8 @@ class InGameScene(var rootService: RootService) : BoardGameScene(1920,1080), Ref
             }
 
             println("Element: " + element.name)
+
+            break
         }
     }
 
