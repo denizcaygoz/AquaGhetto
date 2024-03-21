@@ -280,8 +280,8 @@ class PlayerActionService(private val rootService: RootService): AbstractRefresh
         if (!(sourceX == sourceY && sourceX == -101)) {
             check(currentPlayer.coins >= 1) { "${currentPlayer.name} has only ${currentPlayer.coins} coins" }
         }
-        val employeeToMove: Tile = GuardTile()
-        var hasSetJanitorHere = false
+        var movedGuardAwayFromYard = false
+        var movedGuardToYard = false
 
         if (sourceX == sourceY && sourceX < -100) {
             when (sourceX) {
@@ -307,6 +307,7 @@ class PlayerActionService(private val rootService: RootService): AbstractRefresh
             currentPlayer.board.setPrisonYard(sourceX, sourceY, null)
             currentPlayer.board.guardPosition.remove(Pair(sourceX, sourceY))
             currentPlayer.coins--
+            movedGuardAwayFromYard = true
         }
 
         if (destinationX == destinationY && destinationX < -100) {
@@ -314,7 +315,6 @@ class PlayerActionService(private val rootService: RootService): AbstractRefresh
                 -102 -> {
                     check(!currentPlayer.hasJanitor) { "Current player already has a Janitor."}
                     currentPlayer.hasJanitor = true
-                    hasSetJanitorHere = true
                 }
                 -103 -> {
                     check(currentPlayer.secretaryCount < 2) { "Current player has the maximum amount of secretaries."}
@@ -330,8 +330,9 @@ class PlayerActionService(private val rootService: RootService): AbstractRefresh
             val isGrid = currentPlayer.board.getPrisonGrid(destinationX, destinationY)
             check(destinationTile == null) { "Another tile already occupies this position."}
             check(isGrid) { "There is no prison tile to place the guard on."}
-            currentPlayer.board.setPrisonYard(destinationX, destinationY, employeeToMove)
+            currentPlayer.board.setPrisonYard(destinationX, destinationY, GuardTile())
             currentPlayer.board.guardPosition.add(Pair(destinationX, destinationY))
+            movedGuardToYard = true
         }
 
         if (isNetworkGame && sender != PlayerType.NETWORK) {
@@ -349,20 +350,22 @@ class PlayerActionService(private val rootService: RootService): AbstractRefresh
             }
         }
 
+        rootService.evaluationService.evaluatePlayer(currentPlayer)
+
+        onAllRefreshables {
+            if (movedGuardToYard || movedGuardAwayFromYard) {
+                refreshGuards(currentPlayer,
+                    if (movedGuardAwayFromYard) Pair(sourceX, sourceY) else null,
+                    if (movedGuardToYard) Pair(destinationX, destinationY) else null,
+                )
+            }
+
+            refreshScoreStats()
+        }
+
         if (!isNetworkGame && !(sourceX == sourceY && sourceX == -101)) {
             /*determine next player is only allowed to be called if this is not a new employee*/
             rootService.gameService.determineNextPlayer(false)
-        }
-
-        onAllRefreshables {
-            refreshEmployee(currentPlayer) // aktualisiert refreshEmployee auch die GuardTiles?
-            if (game.players[game.currentPlayer].board.getPrisonYard(destinationX,destinationY) is GuardTile) {
-                refreshPrison(null, destinationX , destinationY)
-            }
-            if (hasSetJanitorHere) {
-                refreshIsolation(currentPlayer)
-            }
-            refreshScoreStats()
         }
     }
 
