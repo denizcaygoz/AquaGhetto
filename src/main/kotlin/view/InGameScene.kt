@@ -409,10 +409,12 @@ class InGameScene(var rootService: RootService) : BoardGameScene(1920,1080), Ref
             println("Element: " + element.name)
         }
     }
+
     override fun refreshTileStack(finalStack: Boolean) {
         if (finalStack) {
             this.finalStack.isVisible = false
             this.finalStack.isDisabled= true
+            this.drawStack.visual = this.finalStack.visual
         }
     }
 
