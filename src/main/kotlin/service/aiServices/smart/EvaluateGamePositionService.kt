@@ -8,6 +8,12 @@ import entity.enums.PrisonerType
 import entity.tileTypes.PrisonerTile
 import kotlin.math.round
 
+/**
+ * Evaluates the current game position for the Smart AI.
+ *
+ * @property smartAI The SmartAI instance associated with this evaluation.
+ * @constructor Initializes the EvaluateGamePositionService with the given SmartAI instance.
+ */
 class EvaluateGamePositionService(private val smartAI: SmartAI) {
 
     fun evaluateCurrentPosition(game: AquaGhetto, player: Player): Int {
