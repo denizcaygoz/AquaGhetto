@@ -252,7 +252,7 @@ class RandomAIActionService(private val rootService: RootService, private val ra
         rootService.playerActionService.takePrisonBus(busToTake)
         for (i in busToTake.tiles.indices) {
             val tileToTake = busToTake.tiles[i] ?: continue
-            this.placeTile(tileToTake, player)
+            this.placeTile(tileToTake, player, true)
 
             /*remove tile from bus*/
             busToTake.tiles[i] = null
