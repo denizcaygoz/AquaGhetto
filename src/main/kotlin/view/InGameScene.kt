@@ -95,17 +95,17 @@ class InGameScene(var rootService: RootService, test: SceneTest = SceneTest()) :
     // Stuff to hide other stuff
     val hideLabels : List<Label> = listOf(
         Label(height=460, width = 1920, visual = ColorVisual.BLACK).apply {
-        opacity = 0.5; isVisible = false
-    } ,
+            opacity = 0.5; isVisible = false
+        } ,
         Label(posY = 620, height=460, width = 1920, visual = ColorVisual.BLACK).apply {
-        opacity = 0.5; isVisible = false
-    },
+            opacity = 0.5; isVisible = false
+        },
         Label(posY = 460, height=160, width = 710, visual = ColorVisual.BLACK).apply {
-        opacity = 0.5; isVisible = false
-    },
+            opacity = 0.5; isVisible = false
+        },
         Label(posY = 460, posX = 1310 ,height=160, width = 1920, visual = ColorVisual.BLACK).apply {
-        opacity = 0.5; isVisible = false
-    })
+            opacity = 0.5; isVisible = false
+        })
 
     // Camera Pane stuff
     private val targetLayout = Pane<ComponentView>(width = 1920, height = 1080)
@@ -181,6 +181,9 @@ class InGameScene(var rootService: RootService, test: SceneTest = SceneTest()) :
         return null
     }
 
+
+    var temp : Tile? = null
+
     override fun refreshPrisonBus(prisonBus: PrisonBus?) {
         if (prisonBus == null) {
             prisonBuses = mutableListOf()
@@ -227,23 +230,75 @@ class InGameScene(var rootService: RootService, test: SceneTest = SceneTest()) :
                 }
             }
         }
+
         for(i in 0 until rootService.currentGame!!.players.size) {
             if(rootService.currentGame!!.players[i].takenBus != null) {
-                for(j in 0 until prisonBuses.size)
-                    if(rootService.currentGame!!.players[i].takenBus == prisonBuses[j].bus) {
-                        prisonBuses[j].apply{
+                for(j in 0 until prisonBuses.size) {
+                    if (rootService.currentGame!!.players[i].takenBus == prisonBuses[j].bus) {
+                        prisonBuses[j].apply {
                             posX = getPlayerBoard(rootService.currentGame!!.players[i])!!.posX - 200
                             posY = getPlayerBoard(rootService.currentGame!!.players[i])!!.posY
                             for (k in 0 until this.bus.tiles.size) {
-                                this.name = "bus_${j}_player"
-                                this[0,j]!!.name = "busTile_${j}_true"
+                                this.name = "bus_${i}_true"
+                                if (this.bus.tiles[k] != null) {
+                                    this[0, k]!!.name = "busTile_${i}_${this.bus.tiles[k]!!.id}_true}"
+                                    temp = this.bus.tiles[k]!!
+                                    this[0, k]!!.apply {
+                                        isDraggable = true
+                                        onDragGestureEnded = {event, success ->
+                                            println("success: $success")
+                                            busDoGestureEndStuff(event, name)
+                                            isTurnEnded()
+                                        }
+                                    }
+                                }
                             }
                         }
                     }
+                }
             }
         }
     }
 
+    fun busDoGestureEndStuff(dropEvent: DropEvent, nameDropped: String) {
+        val targetList = dropEvent.dragTargets
+        for (element in targetList) {
+            val name = element.name
+            if (!name.contains("dropTile_")) continue
+            val splitInfo = name.split("_")
+            val playerIndexLocation = Integer.parseInt(splitInfo[1])
+            val locXVisual = Integer.parseInt(splitInfo[2])
+            val locYVisual = Integer.parseInt(splitInfo[3])
+
+            val loc = coordsToService(locXVisual, locYVisual)
+
+            println("place tile info $playerIndexLocation    ${loc.first}    ${loc.second}")
+
+            val game = rootService.currentGame
+            requireNotNull(game)
+            val currentPlayerIndex = game.currentPlayer
+
+            if (currentPlayerIndex == playerIndexLocation) {
+                /*player moving on own grid*/
+                if (!rootService.validationService.validateTilePlacement(temp as PrisonerTile, loc.first, loc.second)) {
+                    println("invalid placemente")
+                    /*no valid location, refreshIsolation*/
+                    refreshPrisonBus(null)
+                    return
+                }
+                val currentPlayer = game.players[currentPlayerIndex]
+                val bonus = rootService.playerActionService.placePrisoner(temp as PrisonerTile,loc.first,loc.second)
+                refreshPrison(temp as PrisonerTile, loc.first, loc.second)
+                doBonusStuff(currentPlayerIndex, bonus, busTaken = false, true)
+            } else {
+                /*player tries to place prisoner on other grid, this is not allowed*/
+                refreshPrisonBus(null)
+                return
+            }
+
+            println("Element: " + element.name)
+        }
+    }
     override fun refreshTileStack(finalStack: Boolean) {
         if (finalStack) {
             this.finalStack.isVisible = false
@@ -256,14 +311,13 @@ class InGameScene(var rootService: RootService, test: SceneTest = SceneTest()) :
 
         val playerLabels : MutableList<Label> = mutableListOf()
         for(i in 0 until prisons.size) {
-            playerLabels.add(Label(posY = i*200, height = 400, font = Font(color = Color.BLACK)).apply {
-                text =  """
-                        # ${prisons[i].player.name}:
-                        # Coins: ${prisons[i].player.coins}
-                        # Has Janitor: ${prisons[i].player.hasJanitor}
-                        # Secretaries: ${prisons[i].player.secretaryCount} 
-                        # Lawyers: ${prisons[i].player.lawyerCount}
-                        """.trimMargin("#")
+            playerLabels.add(Label(posY = i*200, height = 400, font = Font(color = Color.WHITE)).apply {
+                text =  "${prisons[i].player.name}:\n\n" +
+                        "Score: ${prisons[i].player.currentScore} \n" +
+                        "Coins: ${prisons[i].player.coins} \n" +
+                        "Has Janitor: \n ${prisons[i].player.hasJanitor} \n" +
+                        "Secretary Count: \n ${prisons[i].player.secretaryCount} \n" +
+                        "Lawyer Count: \n ${prisons[i].player.lawyerCount}"
             } )
         }
         removeComponents(statGui)
@@ -275,16 +329,6 @@ class InGameScene(var rootService: RootService, test: SceneTest = SceneTest()) :
         val game = rootService.currentGame
         checkNotNull(game) { "There is no game running" }
         val playerCount = game.players.size
-
-        /*remove old values*/
-        targetLayout.removeAll(prisons)
-        targetLayout.removeAll(isolations)
-        targetLayout.removeAll(names)
-        targetLayout.removeAll(prisonBuses)
-        prisons.clear()
-        isolations.clear()
-        names.clear()
-        prisonBuses.clear()
 
         // Prison Grids and Isolations
         for (i in 0 until playerCount) {
@@ -383,7 +427,7 @@ class InGameScene(var rootService: RootService, test: SceneTest = SceneTest()) :
         refreshScoreStats()
     }
 
-    override fun refreshPrison(tile: PrisonerTile?, x: Int, y: Int) {
+    override fun refreshPrison(tile: Tile?, x: Int, y: Int) {
         val game = rootService.currentGame
         checkNotNull(game) { "There is no game running" }
         val player = game.currentPlayer
@@ -408,7 +452,7 @@ class InGameScene(var rootService: RootService, test: SceneTest = SceneTest()) :
             prisons[player][coordsToView(x, y).first, coordsToView(x, y).second] =
                 TokenView(
                     height = 50 * prisons[player].currentGridSize, width = 50 * prisons[player].currentGridSize,
-                    visual = prisons[player].tileVisual(tile)
+                    visual = prisons[player].tileVisual(tile as PrisonerTile)
                 )
         }
     }
@@ -446,7 +490,7 @@ class InGameScene(var rootService: RootService, test: SceneTest = SceneTest()) :
 
                 this.onDragDropped = { dragEvent ->
                     when (dragEvent.draggedComponent.name) {
-                        
+
                     }
                 }
             }
@@ -555,10 +599,8 @@ class InGameScene(var rootService: RootService, test: SceneTest = SceneTest()) :
                             dropAcceptor = {
                                 var result = false
                                 val fromIsolation = it.draggedComponent.name.contains("isolation_")
-                                val fromTakenBus = it.draggedComponent.name.contains("busTile") && it.draggedComponent.name.contains("true")
-                                val fromGuardMove = it.draggedComponent.name.contains("guard_")
-                                println("fromIsolation: $fromIsolation")
-                                println("fromGuardMove: $fromGuardMove")
+                                val fromTakenBus = it.draggedComponent.name.contains("busTile_") && it.draggedComponent.name.contains("true")
+                                println(fromIsolation)
                                 if (fromIsolation) {
                                     val textSplit = it.draggedComponent.name.split("_")
                                     val playerIsolation = Integer.parseInt(textSplit[1])
@@ -611,10 +653,20 @@ class InGameScene(var rootService: RootService, test: SceneTest = SceneTest()) :
                                         result = rootService.validationService.validateTilePlacement(tile, x, y)
                                     }
                                 }
+                                if(fromTakenBus) {
+                                    val textSplit = it.draggedComponent.name.split("_")
+                                    result = true
+                                }
 
 
                                 result
                             }
+
+                            /*
+                            onDragDropped = {
+                                println(it.draggedComponent.name)
+                            }
+                            */
                         }
                     }
                 }
@@ -811,22 +863,27 @@ class InGameScene(var rootService: RootService, test: SceneTest = SceneTest()) :
             for (i in 0 until bus.tiles.size) {
                 for (j in 0 until this.bus.tiles.size) {
                     if (bus.tiles[j] == null) {
-                        this[0, j] = TokenView(height = 50, width = 50, visual = ImageVisual("tiles/default_tile.png")) }
+                        this[0, j] = TokenView(height = 50, width = 50, visual = ImageVisual("tiles/default_tile.png"))
+                    }
                     if (bus.tiles[j] is CoinTile) {
-                        this[0, j] = TokenView(height = 50, width = 50, visual = ImageVisual("tiles/default_coin.png")) }
+                        this[0, j] = TokenView(height = 50, width = 50, visual = ImageVisual("tiles/default_coin.png"))
+                    }
                     if (bus.tiles[j] is GuardTile) {
-                        this[0, j] = TokenView(height = 50, width = 50, visual = ImageVisual("tiles/default_guard.png")) }
+                        this[0, j] = TokenView(height = 50, width = 50, visual = ImageVisual("tiles/default_guard.png"))
+                    }
                     if (bus.tiles[j] is PrisonerTile) {
-                        this[0, j] = TokenView(height = 50, width = 50, visual = tileVisual(bus.tiles[i] as PrisonerTile)) }
+                        this[0, j] =
+                            TokenView(height = 50, width = 50, visual = tileVisual(bus.tiles[i] as PrisonerTile))
+                    }
 
                     this.name = "bus_${j}_board"
-                    this[0,j]!!.name = "busTile_${j}_false"
+                    this[0, j]!!.name = "busTile_${j}_false"
                 }
-                this.apply{
+                this.apply {
                     this.onMouseClicked = {
-                        if(tileDrawn) {
-                            if(drawnServiceTile != null) {
-                                rootService.playerActionService.addTileToPrisonBus(drawnServiceTile!!,bus)
+                        if (tileDrawn) {
+                            if (drawnServiceTile != null) {
+                                rootService.playerActionService.addTileToPrisonBus(drawnServiceTile!!, bus)
                             }
                             tileDrawn = false
                             drawnTile.isDisabled = true
@@ -838,8 +895,7 @@ class InGameScene(var rootService: RootService, test: SceneTest = SceneTest()) :
                                     j.isVisible = false
                                 }
                             }
-                        }
-                        else if (this.name.contains("bus_") && this.name.contains("board")){
+                        } else if (this.name.contains("bus_") && this.name.contains("board")) {
                             rootService.playerActionService.takePrisonBus(this.bus)
                         }
                     }
@@ -847,16 +903,28 @@ class InGameScene(var rootService: RootService, test: SceneTest = SceneTest()) :
             }
         }
 
+        fun isTurnEnded() {
+            var isEnded = true
+            for (i in 0..2) {
+                if (this[0, i] != null) {
+                    if (this[0, i]!!.visual == ImageVisual("tiles/default_tile.png")) {
+                        isEnded = false
+                    }
+                }
+            }
+            if (isEnded) rootService.gameService.determineNextPlayer(true)
+        }
+
     }
 
-    inner class BoardIsolation(var isolation: Stack<PrisonerTile>, val playerIndex: Int) :
+    inner class BoardIsolation(val isolation: Stack<PrisonerTile>, val playerIndex: Int) :
         GridPane<TokenView>(rows = 1, columns = 120, layoutFromCenter = true) {
 
         init {
             this.refreshIsolation()
         }
 
-        private fun doGestureEndStuff(dropEvent: DropEvent, nameDropped: String) {
+        fun doGestureEndStuff(dropEvent: DropEvent, nameDropped: String) {
             val targetList = dropEvent.dragTargets
             for (element in targetList) {
                 val name = element.name
@@ -918,11 +986,6 @@ class InGameScene(var rootService: RootService, test: SceneTest = SceneTest()) :
         }
 
         fun refreshIsolation() {
-            val game = rootService.currentGame
-            requireNotNull(game) {"game is null"}
-            val player = game.players[playerIndex]
-            this.isolation = player.isolation
-
             this.spacing = 0.5
             for (i in 0 until columns) {
                 this[i,0] = null
