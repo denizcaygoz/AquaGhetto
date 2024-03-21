@@ -92,6 +92,7 @@ class GameService(private val rootService: RootService): AbstractRefreshingServi
         // Copy current game and use it as a new starting point
         val game = rootService.gameStatesService.copyAquaGhetto()
         rootService.currentGame = game
+        game.nextState = null /*ensure the next state is null and redo is not possible*/
 
         val isTwoPlayerGame = game.players.size == 2
 
