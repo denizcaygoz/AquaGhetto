@@ -122,10 +122,20 @@ class GameService(private val rootService: RootService): AbstractRefreshingServi
                     refreshScoreStats()
                     refreshAfterNextTurn(game.players[game.currentPlayer])
                 }
+
+                if (busWasTakenInThisRound && busTaken != null && state == ConnectionState.PLAYING_MY_TURN) {
+                    rootService.networkService.sendTakeTruck(busTaken.index)
+                }
+
                 this.checkAITurn(game.players[game.currentPlayer])
             }
             0 -> { /*all players have taken a buss*/
-                if (game.finalStack.size != 15) { /*reserve stack was taken*/
+
+                if (game.finalStack.size != 15) {
+                    if (busWasTakenInThisRound && busTaken != null && state == ConnectionState.PLAYING_MY_TURN) {
+                        rootService.networkService.sendTakeTruck(busTaken.index)
+                    }
+                    /*reserve stack was taken*/
                     rootService.evaluationService.evaluateGame()
                     thread {
                         Thread.sleep(5000)
@@ -139,6 +149,11 @@ class GameService(private val rootService: RootService): AbstractRefreshingServi
                     /*reserve stack was not taken*/
                     /*next player is the current player*/
                     game.players[game.currentPlayer].currentScore = rootService.evaluationService.evaluatePlayer(game.players[game.currentPlayer])
+
+                    if (busWasTakenInThisRound && busTaken != null && state == ConnectionState.PLAYING_MY_TURN) {
+                        rootService.networkService.sendTakeTruck(busTaken.index)
+                    }
+
                     onAllRefreshables {
                         refreshScoreStats()
                     }
@@ -160,12 +175,13 @@ class GameService(private val rootService: RootService): AbstractRefreshingServi
                     refreshScoreStats()
                     refreshAfterNextTurn(game.players[game.currentPlayer])
                 }
+
+                if (busWasTakenInThisRound && busTaken != null && state == ConnectionState.PLAYING_MY_TURN) {
+                    rootService.networkService.sendTakeTruck(busTaken.index)
+                }
+
                 this.checkAITurn(game.players[game.currentPlayer])
             }
-        }
-
-        if (busWasTakenInThisRound && busTaken != null && state == ConnectionState.PLAYING_MY_TURN) {
-            rootService.networkService.sendTakeTruck(busTaken.index)
         }
 
     }

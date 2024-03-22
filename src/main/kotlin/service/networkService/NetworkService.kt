@@ -157,6 +157,8 @@ class NetworkService(private val rootService: RootService): AbstractRefreshingSe
         determineNextPlayer()
 
         client?.sendGameActionMessage(message)
+
+        rootService.gameService.checkAITurn(game.players[game.currentPlayer])
     }
 
     /**
@@ -225,6 +227,8 @@ class NetworkService(private val rootService: RootService): AbstractRefreshingSe
             refreshAfterNextTurn(currentPlayer)
             refreshPrisonBus(null)
         }
+
+        rootService.gameService.checkAITurn(currentPlayer)
     }
 
     /**
