@@ -990,15 +990,20 @@ class InGameScene(var rootService: RootService) : BoardGameScene(1920,1080), Ref
                     }
                 }
             }
-            val importantNumber =
-                if ((maxX.absoluteValue - minX.absoluteValue) >= (maxY.absoluteValue - minY.absoluteValue)) {
-                    (maxX.absoluteValue - minX.absoluteValue)
-                } else (maxY.absoluteValue - minY.absoluteValue)
+            var spanX =
+                if(minX < 0) maxX -minX
+                else maxX + minX
+            var spanY =
+                if(minY < 0) maxY -minY
+                else maxY + minY
+            val biggerSpan =
+                if(spanX > spanY) spanX
+                else spanY
 
             // Numbers are not final, just to test
-            if (importantNumber <= 4) {
+            if (biggerSpan <= 4) {
                 currentGridSize = 1.0
-            } else if (importantNumber <= 6) {
+            } else if (biggerSpan <= 6) {
                 currentGridSize = 0.8
             } else {
                 currentGridSize = 0.6
@@ -1080,7 +1085,6 @@ class InGameScene(var rootService: RootService) : BoardGameScene(1920,1080), Ref
                     }
                 }
             }
-
             return currentGridSize
         }
 
