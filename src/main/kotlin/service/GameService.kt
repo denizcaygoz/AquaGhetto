@@ -224,9 +224,7 @@ class GameService(private val rootService: RootService): AbstractRefreshingServi
         if (!isNetworkGame) {
             innerCheckAITurn(player)
         } else {
-            if (state == ConnectionState.PLAYING_MY_TURN) {
-                innerCheckAITurn(player)
-            }
+            innerCheckAITurn(player)
         }
 
     }
@@ -243,7 +241,7 @@ class GameService(private val rootService: RootService): AbstractRefreshingServi
         require(player.takenBus == null)
         if (player.type == PlayerType.AI || player.type == PlayerType.RANDOM_AI) {
             thread {
-                Thread.sleep(500)
+                while ((rootService.networkService.connectionState != ConnectionState.PLAYING_MY_TURN)) {Thread.sleep(500)}
                 BoardGameApplication.runOnGUIThread {
                     rootService.aiService.makeTurn(player)
                 }

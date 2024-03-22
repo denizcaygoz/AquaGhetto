@@ -361,7 +361,7 @@ class NetworkService(private val rootService: RootService): AbstractRefreshingSe
         /**create TakeTruckMessage **/
         val message = TakeTruckMessage(
             prisonBus,
-            listsToSend.first.toList(),
+            listsToSend.first. toList(),
             listsToSend.second.toList(),
             listsToSend.third.toList()
         )
