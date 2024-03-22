@@ -122,7 +122,7 @@ class AquaGhettoApplication: BoardGameApplication("AquaGhetto"), Refreshable {
 
         mainMenuScene.hostButton.apply {
             onMouseClicked = {
-                rootService.networkService.startNewHostedGame()
+                rootService.networkService.startNewHostedGame(mainMenuScene.getPlayerType(mainMenuScene.typeSelector))
                 showGameScene(inGameScene)
             }
         }

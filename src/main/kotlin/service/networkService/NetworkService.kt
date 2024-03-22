@@ -207,9 +207,9 @@ class NetworkService(private val rootService: RootService): AbstractRefreshingSe
 
         message.drawPile.forEachIndexed { index, tileId ->
             if (index >= finalStackIndex) {
-               finalStack.add(game.allTiles[tileId-1])
+               finalStack.add(game.allTiles.filter { it.id == tileId }[0])
             } else {
-                drawStack.add(game.allTiles[tileId-1])
+                drawStack.add(game.allTiles.filter { it.id == tileId }[0])
             }
         }
         game.drawStack = drawStack

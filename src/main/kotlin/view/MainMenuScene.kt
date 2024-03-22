@@ -263,7 +263,7 @@ class MainMenuScene(rootService : RootService) : MenuScene(), Refreshable {
                 refreshLabel()
             }
         }
-    private fun getPlayerType(button: UIComponent?): PlayerType {
+    fun getPlayerType(button: UIComponent?): PlayerType {
         var selectedPlayerType: PlayerType = PlayerType.PLAYER
         if (button is Button) {
             when (button.text) {
