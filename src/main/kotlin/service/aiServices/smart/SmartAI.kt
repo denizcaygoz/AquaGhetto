@@ -599,8 +599,6 @@ class SmartAI(val rootService: RootService, var player: Player, val playerIndex:
                 if (placeCard.placeBonusPrisoner.first == -100) {
                     val babyTile = PrisonerTile(-1, PrisonerTrait.BABY, baby.first.prisonerType)
                     player.isolation.add(babyTile)
-                    baby.first.breedable = false
-                    baby.second.breedable = false
                 } else {
                     val babyTile = PrisonerTile(-1, PrisonerTrait.BABY, baby.first.prisonerType)
                     board.setPrisonYard(placeCard.placeBonusPrisoner.first, placeCard.placeBonusPrisoner.second, babyTile)
@@ -676,8 +674,6 @@ class SmartAI(val rootService: RootService, var player: Player, val playerIndex:
         if (placeCard.placeBonusPrisoner != null && parentTiles != null) {
             if (placeCard.placeBonusPrisoner.first == -100) {
                 player.isolation.pop()
-                parentTiles.first.breedable = true
-                parentTiles.second.breedable = true
             } else {
                 board.setPrisonYard(placeCard.placeBonusPrisoner.first, placeCard.placeBonusPrisoner.second, null)
                 parentTiles.first.breedable = true
