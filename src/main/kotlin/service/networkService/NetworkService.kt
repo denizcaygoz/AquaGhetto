@@ -369,9 +369,6 @@ class NetworkService(private val rootService: RootService): AbstractRefreshingSe
         client?.sendGameActionMessage(message)
         resetLists()
 
-        //if (serviceType == PlayerType.PLAYER)
-            //rootService.gameService.determineNextPlayer(true)
-
         determineNextPlayer()
     }
 
