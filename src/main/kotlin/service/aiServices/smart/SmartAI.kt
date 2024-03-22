@@ -6,6 +6,7 @@ import entity.PrisonBus
 import entity.aIActions.*
 import entity.enums.PlayerType
 import entity.enums.PrisonerTrait
+import entity.enums.PrisonerType
 import entity.tileTypes.CoinTile
 import entity.tileTypes.GuardTile
 import entity.tileTypes.PrisonerTile
@@ -95,7 +96,7 @@ class SmartAI(val rootService: RootService, var player: Player, val playerIndex:
                 val placeCard = aiAction.placeCard
                 val prisoner = placeCard.placePrisoner
                 val bonus = rootService.playerActionService.movePrisonerToPrisonYard(prisoner.first, prisoner.second)
-                this.placeCardBonus(aiAction.placeCard, bonus, game)
+                this.placeCardBonus(aiAction.placeCard, bonus, game, player.isolation.peek().prisonerType)
                 println("execute action move prisoner from own isolation to ${prisoner.first}  ${prisoner.second}")
             }
             is ActionMoveEmployee -> {
@@ -121,7 +122,7 @@ class SmartAI(val rootService: RootService, var player: Player, val playerIndex:
                 val prisoner = placeCard.placePrisoner
                 val bonus = rootService.playerActionService.buyPrisonerFromOtherIsolation(boughtFrom,
                     prisoner.first, prisoner.second)
-                this.placeCardBonus(aiAction.placeCard, bonus, game)
+                this.placeCardBonus(aiAction.placeCard, bonus, game, boughtFrom.isolation.peek().prisonerType)
                 println("execute action buy prisoner from ${boughtFrom.name} and place ${prisoner.first}  ${prisoner.second}")
             }
             is ActionFreePrisoner -> {
@@ -188,7 +189,7 @@ class SmartAI(val rootService: RootService, var player: Player, val playerIndex:
 
             try {
                 val bonus = rootService.playerActionService.placePrisoner(tile, prisoner.first, prisoner.second , true)
-                this.placeCardBonus(placeCard, bonus, game)
+                this.placeCardBonus(placeCard, bonus, game, tile.prisonerType)
             } catch (e: IllegalStateException) {
                 /*sometimes wrong location is calculated*/
                 /*emergency location*/
@@ -386,7 +387,7 @@ class SmartAI(val rootService: RootService, var player: Player, val playerIndex:
      * @param placeCard info about the location, where to place a tile
      * @param bonus the bonus obtained by placing a card
      */
-    private fun placeCardBonus(placeCard: PlaceCard , bonus: Pair<Boolean,PrisonerTile?>, game: AquaGhetto) {
+    private fun placeCardBonus(placeCard: PlaceCard , bonus: Pair<Boolean,PrisonerTile?>, game: AquaGhetto, prisonerType: PrisonerType) {
         /*place possible employee if valid*/
         placeEmployee(bonus.first, placeCard.firstTileBonusEmployee)
 
@@ -416,6 +417,10 @@ class SmartAI(val rootService: RootService, var player: Player, val playerIndex:
         } else if (bonusBaby == null && bonusLocation != null) {
             /*do nothing I guess*/
             println("Error AI action did not matched bonus Card 2")
+            val tileToPlace = rootService.boardService.getBabyTile(prisonerType)
+            secondBonus = rootService.playerActionService.placePrisoner(tileToPlace,
+                bonusLocation.first, bonusLocation.second, false)
+
         } else if (bonusBaby != null && bonusLocation != null) {
             secondBonus = rootService.playerActionService.placePrisoner(bonusBaby,
                 bonusLocation.first, bonusLocation.second, false)

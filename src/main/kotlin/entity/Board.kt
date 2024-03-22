@@ -127,7 +127,12 @@ class Board: Serializable, Cloneable {
                     val tile = this@Board.getPrisonYard(xIterator.key, yIterator.key)?.let {
                         if (it is PrisonerTile) it.clone() else it
                     }
-                    this.setPrisonYard(xIterator.key, yIterator.key, tile)
+                    if (tile is PrisonerTile) {
+                        this.setPrisonYard(xIterator.key, yIterator.key, tile.clone())
+                    } else {
+                        this.setPrisonYard(xIterator.key, yIterator.key, tile)
+                    }
+
                 }
             }
         }

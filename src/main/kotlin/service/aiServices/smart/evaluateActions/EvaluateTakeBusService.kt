@@ -83,7 +83,7 @@ class EvaluateTakeBusService(private val smartAI: SmartAI) {
 
         /*undo stuff*/
         player.coins -= coins
-        for (i in bestPos.indices) {
+        for (i in bestPos.size-1 downTo 0) {
             smartAI.undoSimulatePlacement(bestPos[i].second.first, bestPos[i].second.second, player, undoes[i])
         }
         game.prisonBuses.add(busIndex, bus)

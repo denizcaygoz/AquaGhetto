@@ -26,4 +26,6 @@ class PrisonerTile(override val id: Int,
     public override fun clone(): PrisonerTile {
         return PrisonerTile(id, prisonerTrait, prisonerType).apply { breedable = this@PrisonerTile.breedable }
     }
+
+
 }
