@@ -128,8 +128,8 @@ class BoardService(private val rootService: RootService): AbstractRefreshingServ
             }
         } else {
             buses.add(PrisonBus().apply { index = 2 })
-            buses.add(PrisonBus().apply { blockedSlots[0] = true; index = 1 })
-            buses.add(PrisonBus().apply { blockedSlots[0] = true; blockedSlots[1] = true; index = 0})
+            buses.add(PrisonBus().apply { blockedSlots[2] = true; index = 1 })
+            buses.add(PrisonBus().apply { blockedSlots[1] = true; blockedSlots[2] = true; index = 0})
         }
 
         return buses

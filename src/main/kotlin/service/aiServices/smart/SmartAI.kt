@@ -59,7 +59,7 @@ class SmartAI(val rootService: RootService, var player: Player, val playerIndex:
         /*wait until delay is over*/
         val endTime = System.currentTimeMillis()
         println("Time: ${endTime - startTime}")
-        Thread.sleep(Integer.max((delay) - (endTime - startTime).toInt() , 0).toLong())
+        Thread.sleep(Integer.max((2000) - (endTime - startTime).toInt() , 0).toLong())
 
         if (!action.validAction) {
             println("Found no valid action?")
